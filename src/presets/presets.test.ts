@@ -1,9 +1,11 @@
 // @vitest-environment happy-dom
-import { describe, expect, test } from 'vitest'
+import { memoryStorage } from '@forinda/kickjs-storage'
+import { describe, expect, test, vi } from 'vitest'
+import { createWorkspace } from '@/core/workspace'
 import { parseProject, TRANSITIONS, type Block, type Project } from '@/core/project'
 import { resolveTimeline } from '@/core/timeline'
 import { createPlayer, sceneNeeds } from '@/player/player'
-import { PRESETS, fromPreset } from './index'
+import { PRESETS, fromPreset, storePresetFonts } from './index'
 
 const blocksOf = (project: Project) =>
   project.scenes.flatMap((s) => (s.kind === 'blocks' ? s.blocks : []))
@@ -96,11 +98,10 @@ describe('presets', () => {
 
   describe('doodle-light-bulb', () => {
     const preset = PRESETS.find((p) => p.id === 'doodle-light-bulb')!
-    test('teaches with doodles, and asks for its handwriting font', () => {
+    test('teaches with doodles, in a handwriting that reads on a phone', () => {
       const types = blocksOf(preset.project).map((b) => b.type)
       expect(types.filter((t) => t === 'doodle').length).toBeGreaterThanOrEqual(14)
-      const { display, body } = preset.project.theme.fonts
-      expect(preset.fonts).toEqual([display, body])
+      expect(preset.project.theme.fonts.display).toBe('Kalam')
     })
     test('every drawing has a tall version for TikTok and Shorts', () => {
       for (const b of blocksOf(preset.project)) {
@@ -108,11 +109,11 @@ describe('presets', () => {
       }
     })
     test('every label fits inside its drawing', () => {
-      // Caveat runs about 0.42 of its size per character at this weight.
+      // Kalam runs about 0.5 of its size per character at this weight.
       const check = (strokes: Extract<Block, { type: 'doodle' }>['strokes'], width: number) => {
         for (const s of strokes) {
           if ('text' in s) {
-            expect(s.x + s.text.length * s.size * 0.42, s.text).toBeLessThanOrEqual(width)
+            expect(s.x + s.text.length * s.size * 0.5, s.text).toBeLessThanOrEqual(width)
           }
         }
       }
@@ -151,6 +152,46 @@ describe('presets', () => {
       expect(project.scenes.some((s) => s.kind === 'custom')).toBe(true)
       expect(project.scenes.some((s) => !s.spoken.trim())).toBe(true)
       expect(project.scenes.some((s) => !s.caption.trim())).toBe(true)
+    })
+  })
+
+  describe('storePresetFonts', () => {
+    const css = (family: string) =>
+      `/* latin */\n@font-face {\n  font-family: '${family}';\n  font-weight: 400;\n  src: url(https://fonts.gstatic.com/s/x/${family.replace(/ /g, '')}.woff2) format('woff2');\n}`
+    const google = vi.fn(async (url: string | URL | Request) => {
+      const address = String(url)
+      if (address.includes('fonts.gstatic.com')) return new Response(new Uint8Array([1, 2, 3]))
+      const family = decodeURIComponent(/family=([^:]+)/.exec(address)![1]).replace(/\+/g, ' ')
+      return new Response(css(family))
+    }) as unknown as typeof fetch
+
+    async function start(id: string) {
+      const ws = createWorkspace(memoryStorage())
+      await ws.write('a', fromPreset(id, 'A'), null)
+      return ws
+    }
+
+    for (const preset of PRESETS) {
+      test(`${preset.id} keeps every font it uses in the project`, async () => {
+        const ws = await start(preset.id)
+        await storePresetFonts(ws, 'a', preset.id, google)
+        const { files, display, body, mono } = (await ws.read('a')).project.theme.fonts
+        const stored = new Set(files!.map((f) => f.family))
+        expect(stored).toEqual(new Set([display, body, mono]))
+        for (const f of files!) expect(await ws.getFile('a', f.path)).not.toBeNull()
+      })
+    }
+
+    test('no network costs the fonts, not the project, and stops after one try', async () => {
+      const ws = await start('python-basics')
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const offline = vi.fn(async () => {
+        throw new TypeError('fetch failed')
+      }) as unknown as typeof fetch
+      await expect(storePresetFonts(ws, 'a', 'python-basics', offline)).resolves.toBeUndefined()
+      expect((await ws.read('a')).project.theme.fonts.files).toBeUndefined()
+      expect(warn).toHaveBeenCalledTimes(1)
+      warn.mockRestore()
     })
   })
 

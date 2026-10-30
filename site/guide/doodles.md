@@ -8,7 +8,7 @@ pnpm kick formercial new "How a bulb works" --preset doodle-light-bulb
 
 Or choose **Doodle lesson: how a light bulb works** on the projects page. It's a complete lesson of about two minutes on current, resistance and why a filament glows. Delete scenes or reword them to make it yours.
 
-Creating it downloads two handwriting fonts from Google Fonts into the project. If that fails, the project is still made, and you can press **Download** under **Project → Fonts** later.
+Creating it downloads its fonts into the project, as with every preset. See [Make your own](./getting-started#make-your-own).
 
 ## Draw your own
 
