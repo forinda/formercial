@@ -2,14 +2,14 @@
 
 Thanks for helping. Bug reports, fixes, new blocks, render drivers, voice providers, docs and example projects are all welcome.
 
-By contributing, you agree that your contribution is licensed under the [Apache License 2.0](LICENSE), as section 5 of the license says. You keep the copyright to what you write. No separate agreement is needed.
+By contributing, you agree that your contribution is licensed under the [Apache License 2.0](https://github.com/forinda/formercial/blob/main/LICENSE), as section 5 of the license says. You keep the copyright to what you write. No separate agreement is needed.
 
-Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md).
+Everyone taking part follows the [Code of Conduct](https://github.com/forinda/formercial/blob/main/CODE_OF_CONDUCT.md).
 
 ## Before you start
 
 - **A bug:** open an issue with steps to reproduce. Attach a `project.json` that shows it, if you can.
-- **A security problem:** don't open an issue. See [SECURITY.md](SECURITY.md).
+- **A security problem:** don't open an issue. See [SECURITY.md](https://github.com/forinda/formercial/blob/main/SECURITY.md).
 - **Something bigger** (a new block type, a change to `project.json`, a new driver API): open an issue first, so we can agree on the shape before you write it. Changes to `project.json` affect every project people already have.
 
 ## Setting up
@@ -27,7 +27,7 @@ pnpm exec oxlint src
 pnpm exec oxfmt src      # format; CI checks with --check
 ```
 
-Read [docs/architecture.md](docs/architecture.md) for how the pieces fit together.
+Read [the architecture page](https://forinda.github.io/formercial/contributing/architecture) for how the pieces fit together.
 
 ## Making a change
 
@@ -47,6 +47,7 @@ If your change affects what a render looks like, attach a frame or a short clip 
 - `src/core` has no framework code, so the server and the CLI can share it. `src/player` runs in the browser only.
 - Comments say why, not what. Name things by what people recognise ("recording", "caption"), not how they're built.
 - Prefer the platform and what's already here over a new dependency.
+- Changes to behavior, commands or configuration update the docs in `site/` (`pnpm docs:dev` to preview).
 
 ## Common contributions
 

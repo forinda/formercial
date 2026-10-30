@@ -29,3 +29,4 @@ jobs:
       - run: pnpm exec oxfmt --check src
       - run: pnpm test
       - run: pnpm build
+      - run: pnpm docs:build

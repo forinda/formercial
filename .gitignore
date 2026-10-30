@@ -20,3 +20,8 @@ projects/*/renders/
 projects/*/voice/*.tts.mp3
 projects/*/voice/.made.json
 .superpowers/
+
+# Local notes and design docs: kept on your machine, never committed.
+docs/
+site/.vitepress/cache/
+site/.vitepress/dist/

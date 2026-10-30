@@ -11,4 +11,4 @@
 - [ ] A test fails without this change and passes with it
 - [ ] `pnpm test`, `tsc --noEmit`, `oxlint src` and `oxfmt --check src` pass
 - [ ] Changes to `project.json` keep existing projects loading (or explain why not)
-- [ ] Docs updated if behavior or commands changed
+- [ ] Docs in `site/` updated if behavior, commands or configuration changed
