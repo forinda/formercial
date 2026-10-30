@@ -81,7 +81,15 @@ export async function launchChrome(): Promise<Page> {
   const send = <T>(method: string, params: object = {}) =>
     new Promise<T>((resolve, reject) => {
       const n = ++id
-      pending.set(n, { resolve, reject })
+      // A call Chromium never answers (a crashed page) fails instead of hanging the queue.
+      const timer = setTimeout(() => {
+        pending.delete(n)
+        reject(new Error(`chromium didn't answer ${method} within 30s`))
+      }, 30_000)
+      pending.set(n, {
+        resolve: (v) => (clearTimeout(timer), resolve(v)),
+        reject: (e) => (clearTimeout(timer), reject(e)),
+      })
       ws.send(JSON.stringify({ id: n, method, params, ...(session ? { sessionId: session } : {}) }))
     })
   const { targetId } = await send<{ targetId: string }>('Target.createTarget', {

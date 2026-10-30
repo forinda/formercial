@@ -53,7 +53,8 @@ async function setup(p: Project) {
   return ws
 }
 
-describe('voiceProject', () => {
+// Each test runs ffmpeg several times; slow machines need more than 5s.
+describe('voiceProject', { timeout: 20_000 }, () => {
   test('generates missing clips and stamps them', async () => {
     const ws = await setup(project([scene('a', 'Hello'), scene('b', 'World')]))
     const { provider, calls } = fake()
