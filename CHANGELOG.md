@@ -1,5 +1,25 @@
 # Changelog
 
+## v0.1.2 (2026-10-30)
+
+[Full changelog](https://github.com/forinda/formercial/compare/v0.1.1...v0.1.2)
+
+### 🐛 Bug Fixes
+
+- presets download their fonts, so they look the same on any machine; doodle lesson uses Kalam [`3db3fb3`](https://github.com/forinda/formercial/commit/3db3fb358e71b2fabeaf8c37becdbae0034800b7)
+
+### 📝 Documentation
+
+- logo, README banner and badges [`0b6ab65`](https://github.com/forinda/formercial/commit/0b6ab65280ad264bf26b8f86354fe09caecb8daa)
+
+### 📦 Build & CI
+
+- bump pnpm/action-setup from 4 to 6 [`09911e5`](https://github.com/forinda/formercial/commit/09911e59c8a1bc2396cfe3856cd14bd87a8abfa7)
+- bump actions/upload-pages-artifact from 3 to 5 [`1e861d3`](https://github.com/forinda/formercial/commit/1e861d30d4b0591675ec9506d33413fcc1d3b9db)
+- bump actions/deploy-pages from 4 to 5 [`d88fe6a`](https://github.com/forinda/formercial/commit/d88fe6ab1d3bef685f7b4b5c2070201c366ce8eb)
+- bump actions/setup-node from 4 to 7 [`6fb11f8`](https://github.com/forinda/formercial/commit/6fb11f8a916604024f90cc17a9ff759e6edb0d72)
+- bump actions/checkout from 4 to 7 [`68a8795`](https://github.com/forinda/formercial/commit/68a879570c954059e9599a77990354948e165926)
+
 ## v0.1.1 (2026-10-30)
 
 [Full changelog](https://github.com/forinda/formercial/compare/v0.1.0...v0.1.1)
