@@ -1,5 +1,5 @@
 // What a render driver opens: the player alone, filling the viewport, with
-// window.cxc for the driver to step it frame by frame.
+// window.formercial for the driver to step it frame by frame.
 import { useEffect, useRef } from 'react'
 import type { Format, Project } from '@/core/project'
 import { resolveTimeline, type Clip } from '@/core/timeline'
@@ -8,7 +8,7 @@ import { fileUrl } from '@/client/editor/useProject'
 
 declare global {
   interface Window {
-    cxc?: { ready: Promise<void>; frame(t: number): void; errors(): Record<string, string> }
+    formercial?: { ready: Promise<void>; frame(t: number): void; errors(): Record<string, string> }
   }
 }
 
@@ -27,7 +27,7 @@ export default function Render(props: {
       fontUrl: (path) => fileUrl(props.slug, path),
     })
     player.frame(0)
-    window.cxc = {
+    window.formercial = {
       // Every face the theme uses, loaded before the first frame is taken.
       ready: Promise.all(
         Object.values({
@@ -48,7 +48,7 @@ export default function Render(props: {
       }),
     }
     return () => {
-      delete window.cxc
+      delete window.formercial
       player.destroy()
     }
   }, [props.project, props.clips, props.format, props.trusted])

@@ -60,7 +60,7 @@ async function boot(drivers: RenderDriver[] = [driver('fake')]) {
 }
 
 function audio(ext: 'webm', seconds = 1): Buffer {
-  const file = join(tmpdir(), `cxc-rec-${process.pid}.${ext}`)
+  const file = join(tmpdir(), `formercial-rec-${process.pid}.${ext}`)
   execFileSync('ffmpeg', [
     '-loglevel',
     'error',

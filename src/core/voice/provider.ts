@@ -4,7 +4,7 @@ export interface Check {
   missing: string[]
 }
 
-/** Turns a spoken line into an audio file. edge-tts is built in; add others in src/cxc.config.ts. */
+/** Turns a spoken line into an audio file. edge-tts is built in; add others in src/formercial.config.ts. */
 export interface VoiceProvider {
   name: string
   check(): Promise<Check>

@@ -1,6 +1,6 @@
 import { defineConfig } from '@forinda/kickjs-cli'
-import { cxcCliPlugin } from './src/cli/plugin'
-import cxcConfig from './src/cxc.config'
+import { formercialCliPlugin } from './src/cli/plugin'
+import formercialConfig from './src/formercial.config'
 
 export default defineConfig({
   pattern: 'inertia',
@@ -9,9 +9,9 @@ export default defineConfig({
   // engine's multipart driver, `kick doctor` checks the engine peers, and
   // `kick typegen` flips the runtime escape-hatch types to this engine.
   runtime: 'express',
-  // `kick cxc new|voice|render|drivers|preview`. Add your own commands with
+  // `kick formercial new|voice|render|drivers|preview`. Add your own commands with
   // another defineCliPlugin in this list.
-  plugins: [cxcCliPlugin(cxcConfig)],
+  plugins: [formercialCliPlugin(formercialConfig)],
   // Pinned so `kick add` and other dep-installing commands always use the
   // project's intended package manager, regardless of which lockfile exists.
   packageManager: 'pnpm',

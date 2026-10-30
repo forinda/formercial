@@ -17,7 +17,7 @@ import type { RenderJob } from './driver'
 const PAGE = `<!doctype html><body style="margin:0"><div id="n" style="font:40px sans-serif;color:#fff">0</div><script>
 const fail = location.search.includes('fail')
 let t = 0
-window.cxc = {
+window.formercial = {
   ready: document.fonts.ready.then(() => {}),
   frame(x) { t = x; document.body.style.background = 'hsl(' + Math.round(x * 90) + ',60%,40%)'; n.textContent = x.toFixed(2) },
   errors() { return fail && t >= 1 ? { b: 'boom' } : {} },
@@ -71,7 +71,7 @@ function job(dir: string, url: string): RenderJob {
 describe('chromium-ffmpeg', () => {
   test("renders an mp4 of the timeline's size and length", async (ctx) => {
     if (!ready) return ctx.skip()
-    const dir = mkdtempSync(join(tmpdir(), 'cxc-test-'))
+    const dir = mkdtempSync(join(tmpdir(), 'formercial-test-'))
     const j = job(dir, base)
     const out = await chromiumFfmpeg.render(j, dir, () => {})
     const probe = (entries: string) =>
@@ -106,7 +106,7 @@ describe('chromium-ffmpeg', () => {
 
   test('render fails with scene id when a scene throws', async (ctx) => {
     if (!ready) return ctx.skip()
-    const dir = mkdtempSync(join(tmpdir(), 'cxc-test-'))
+    const dir = mkdtempSync(join(tmpdir(), 'formercial-test-'))
     await expect(chromiumFfmpeg.render(job(dir, `${base}?fail`), dir, () => {})).rejects.toThrow(
       'scene b: boom',
     )

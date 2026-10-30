@@ -9,7 +9,7 @@ export interface RenderJob {
   /** Render only the first N seconds. */
   seconds?: number
   timeline: Timeline
-  /** The render page for this project and format (it implements window.cxc). */
+  /** The render page for this project and format (it implements window.formercial). */
   renderUrl: string
   /** Music file, relative to the work folder. */
   music?: { path: string; volume: number; duck: number }

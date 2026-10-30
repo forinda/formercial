@@ -16,7 +16,7 @@ export default mergeConfig(
       environment: 'node',
       include: ['src/**/*.test.ts'],
       // Tests trust projects too: never in the real ~/.config file.
-      env: { CXC_TRUST_FILE: join(tmpdir(), `cxc-trust-test-${process.pid}.json`) },
+      env: { FORMERCIAL_TRUST_FILE: join(tmpdir(), `formercial-trust-test-${process.pid}.json`) },
     },
   }),
 )

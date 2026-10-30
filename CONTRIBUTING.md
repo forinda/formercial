@@ -17,8 +17,8 @@ Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md).
 You need Node 22+, pnpm, ffmpeg and ffprobe. For render tests you also need a Chromium (`npx playwright install chromium-headless-shell`, or set `CHROME`). edge-tts is only needed to try generated voice by hand.
 
 ```bash
-git clone https://github.com/forinda/commercial-x-creator.git
-cd commercial-x-creator
+git clone https://github.com/forinda/formercial.git
+cd formercial
 pnpm install
 pnpm dev                 # the editor
 pnpm test                # all tests (render tests skip without Chromium/ffmpeg)
@@ -66,7 +66,7 @@ Write it against `RenderDriver` (`src/core/render/driver.ts`) or `VoiceProvider`
 - use the timeline it's given rather than working out its own;
 - write its files under the work folder it's handed.
 
-It's usually best to publish a driver as its own package that people add in `src/cxc.config.ts`. Open an issue if you think it belongs here.
+It's usually best to publish a driver as its own package that people add in `src/formercial.config.ts`. Open an issue if you think it belongs here.
 
 ### An example project
 

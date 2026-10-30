@@ -28,6 +28,9 @@ export default defineConfig({
     entries: ['src/client/main.tsx'],
     include: ['react', 'react-dom/client', 'react/jsx-runtime', 'react/jsx-dev-runtime'],
   },
+  // `kick formercial render` starts its own server with FORMERCIAL_RENDER=1:
+  // no hot reload, so editing files can't reload a page mid-render.
+  server: process.env.FORMERCIAL_RENDER ? { hmr: false, watch: null } : undefined,
   // Aliases come from tsconfig.json `paths` — one list for the server,
   // the pages and the editor.
   resolve: { tsconfigPaths: true },

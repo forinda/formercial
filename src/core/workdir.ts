@@ -11,7 +11,7 @@ export async function withWorkdir<T>(
   paths: string[],
   fn: (dir: string) => Promise<{ result: T; outputs: string[] }>,
 ): Promise<T> {
-  const dir = await mkdtemp(join(tmpdir(), 'cxc-'))
+  const dir = await mkdtemp(join(tmpdir(), 'formercial-'))
   const inside = (path: string) => {
     const full = resolve(dir, path)
     if (!full.startsWith(dir + sep)) throw new Error(`"${path}" is outside the work folder`)

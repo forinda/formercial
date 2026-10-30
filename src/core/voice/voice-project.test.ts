@@ -85,7 +85,7 @@ describe('voiceProject', { timeout: 20_000 }, () => {
 
   test("a recording wins over tts for voice: 'recording'", async () => {
     const ws = await setup(project([scene('a', 'Hello', { voice: 'recording' })]))
-    const tmp = `${process.env.TMPDIR ?? '/tmp'}/cxc-rec-${process.pid}.webm`
+    const tmp = `${process.env.TMPDIR ?? '/tmp'}/formercial-rec-${process.pid}.webm`
     silence(tmp, 2)
     await ws.putFile('demo', 'voice/a.rec.webm', (await import('node:fs')).readFileSync(tmp))
     const { provider, calls } = fake()
@@ -124,7 +124,7 @@ describe('voiceProject', { timeout: 20_000 }, () => {
 
 describe('probeSeconds', () => {
   test('probeSeconds reads a 1s clip as ~1', async () => {
-    const tmp = `${process.env.TMPDIR ?? '/tmp'}/cxc-probe-${process.pid}.mp3`
+    const tmp = `${process.env.TMPDIR ?? '/tmp'}/formercial-probe-${process.pid}.mp3`
     silence(tmp)
     expect(await probeSeconds(tmp)).toBeCloseTo(1, 1)
   })

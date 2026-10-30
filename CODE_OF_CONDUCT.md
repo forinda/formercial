@@ -60,7 +60,7 @@ representative at an online or offline event.
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported privately to the maintainers through the repository's
-[private reporting form](https://github.com/forinda/commercial-x-creator/security/advisories/new)
+[private reporting form](https://github.com/forinda/formercial/security/advisories/new)
 (choose "Code of conduct" in the title), or by messaging the maintainer
 [@forinda](https://github.com/forinda) on GitHub.
 All complaints will be reviewed and investigated promptly and fairly.

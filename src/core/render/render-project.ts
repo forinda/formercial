@@ -1,4 +1,4 @@
-// One render of one format, used by the app's queue and by `kick cxc render`:
+// One render of one format, used by the app's queue and by `kick formercial render`:
 // voice (when a provider is given), resolve the timeline, copy the clips and
 // music into a work folder, run the driver, and keep its MP4 and SRT.
 import { sceneNeeds } from '@/player/player'

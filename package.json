@@ -1,12 +1,12 @@
 {
-  "name": "commercial-x-creator",
+  "name": "formercial",
   "version": "0.0.0",
   "description": "Make short product commercials from programmable scenes: live preview, recorded or generated voice, MP4 in 16:9, 9:16 and 1:1.",
   "license": "Apache-2.0",
   "author": "Felix Orinda",
   "repository": {
     "type": "git",
-    "url": "https://github.com/forinda/commercial-x-creator.git"
+    "url": "https://github.com/forinda/formercial.git"
   },
   "keywords": [
     "video",

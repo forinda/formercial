@@ -13,9 +13,9 @@ import type { Project } from './project'
 type TrustFile = Record<string, Record<string, string>>
 
 export function defaultTrustFile(): string {
-  if (process.env.CXC_TRUST_FILE) return process.env.CXC_TRUST_FILE
+  if (process.env.FORMERCIAL_TRUST_FILE) return process.env.FORMERCIAL_TRUST_FILE
   const config = process.env.XDG_CONFIG_HOME ?? join(homedir(), '.config')
-  return join(config, 'commercial-x-creator', 'trust.json')
+  return join(config, 'formercial', 'trust.json')
 }
 
 export function customHash(project: Project): string | null {

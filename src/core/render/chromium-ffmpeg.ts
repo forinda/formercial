@@ -76,14 +76,14 @@ export const chromiumFfmpeg: RenderDriver = {
       }
       // The page may still be loading: wait for its contract to appear.
       await evaluate(`new Promise((ok, fail) => { const s = Date.now(); (function poll() {
-        if (window.cxc) return window.cxc.ready.then(ok, fail)
-        if (Date.now() - s > 30000) return fail(new Error('render page never set window.cxc'))
+        if (window.formercial) return window.formercial.ready.then(ok, fail)
+        if (Date.now() - s > 30000) return fail(new Error('render page never set window.formercial'))
         setTimeout(poll, 50) })() })`)
 
       for (let f = 0; f < frames; f++) {
-        await evaluate(`window.cxc.frame(${f / job.fps})`)
+        await evaluate(`window.formercial.frame(${f / job.fps})`)
         {
-          const errors = await evaluate<Record<string, string>>('window.cxc.errors()')
+          const errors = await evaluate<Record<string, string>>('window.formercial.errors()')
           const [id, message] = Object.entries(errors)[0] ?? []
           if (id) throw new Error(`scene ${id}: ${message}`)
         }

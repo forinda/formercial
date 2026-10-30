@@ -37,7 +37,7 @@ export default function Projects({ projects }: { projects: { slug: string; name:
       {error && <p className="error">{error}</p>}
       {projects.length === 0 ? (
         <p className="muted">
-          No commercials yet. Name one above, or run kick cxc new &lt;name&gt;.
+          No commercials yet. Name one above, or run kick formercial new &lt;name&gt;.
         </p>
       ) : (
         <ul className="projects">

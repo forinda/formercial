@@ -1,10 +1,10 @@
-# commercial-x-creator
+# Formercial
 
 Make short product commercials on your own machine. You put scenes together in an editor, see and hear them play as you edit, and render MP4s in 16:9, 9:16 and 1:1. A project is a folder of plain files, so a script can write one as easily as the editor can.
 
 Built on [KickJS](https://kickjs.app/) (the Inertia + React template) with `@forinda/kickjs-storage` for project files.
 
-[![CI](https://github.com/forinda/commercial-x-creator/actions/workflows/ci.yml/badge.svg)](https://github.com/forinda/commercial-x-creator/actions/workflows/ci.yml)
+[![CI](https://github.com/forinda/formercial/actions/workflows/ci.yml/badge.svg)](https://github.com/forinda/formercial/actions/workflows/ci.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
 It's early (0.x): `project.json` may still change between releases, and changes will say how to update existing projects.
@@ -21,12 +21,12 @@ You need:
 ```bash
 pnpm install
 pnpm dev                # the editor, at the address it prints
-pnpm kick cxc drivers   # what can render here, and what's missing
+pnpm kick formercial drivers   # what can render here, and what's missing
 ```
 
 ## Making a commercial
 
-1. Open the app and create a commercial, or run `pnpm kick cxc new "My Product"`.
+1. Open the app and create a commercial, or run `pnpm kick formercial new "My Product"`.
 2. Add scenes. Each one has a **caption** (on screen) and a **spoken line** (for the voice: spell out what a voice would misread, like "KickJS D-B" for `@forinda/kickjs-db`).
 3. Build each scene from blocks (headline, code that types itself, terminal, file tree, cards, chips, stamp, end card), or make it a custom scene with your own HTML, CSS and script.
 4. Give each scene a voice: **Generate** it, or **Record** it in the browser and use the recording.
@@ -49,7 +49,7 @@ projects/<name>/
 
 `project.json` is validated on every load (`src/core/project.ts` has the schema). Edit it by hand or from a script while the editor is open: the editor reloads it, or shows "Changed on disk" if you have unsaved edits.
 
-Projects live in `projects/`; set `CXC_PROJECTS` to use another folder.
+Projects live in `projects/`; set `FORMERCIAL_PROJECTS` to use another folder.
 
 ## Custom scenes
 
@@ -68,17 +68,17 @@ export function draw(t, ctx) {
 - `root` is the scene's shadow root, holding its HTML and CSS. Size things with `calc(N * var(--u))`; `--u` grows on tall and square formats. Theme colors are `var(--bg)`, `var(--accent)` and so on.
 - `import` isn't supported inside a scene script.
 
-Custom scenes are code. A project you didn't write shows them as placeholders until you trust it in the editor. Trust is kept in `~/.config/commercial-x-creator/trust.json`, never in the project, and a change to the scene code asks again.
+Custom scenes are code. A project you didn't write shows them as placeholders until you trust it in the editor. Trust is kept in `~/.config/formercial/trust.json`, never in the project, and a change to the scene code asks again.
 
 ## Command line
 
 ```bash
-pnpm kick cxc new "My Product"
-pnpm kick cxc voice my-product                 # generate missing or changed lines
-pnpm kick cxc render my-product --format all   # 16:9, 9:16, 1:1 → projects/my-product/renders/
-pnpm kick cxc render ../elsewhere/promo --format 9:16 --seconds 10 --fps 24
-pnpm kick cxc drivers
-pnpm kick cxc preview my-product
+pnpm kick formercial new "My Product"
+pnpm kick formercial voice my-product                 # generate missing or changed lines
+pnpm kick formercial render my-product --format all   # 16:9, 9:16, 1:1 → projects/my-product/renders/
+pnpm kick formercial render ../elsewhere/promo --format 9:16 --seconds 10 --fps 24
+pnpm kick formercial drivers
+pnpm kick formercial preview my-product
 ```
 
 `render` starts the app on a free port for the render page (or uses `--origin http://127.0.0.1:3000` if one is running).
@@ -98,12 +98,12 @@ const mine = defineCliPlugin({
   },
 })
 
-export default defineConfig({ plugins: [cxcCliPlugin(cxcConfig), mine] })
+export default defineConfig({ plugins: [formercialCliPlugin(formercialConfig), mine] })
 ```
 
 ## Render drivers and voice providers
 
-A render driver turns a project, a format and a resolved timeline into an MP4 and an `.srt`. The built-in one, `chromium-ffmpeg`, screenshots the render page frame by frame in headless Chromium and encodes with ffmpeg. Add your own (a GPU encoder, a render farm) in `src/cxc.config.ts`:
+A render driver turns a project, a format and a resolved timeline into an MP4 and an `.srt`. The built-in one, `chromium-ffmpeg`, screenshots the render page frame by frame in headless Chromium and encodes with ffmpeg. Add your own (a GPU encoder, a render farm) in `src/formercial.config.ts`:
 
 ```ts
 import { defineConfig } from './core/render/registry'
@@ -117,7 +117,7 @@ export default defineConfig({
       },
       async render(job, dir, progress) {
         // job.timeline has every scene's start, length and voice clip (files in dir).
-        // job.renderUrl is the page that draws job.format; window.cxc.frame(t) steps it.
+        // job.renderUrl is the page that draws job.format; window.formercial.frame(t) steps it.
         // Write the MP4 and SRT under dir and return their paths relative to it.
         return { mp4: 'renders/out.mp4', srt: 'renders/out.srt' }
       },
@@ -127,7 +127,7 @@ export default defineConfig({
 })
 ```
 
-The editor and `kick cxc drivers` show each driver as ready or list what it's missing, and you pick one per render.
+The editor and `kick formercial drivers` show each driver as ready or list what it's missing, and you pick one per render.
 
 ## Running it safely
 
@@ -148,7 +148,7 @@ Contributions are welcome: bug reports, fixes, new blocks, render drivers, voice
 
 ## License
 
-[Apache License 2.0](LICENSE). Copyright 2026 Felix Orinda and the commercial-x-creator contributors. If you redistribute it, keep the [NOTICE](NOTICE) file with it.
+[Apache License 2.0](LICENSE). Copyright 2026 Felix Orinda and the formercial contributors. If you redistribute it, keep the [NOTICE](NOTICE) file with it.
 
 The example project's fonts (Unbounded, IBM Plex Sans, JetBrains Mono) are under the SIL Open Font License 1.1.
 

@@ -1,4 +1,4 @@
-// `kick cxc …`: make, voice and render commercials without opening the app.
+// `kick formercial …`: make, voice and render commercials without opening the app.
 // Registered in kick.config.ts; add your own commands next to it with another
 // defineCliPlugin.
 import { spawn, type ChildProcess } from 'node:child_process'
@@ -8,7 +8,7 @@ import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { defineCliPlugin, type KickCliPlugin } from '@forinda/kickjs-cli'
 import { diskStorage } from '@forinda/kickjs-storage/disk'
 import { FORMATS, slugFrom, starterProject, type Format } from '@/core/project'
-import { createRegistry, driverReport, type CxcConfig } from '@/core/render/registry'
+import { createRegistry, driverReport, type FormercialConfig } from '@/core/render/registry'
 import { renderProject } from '@/core/render/render-project'
 import { voiceProject } from '@/core/voice/voice-project'
 import { createTrust } from '@/core/trust'
@@ -25,8 +25,8 @@ export function resolveProject(arg: string, projectRoot: string): { root: string
   ) {
     return { root: dirname(asPath), slug: basename(asPath) }
   }
-  const root = process.env.CXC_PROJECTS
-    ? resolve(projectRoot, process.env.CXC_PROJECTS)
+  const root = process.env.FORMERCIAL_PROJECTS
+    ? resolve(projectRoot, process.env.FORMERCIAL_PROJECTS)
     : join(projectRoot, 'projects')
   return { root, slug: arg }
 }
@@ -49,7 +49,12 @@ async function startApp(
   const port = await freePort()
   const child: ChildProcess = spawn('pnpm', ['exec', 'kick', 'dev'], {
     cwd: projectRoot,
-    env: { ...process.env, PORT: String(port), CXC_PROJECTS: projects },
+    env: {
+      ...process.env,
+      PORT: String(port),
+      FORMERCIAL_PROJECTS: projects,
+      FORMERCIAL_RENDER: '1',
+    },
     stdio: 'ignore',
   })
   const origin = `http://127.0.0.1:${port}`
@@ -66,20 +71,20 @@ async function startApp(
   throw new Error("the app didn't start within 60s")
 }
 
-export function cxcCliPlugin(config: CxcConfig): KickCliPlugin {
+export function formercialCliPlugin(config: FormercialConfig): KickCliPlugin {
   return defineCliPlugin({
-    name: 'commercial-x-creator',
+    name: 'formercial',
     register(program, ctx) {
       const registry = createRegistry(config)
       const open = (arg: string) => {
         const { root, slug } = resolveProject(arg, ctx.projectRoot)
         return { root, slug, ws: createWorkspace(diskStorage({ root })) }
       }
-      const cxc = program
-        .command('cxc')
+      const group = program
+        .command('formercial')
         .description('Make commercials: new, voice, render, drivers, preview')
 
-      cxc
+      group
         .command('new <name>')
         .description('Create a project with one starter scene')
         .action(async (name: string) => {
@@ -88,7 +93,7 @@ export function cxcCliPlugin(config: CxcConfig): KickCliPlugin {
           ctx.log(`Created ${join(root, slug).replace(`${ctx.projectRoot}/`, '')}/project.json`)
         })
 
-      cxc
+      group
         .command('voice <project>')
         .description('Generate any missing or changed voice lines')
         .action(async (arg: string) => {
@@ -103,7 +108,7 @@ export function cxcCliPlugin(config: CxcConfig): KickCliPlugin {
           ctx.log(`${Object.values(clips).filter(Boolean).length} scene(s) voiced`)
         })
 
-      cxc
+      group
         .command('render <project>')
         .description('Voice, then render each format to renders/')
         .option('--format <format>', '16:9, 9:16, 1:1 or all', 'all')
@@ -125,14 +130,16 @@ export function cxcCliPlugin(config: CxcConfig): KickCliPlugin {
             const { root, slug, ws } = open(arg)
             const driver = registry.drivers.get(opts.driver)
             if (!driver)
-              throw new Error(`no render driver "${opts.driver}" (kick cxc drivers lists them)`)
+              throw new Error(
+                `no render driver "${opts.driver}" (kick formercial drivers lists them)`,
+              )
             const check = await driver.check()
             if (!check.ok)
               throw new Error(`${driver.name} can't run here: ${check.missing.join(', ')}`)
             const { project } = await ws.read(slug)
             if (!(await createTrust({ workspace: root }).isTrusted(slug, project))) {
               throw new Error(
-                `${slug} has custom scenes you haven't trusted: open it in the app (kick cxc preview ${arg}) and trust it first`,
+                `${slug} has custom scenes you haven't trusted: open it in the app (kick formercial preview ${arg}) and trust it first`,
               )
             }
             const formats = (opts.format === 'all' ? project.formats : [opts.format]) as Format[]
@@ -168,7 +175,7 @@ export function cxcCliPlugin(config: CxcConfig): KickCliPlugin {
           },
         )
 
-      cxc
+      group
         .command('drivers')
         .description('List render drivers and what each one needs')
         .action(async () => {
@@ -179,7 +186,7 @@ export function cxcCliPlugin(config: CxcConfig): KickCliPlugin {
           }
         })
 
-      cxc
+      group
         .command('preview <project>')
         .description('Start the app and print the editor address')
         .action(async (arg: string) => {

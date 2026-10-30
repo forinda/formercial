@@ -1,4 +1,4 @@
-# AGENTS.md — AI Agent Guide for commercial-x-creator
+# AGENTS.md — AI Agent Guide for formercial
 
 This guide is the **canonical, multi-agent reference** for this KickJS
 application — Claude, Copilot, Codex, Gemini, etc. all read it first.

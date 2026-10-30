@@ -1,14 +1,14 @@
 // Render drivers and voice providers by name: the built-ins plus whatever
-// src/cxc.config.ts adds.
+// src/formercial.config.ts adds.
 import { edgeTts } from '@/core/voice/edge-tts'
 import type { Check, VoiceProvider } from '@/core/voice/provider'
 import { chromiumFfmpeg } from './chromium-ffmpeg'
 import type { RenderDriver } from './driver'
 
-export type CxcConfig = { drivers?: RenderDriver[]; voices?: VoiceProvider[] }
+export type FormercialConfig = { drivers?: RenderDriver[]; voices?: VoiceProvider[] }
 export type Registry = { drivers: Map<string, RenderDriver>; voices: Map<string, VoiceProvider> }
 
-export const defineConfig = (config: CxcConfig): CxcConfig => config
+export const defineConfig = (config: FormercialConfig): FormercialConfig => config
 
 function byName<T extends { name: string }>(kind: string, items: T[]): Map<string, T> {
   const map = new Map<string, T>()
@@ -19,7 +19,7 @@ function byName<T extends { name: string }>(kind: string, items: T[]): Map<strin
   return map
 }
 
-export function createRegistry(config: CxcConfig): Registry {
+export function createRegistry(config: FormercialConfig): Registry {
   return {
     drivers: byName('render drivers', [chromiumFfmpeg, ...(config.drivers ?? [])]),
     voices: byName('voice providers', [edgeTts, ...(config.voices ?? [])]),

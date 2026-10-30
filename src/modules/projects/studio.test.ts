@@ -8,7 +8,7 @@ import { createRegistry } from '@/core/render/registry'
 import { Studio } from './studio.service'
 
 test('an outside edit to project.json reaches listeners with its version', async () => {
-  const root = mkdtempSync(join(tmpdir(), 'cxc-watch-'))
+  const root = mkdtempSync(join(tmpdir(), 'formercial-watch-'))
   const studio = new Studio(diskStorage({ root }), createRegistry({}))
   await studio.ws.write('demo', starterProject('Demo'), null)
   const seen: unknown[] = []

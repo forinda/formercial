@@ -6,8 +6,8 @@ import { S3Settings, s3FromSettings } from '@forinda/kickjs-storage/settings'
 export { STORAGE } from '@forinda/kickjs-storage/adapter'
 export type { Storage } from '@forinda/kickjs-storage'
 
-/** The projects folder: CXC_PROJECTS, or projects/ in the app. */
-export const projectsRoot = () => process.env.CXC_PROJECTS ?? 'projects'
+/** The projects folder: FORMERCIAL_PROJECTS, or projects/ in the app. */
+export const projectsRoot = () => process.env.FORMERCIAL_PROJECTS ?? 'projects'
 
 /** Where projects are, for keying trust: the bucket, or the folder's absolute path. */
 export const workspaceId = () =>

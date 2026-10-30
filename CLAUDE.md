@@ -1,4 +1,4 @@
-# CLAUDE.md — commercial-x-creator
+# CLAUDE.md — formercial
 
 **Read `./.agents/AGENTS.md` first.** It is the canonical, multi-agent
 reference for this project (Claude, Copilot, Codex, Gemini, etc.) —

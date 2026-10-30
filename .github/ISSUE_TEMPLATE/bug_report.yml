@@ -6,7 +6,7 @@ body:
     attributes:
       value: |
         Thanks for reporting. A `project.json` that shows the problem is the fastest way to a fix.
-        For a security issue, don't open an issue: [report it privately](https://github.com/forinda/commercial-x-creator/security/advisories/new).
+        For a security issue, don't open an issue: [report it privately](https://github.com/forinda/formercial/security/advisories/new).
   - type: textarea
     id: what
     attributes:
@@ -33,7 +33,7 @@ body:
         - Editor / preview
         - Voice (generated or recorded)
         - Render (app)
-        - kick cxc (command line)
+        - kick formercial (command line)
         - Something else
     validations:
       required: true
@@ -41,6 +41,6 @@ body:
     id: env
     attributes:
       label: Environment
-      description: OS, Node version, browser, and the output of `pnpm kick cxc drivers`.
+      description: OS, Node version, browser, and the output of `pnpm kick formercial drivers`.
     validations:
       required: true

@@ -29,7 +29,7 @@ export const app = await bootstrap({
   ],
   adapters: [
     InertiaAdapter({
-      title: 'commercial-x-creator',
+      title: 'Formercial',
       entry: 'src/client/main.tsx',
       head: '<link rel="icon" href="/favicon.svg" type="image/svg+xml" />',
       // Canonical URLs and absolute image URLs start here — not at the Host header.
@@ -39,17 +39,17 @@ export const app = await bootstrap({
       // browser's <head> in sync on client-side visits.
       meta: {
         lang: 'en',
-        titleTemplate: '%s · commercial-x-creator',
-        description: 'commercial-x-creator, built with KickJS and Inertia.',
+        titleTemplate: '%s · Formercial',
+        description: 'Formercial: make short product commercials from programmable scenes.',
         // Link previews: add `image: '/og.png'` (1200×630, in public/) and
         // switch the card to 'summary_large_image'.
-        og: { site_name: 'commercial-x-creator', type: 'website' },
+        og: { site_name: 'Formercial', type: 'website' },
         twitter: { card: 'summary' },
         // Any other <meta> / <link>: hreflang alternates, preloads.
         head: [h('meta', { name: 'theme-color', content: '#ffffff' })],
       },
       // Props every page receives.
-      share: () => ({ appName: 'commercial-x-creator' }),
+      share: () => ({ appName: 'Formercial' }),
       ssr: { entry: 'src/client/ssr.tsx' },
       // Unknown URLs and thrown errors render src/client/pages/Error.tsx
       // (through inertiaNotFound / inertiaErrorHandler below).

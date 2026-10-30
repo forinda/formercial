@@ -7,7 +7,7 @@ import { describe, expect, test } from 'vitest'
 import type { RenderDriver } from '@/core/render/driver'
 import { parseProject, starterProject } from '@/core/project'
 import { createWorkspace } from '@/core/workspace'
-import { cxcCliPlugin, resolveProject } from './plugin'
+import { formercialCliPlugin, resolveProject } from './plugin'
 
 const fakeDriver: RenderDriver = {
   name: 'farm',
@@ -18,7 +18,7 @@ const fakeDriver: RenderDriver = {
 async function run(args: string[], projectRoot: string) {
   const out: string[] = []
   const program = new Command().exitOverride()
-  const plugin = cxcCliPlugin({ drivers: [fakeDriver] })
+  const plugin = formercialCliPlugin({ drivers: [fakeDriver] })
   await plugin.register!(program, {
     cwd: projectRoot,
     projectRoot,
@@ -29,24 +29,24 @@ async function run(args: string[], projectRoot: string) {
   return out.join('\n')
 }
 
-describe('kick cxc', () => {
+describe('kick formercial', () => {
   test('new creates a valid project', async () => {
-    const root = mkdtempSync(join(tmpdir(), 'cxc-cli-'))
-    const out = await run(['cxc', 'new', 'My Product'], root)
+    const root = mkdtempSync(join(tmpdir(), 'formercial-cli-'))
+    const out = await run(['formercial', 'new', 'My Product'], root)
     expect(out).toContain('projects/my-product')
     const ws = createWorkspace(diskStorage({ root: join(root, 'projects') }))
     expect((await ws.read('my-product')).project.name).toBe('My Product')
   })
 
   test('drivers prints each driver with ready or missing', async () => {
-    const root = mkdtempSync(join(tmpdir(), 'cxc-cli-'))
-    const out = await run(['cxc', 'drivers'], root)
+    const root = mkdtempSync(join(tmpdir(), 'formercial-cli-'))
+    const out = await run(['formercial', 'drivers'], root)
     expect(out).toMatch(/chromium-ffmpeg/)
     expect(out).toMatch(/farm\s+missing: a render farm/)
   })
 
   test('resolves a folder path to root and slug', () => {
-    const root = mkdtempSync(join(tmpdir(), 'cxc-cli-'))
+    const root = mkdtempSync(join(tmpdir(), 'formercial-cli-'))
     mkdirSync(join(root, 'elsewhere', 'promo'), { recursive: true })
     expect(resolveProject(join(root, 'elsewhere', 'promo'), root)).toEqual({
       root: join(root, 'elsewhere'),
@@ -55,16 +55,16 @@ describe('kick cxc', () => {
     expect(resolveProject('promo', root)).toEqual({ root: join(root, 'projects'), slug: 'promo' })
   })
 
-  test('registers exactly the cxc command group', async () => {
-    const root = mkdtempSync(join(tmpdir(), 'cxc-cli-'))
+  test('registers exactly the formercial command group', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'formercial-cli-'))
     const program = new Command()
-    await cxcCliPlugin({}).register!(program, {
+    await formercialCliPlugin({}).register!(program, {
       cwd: root,
       projectRoot: root,
       config: null,
       log: () => {},
     })
-    expect(program.commands.map((c) => c.name())).toEqual(['cxc'])
+    expect(program.commands.map((c) => c.name())).toEqual(['formercial'])
     expect(program.commands[0].commands.map((c) => c.name())).toEqual([
       'new',
       'voice',
@@ -75,7 +75,7 @@ describe('kick cxc', () => {
   })
 
   test('render refuses a project whose custom scenes are not trusted', async () => {
-    const root = mkdtempSync(join(tmpdir(), 'cxc-cli-'))
+    const root = mkdtempSync(join(tmpdir(), 'formercial-cli-'))
     const ws = createWorkspace(diskStorage({ root: join(root, 'projects') }))
     const project = parseProject({
       ...starterProject('C'),
@@ -88,14 +88,14 @@ describe('kick cxc', () => {
       check: async () => ({ ok: true, missing: [] }),
     }
     const program = new Command().exitOverride()
-    await cxcCliPlugin({ drivers: [ready] }).register!(program, {
+    await formercialCliPlugin({ drivers: [ready] }).register!(program, {
       cwd: root,
       projectRoot: root,
       config: null,
       log: () => {},
     })
     await expect(
-      program.parseAsync(['node', 'kick', 'cxc', 'render', 'c', '--driver', 'ok']),
+      program.parseAsync(['node', 'kick', 'formercial', 'render', 'c', '--driver', 'ok']),
     ).rejects.toThrow(/trust/)
   })
 })
