@@ -47,4 +47,36 @@ describe('parseProject', () => {
       expect(() => parseProject({ ...starterProject('D'), scenes: [scene] })).toThrow(ProjectError)
     }
   })
+
+  test('theme values that end up in CSS are plain', () => {
+    const base = starterProject('D')
+    const bad = [
+      {
+        ...base.theme,
+        fonts: { ...base.theme.fonts, display: "X'; } body { background: url(//evil) }" },
+      },
+      { ...base.theme, colors: { ...base.theme.colors, bg: 'red; --x: url(//evil)' } },
+      {
+        ...base.theme,
+        fonts: {
+          ...base.theme.fonts,
+          files: [{ family: "a'b", weight: 400, path: 'media/fonts/a.woff2' }],
+        },
+      },
+      {
+        ...base.theme,
+        fonts: {
+          ...base.theme.fonts,
+          files: [{ family: 'A', weight: 5000, path: 'media/fonts/a.woff2' }],
+        },
+      },
+    ]
+    for (const theme of bad) expect(() => parseProject({ ...base, theme })).toThrow(ProjectError)
+    expect(
+      parseProject({
+        ...base,
+        theme: { ...base.theme, colors: { ...base.theme.colors, bg: '#0D2226' } },
+      }).theme.colors.bg,
+    ).toBe('#0D2226')
+  })
 })

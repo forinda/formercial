@@ -1,10 +1,9 @@
 // Theme fonts live in the project (media/fonts/), so a render looks the same
 // offline and on any machine. Picking a Google Fonts family downloads its
 // latin files once.
-import type { Theme } from './project'
+import { FONT_FAMILY as FAMILY, type Theme } from './project'
 import type { Workspace } from './workspace'
 
-const FAMILY = /^[A-Za-z0-9 ]{1,60}$/
 // A modern browser agent: the css2 API answers it with woff2.
 const UA =
   'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36'
@@ -41,7 +40,14 @@ export async function fetchGoogleFont(
 
 /** @font-face rules for the fonts stored in the project. */
 export function fontFaceCss(theme: Theme, fileUrl: (path: string) => string): string {
+  // The schema already keeps these plain; skip anything else rather than trust it.
   return (theme.fonts.files ?? [])
+    .filter(
+      (f) =>
+        FAMILY.test(f.family) &&
+        Number.isInteger(f.weight) &&
+        /^media\/fonts\/[\w.-]+$/.test(f.path),
+    )
     .map(
       (f) =>
         `@font-face { font-family: '${f.family.replace(/'/g, '')}'; font-weight: ${f.weight}; src: url('${fileUrl(f.path).replace(/'/g, '%27')}') format('woff2'); font-display: block }`,

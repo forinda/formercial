@@ -44,7 +44,6 @@ const freePort = () =>
 async function startApp(
   projectRoot: string,
   projects: string,
-  log: (m: string) => void,
 ): Promise<{ origin: string; stop(): void }> {
   const port = await freePort()
   const child: ChildProcess = spawn('pnpm', ['exec', 'kick', 'dev'], {
@@ -138,7 +137,7 @@ export function cxcCliPlugin(config: CxcConfig): KickCliPlugin {
             if (!canVoice) ctx.log('edge-tts not found: rendering with the clips already made')
             const app = opts.origin
               ? { origin: opts.origin, stop() {} }
-              : await startApp(ctx.projectRoot, root, ctx.log)
+              : await startApp(ctx.projectRoot, root)
             try {
               for (const format of formats) {
                 const out = await renderProject({
@@ -179,7 +178,7 @@ export function cxcCliPlugin(config: CxcConfig): KickCliPlugin {
         .description('Start the app and print the editor address')
         .action(async (arg: string) => {
           const { root, slug } = open(arg)
-          const app = await startApp(ctx.projectRoot, root, ctx.log)
+          const app = await startApp(ctx.projectRoot, root)
           ctx.log(`Editing ${slug}: ${app.origin}/p/${slug}  (Ctrl+C to stop)`)
           await new Promise<void>((done) => process.once('SIGINT', () => (app.stop(), done())))
         })

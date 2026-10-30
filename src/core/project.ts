@@ -94,7 +94,11 @@ const SceneSchema = z.discriminatedUnion('kind', [
   }),
 ])
 
-const color = z.string().min(1)
+// Theme values are written into CSS, so they're kept to plain forms: a hex
+// color, a family name of letters, digits and spaces.
+export const FONT_FAMILY = /^[A-Za-z0-9 ]{1,60}$/
+const color = z.string().regex(/^#[0-9a-fA-F]{3,8}$/, { error: 'a hex color like #f2c14e' })
+const family = z.string().regex(FONT_FAMILY, { error: 'letters, digits and spaces only' })
 const ThemeSchema = z.object({
   colors: z.object({
     bg: color,
@@ -107,15 +111,15 @@ const ThemeSchema = z.object({
     bad: color,
   }),
   fonts: z.object({
-    display: z.string(),
-    body: z.string(),
-    mono: z.string(),
+    display: family,
+    body: family,
+    mono: family,
     /** Font files stored in the project, from Google Fonts or added by hand. */
     files: z
       .array(
         z.object({
-          family: z.string(),
-          weight: z.number().int(),
+          family,
+          weight: z.number().int().min(1).max(1000),
           path: z.string().startsWith('media/fonts/'),
         }),
       )
