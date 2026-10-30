@@ -194,4 +194,15 @@ describe('player', () => {
       "src: url('/files/media/fonts/unbounded-800.woff2')",
     )
   })
+
+  test('locked custom scenes are listed, so a render can refuse them', () => {
+    const p = project([
+      scenes[1],
+      { id: 'c', kind: 'custom', caption: '', script: 'export function draw() {}' },
+    ])
+    const host = document.createElement('div')
+    document.body.append(host)
+    const player = createPlayer(host, p, resolveTimeline(p, {}, sceneNeeds), '16:9')
+    expect(player.locked).toEqual(['c'])
+  })
 })

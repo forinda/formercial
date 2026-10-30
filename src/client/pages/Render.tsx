@@ -41,7 +41,11 @@ export default function Render(props: {
         .then(() => document.fonts.ready)
         .then(() => {}),
       frame: (t) => player.frame(t),
-      errors: () => Object.fromEntries([...player.errors].map(([id, e]) => [id, e.message])),
+      errors: () => ({
+        // A locked scene would render as a placeholder: fail the render instead.
+        ...Object.fromEntries(player.locked.map((id) => [id, "custom scene isn't trusted"])),
+        ...Object.fromEntries([...player.errors].map(([id, e]) => [id, e.message])),
+      }),
     }
     return () => {
       delete window.cxc

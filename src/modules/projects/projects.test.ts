@@ -17,6 +17,12 @@ import { REGISTRY } from './tokens'
 import { localOnly } from '@/middleware/local-only'
 
 const urls: string[] = []
+const customProject = (script = 'export function draw() {}') => ({
+  ...starterProject('Demo'),
+  scenes: [{ id: 'c', kind: 'custom', caption: '', script }],
+})
+/** Custom code that arrives outside the editor: a git pull, a script. */
+const pull = (project: unknown) => storage.put('demo/project.json', JSON.stringify(project))
 function driver(name: string, opts: { ok?: boolean; hold?: Promise<void> } = {}): RenderDriver {
   return {
     name,
@@ -36,8 +42,9 @@ function driver(name: string, opts: { ok?: boolean; hold?: Promise<void> } = {})
   }
 }
 
+let storage = memoryStorage()
 async function boot(drivers: RenderDriver[] = [driver('fake')]) {
-  const storage = memoryStorage()
+  storage = memoryStorage()
   const { app } = await createTestApp({
     runtime: expressRuntime(),
     modules: [ProjectsModule()],
@@ -187,12 +194,7 @@ describe('projects api', () => {
 
   test('a project with custom scenes renders only once trusted', async () => {
     const http = await boot()
-    const { version } = (await http.get('/api/v1/projects/demo')).body
-    const project = {
-      ...starterProject('Demo'),
-      scenes: [{ id: 'c', kind: 'custom', caption: '', script: 'export function draw() {}' }],
-    }
-    await http.put('/api/v1/projects/demo').send({ project, baseVersion: version }).expect(200)
+    await pull(customProject())
     expect((await http.get('/api/v1/projects/demo')).body.trusted).toBe(false)
     await http
       .post('/api/v1/projects/demo/renders')
@@ -284,5 +286,47 @@ describe('projects api', () => {
     } finally {
       vi.unstubAllGlobals()
     }
+  })
+
+  test('saving your own edits keeps a trusted project trusted', async () => {
+    const http = await boot()
+    const scene = (script: string) => ({ id: 'c', kind: 'custom', caption: '', script })
+    let { version } = (await http.get('/api/v1/projects/demo')).body
+    const first = { ...starterProject('Demo'), scenes: [scene('export function draw() {}')] }
+    ;({ version } = (
+      await http
+        .put('/api/v1/projects/demo')
+        .send({ project: first, baseVersion: version })
+        .expect(200)
+    ).body)
+    await http.post('/api/v1/projects/demo/trust').send({ trusted: true }).expect(204)
+    const edited = { ...first, scenes: [scene('export function draw(t) { t }')] }
+    const res = await http
+      .put('/api/v1/projects/demo')
+      .send({ project: edited, baseVersion: version })
+      .expect(200)
+    expect(res.body.trusted).toBe(true)
+    expect((await http.get('/api/v1/projects/demo')).body.trusted).toBe(true)
+  })
+
+  test('custom code pulled in from outside stays untrusted after you save edits', async () => {
+    const http = await boot()
+    await pull(customProject())
+    const { version, project } = (await http.get('/api/v1/projects/demo')).body
+    const res = await http
+      .put('/api/v1/projects/demo')
+      .send({ project: { ...project, name: 'Renamed' }, baseVersion: version })
+      .expect(200)
+    expect(res.body.trusted).toBe(false)
+  })
+
+  test('a custom scene you add in the editor can run', async () => {
+    const http = await boot()
+    const { version } = (await http.get('/api/v1/projects/demo')).body
+    const res = await http
+      .put('/api/v1/projects/demo')
+      .send({ project: customProject(), baseVersion: version })
+      .expect(200)
+    expect(res.body.trusted).toBe(true)
   })
 })

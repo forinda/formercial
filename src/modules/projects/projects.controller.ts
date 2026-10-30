@@ -131,13 +131,21 @@ export class ProjectsController {
     return this.handle(ctx, async () => {
       const { slug } = ctx.params
       const { project, baseVersion } = ctx.body ?? {}
+      // Your own edits in the editor keep a trusted project trusted (this route
+      // only answers same-origin requests from this machine); edits from
+      // anywhere else, like a pulled change, still need trusting again.
+      const before = await this.studio.ws.read(slug).catch(() => null)
+      const wasTrusted = before ? await this.studio.trust.isTrusted(slug, before.project) : false
       const { version } = await this.studio.ws.write(
         slug,
         project as Project,
         String(baseVersion ?? ''),
       )
+      const saved = (await this.studio.ws.read(slug)).project
+      if (wasTrusted) await this.studio.trust.set(slug, saved, true)
+      const trusted = await this.studio.trust.isTrusted(slug, saved)
       this.studio.emit(slug, 'project-changed', { version })
-      return ctx.json({ version })
+      return ctx.json({ version, trusted })
     })
   }
 

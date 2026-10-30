@@ -13,6 +13,8 @@ export interface Player {
   frame(t: number): void
   destroy(): void
   errors: Map<string, Error>
+  /** Custom scenes not run because the project isn't trusted. */
+  locked: string[]
 }
 
 /** Seconds of a new scene spent on its transition. */
@@ -60,6 +62,7 @@ export function createPlayer(
   host.append(style, stage)
 
   const errors = new Map<string, Error>()
+  const lockedScenes: string[] = []
   const ctx: BlockCtx = { theme: project.theme, format, width, height }
   const byId = new Map(project.scenes.map((s) => [s.id, s]))
 
@@ -125,6 +128,7 @@ export function createPlayer(
         draws.forEach((d) => d(local))
       }
     } else if (!opts.trusted) {
+      lockedScenes.push(scene.id)
       const css = document.createElement('style')
       css.textContent = SCENE_CSS
       const locked = document.createElement('div')
@@ -236,6 +240,7 @@ export function createPlayer(
   return {
     frame,
     errors,
+    locked: lockedScenes,
     destroy() {
       stage.remove()
       style.remove()

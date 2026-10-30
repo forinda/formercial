@@ -60,7 +60,12 @@ export class ProjectSession {
     if (!res.ok)
       return this.update({ status: 'error', error: body.error ?? `save failed (${res.status})` })
     this.dirty = false
-    this.update({ version: body.version, status: 'saved', error: undefined })
+    this.update({
+      version: body.version,
+      trusted: body.trusted ?? this.state.trusted,
+      status: 'saved',
+      error: undefined,
+    })
   }
 
   /** Load the file as it is on disk, dropping local edits. */
