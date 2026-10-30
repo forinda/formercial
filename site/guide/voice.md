@@ -1,6 +1,6 @@
 # Voice
 
-Each scene gets one clip: a generated line, or a recording you make in the browser. A scene lasts at least as long as its clip plus 1.3 seconds.
+Each scene gets one clip: a generated line, or a recording you make in the browser. A scene lasts at least as long as its clip plus a short pause, 1.3 seconds unless you change **Pause after each spoken line** under **Project**. For shorts, try `0.3`, and set each scene's **At least** low too, since a scene never ends before that.
 
 ## Generated voice
 

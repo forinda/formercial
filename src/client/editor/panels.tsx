@@ -150,6 +150,22 @@ export function ThemePanel({
           }
         />
       </Field>
+      <Field id="p-pause" label="Pause after each spoken line (s)">
+        <Input
+          id="p-pause"
+          type="number"
+          min={0}
+          max={5}
+          step={0.1}
+          value={project.pauseSeconds}
+          onChange={(e) => {
+            const pauseSeconds = Number(e.target.value)
+            if (e.target.value !== '' && pauseSeconds >= 0 && pauseSeconds <= 5) {
+              onChange({ ...project, pauseSeconds })
+            }
+          }}
+        />
+      </Field>
       <Field id="p-logo" label="Logo">
         <input
           id="p-logo"

@@ -46,6 +46,7 @@ Everything about a commercial lives in its folder's `project.json`. The editor w
 | `voice` | `{ tts, rate }` | required | Generated voice: an edge-tts voice name and rate, like `"-4%"`. |
 | `music` | `{ file, volume, duck }` | none | [Music](#music) |
 | `captions` | boolean | `true` | Draw captions into the picture. |
+| `pauseSeconds` | number, 0 to 5 | `1.3` | Picture kept after each spoken line, before the next scene. `0.3` feels tight, for shorts. |
 | `scenes` | array | required, at least one | [Scenes](#scenes), in order. Ids must be unique. |
 
 ## Theme

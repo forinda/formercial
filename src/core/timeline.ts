@@ -6,22 +6,26 @@ export type Clip = { path: string; seconds: number }
 export type TimelineScene = { id: string; start: number; length: number; clip?: Clip }
 export type Timeline = { scenes: TimelineScene[]; total: number }
 
-/** Picture kept after a scene's voice ends. */
-export const VOICE_TAIL = 1.3
-
 // Tenths of a second, as integers, so starts don't drift over many scenes.
 const tenths = (seconds: number) => Math.ceil(Math.round(seconds * 1000) / 100)
 
 export function resolveTimeline(
   project: Project,
   clips: Record<string, Clip | undefined>,
-  needs: (s: Scene) => number,
+  /** How long a scene's blocks take to appear, plus `read` seconds to read them. */
+  needs: (s: Scene, read?: number) => number,
 ): Timeline {
   let at = 0
   const scenes = project.scenes.map((scene) => {
     const clip = clips[scene.id]
+    const pause = project.pauseSeconds
+    // A voiced scene has been explained already: a short pause shortens its reading time too.
     const length = tenths(
-      Math.max(scene.minSeconds, needs(scene), clip ? clip.seconds + VOICE_TAIL : 0),
+      Math.max(
+        scene.minSeconds,
+        needs(scene, clip ? Math.min(1, pause) : 1),
+        clip ? clip.seconds + pause : 0,
+      ),
     )
     const entry: TimelineScene = { id: scene.id, start: at / 10, length: length / 10 }
     if (clip) entry.clip = clip
