@@ -22,6 +22,7 @@ cd formercial
 pnpm install
 pnpm dev                 # the editor
 pnpm test                # all tests (render tests skip without Chromium/ffmpeg)
+pnpm exec kick typegen   # generated types; pnpm dev also does this
 pnpm exec tsc --noEmit
 pnpm exec oxlint src
 pnpm exec oxfmt src      # format; CI checks with --check

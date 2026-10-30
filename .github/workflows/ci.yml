@@ -26,6 +26,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Chromium for render tests
         run: pnpm dlx playwright install --with-deps chromium-headless-shell
+      # The generated env and route types are git-ignored; tsc needs them.
+      - run: pnpm exec kick typegen
       - run: pnpm exec tsc --noEmit
       - run: pnpm exec oxlint src
       - run: pnpm exec oxfmt --check src
