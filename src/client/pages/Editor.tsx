@@ -115,7 +115,12 @@ export default function Editor(props: {
             </>
           )}
           {tab === 'project' && (
-            <ThemePanel slug={props.slug} project={project} onChange={(p) => session.set(p)} />
+            <ThemePanel
+              slug={props.slug}
+              project={project}
+              onChange={(p) => session.set(p)}
+              onFontsChanged={() => void session.reload()}
+            />
           )}
           {tab === 'render' && (
             <RenderPanel slug={props.slug} project={project} trusted={trusted} />

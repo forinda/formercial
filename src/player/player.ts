@@ -1,6 +1,7 @@
 // Draws a project at any time t. The editor's preview and the render page both
 // use this, so what you watch is what renders. Every frame follows from t:
 // no CSS transitions, timers or clocks.
+import { fontFaceCss } from '../core/fonts'
 import { FORMATS, type Format, type Project, type Scene } from '../core/project'
 import type { Timeline, TimelineScene } from '../core/timeline'
 import { BLOCKS, reveal, type BlockCtx } from './blocks'
@@ -36,7 +37,7 @@ export function createPlayer(
    * `trusted`: run custom scenes' HTML, CSS and scripts. They're code, and a
    * project may come from someone else, so the app asks before running them.
    */
-  opts: { captions?: boolean; trusted?: boolean } = {},
+  opts: { captions?: boolean; trusted?: boolean; fontUrl?: (path: string) => string } = {},
 ): Player {
   const [width, height] = FORMATS[format]
   const { colors, fonts } = project.theme
@@ -52,7 +53,8 @@ export function createPlayer(
     `--mono: '${fonts.mono}', ui-monospace, monospace`,
   ].join('; ')
   const style = document.createElement('style')
-  style.textContent = STAGE_CSS
+  // @font-face can't live in a shadow root, so the project's fonts go here.
+  style.textContent = STAGE_CSS + (opts.fontUrl ? fontFaceCss(project.theme, opts.fontUrl) : '')
   host.append(style, stage)
 
   const errors = new Map<string, Error>()

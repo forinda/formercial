@@ -3,6 +3,7 @@
 import { join } from 'node:path'
 import { Controller, Delete, Get, Post, Put, type RequestContext } from '@forinda/kickjs'
 import { checkRange } from '@forinda/kickjs-storage'
+import { storeGoogleFont } from '../../core/fonts'
 import { probeSeconds } from '../../core/media'
 import {
   FORMATS,
@@ -156,6 +157,21 @@ export class ProjectsController {
       const { project } = await this.studio.ws.read(slug)
       await this.studio.trust.set(slug, project, ctx.body?.trusted === true)
       return ctx.noContent()
+    })
+  }
+
+  /** Download a Google Fonts family into the project's media/fonts/. */
+  @Post('/:slug/fonts')
+  addFont(ctx: RequestContext) {
+    return this.handle(ctx, async () => {
+      const family = String(ctx.body?.family ?? '').trim()
+      if (!/^[A-Za-z0-9 ]{1,60}$/.test(family))
+        throw new HttpError(400, 'a font family is letters, digits and spaces')
+      const files = await storeGoogleFont(this.studio.ws, ctx.params.slug, family)
+      this.studio.emit(ctx.params.slug, 'project-changed', {
+        version: (await this.studio.ws.read(ctx.params.slug)).version,
+      })
+      return ctx.json({ files })
     })
   }
 

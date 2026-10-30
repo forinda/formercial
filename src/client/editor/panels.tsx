@@ -18,13 +18,16 @@ export function ThemePanel({
   slug,
   project,
   onChange,
+  onFontsChanged,
 }: {
   slug: string
   project: Project
   onChange(p: Project): void
+  onFontsChanged(): void
 }) {
   const { theme } = project
   const [error, setError] = useState('')
+  const [fetching, setFetching] = useState('')
   const setColor = (key: keyof Project['theme']['colors'], value: string) =>
     onChange({ ...project, theme: { ...theme, colors: { ...theme.colors, [key]: value } } })
   return (
@@ -75,21 +78,52 @@ export function ThemePanel({
       </fieldset>
       <fieldset>
         <legend>Fonts</legend>
-        {(['display', 'body', 'mono'] as const).map((k) => (
-          <div className="field" key={k}>
-            <label htmlFor={`font-${k}`}>{k}</label>
-            <input
-              id={`font-${k}`}
-              value={theme.fonts[k]}
-              onChange={(e) =>
-                onChange({
-                  ...project,
-                  theme: { ...theme, fonts: { ...theme.fonts, [k]: e.target.value } },
-                })
-              }
-            />
-          </div>
-        ))}
+        {(['display', 'body', 'mono'] as const).map((k) => {
+          const family = theme.fonts[k]
+          const stored = theme.fonts.files?.some((f) => f.family === family)
+          return (
+            <div className="row" key={k}>
+              <div className="field">
+                <label htmlFor={`font-${k}`}>{k}</label>
+                <input
+                  id={`font-${k}`}
+                  value={family}
+                  onChange={(e) =>
+                    onChange({
+                      ...project,
+                      theme: { ...theme, fonts: { ...theme.fonts, [k]: e.target.value } },
+                    })
+                  }
+                />
+              </div>
+              <button
+                type="button"
+                disabled={!!fetching || stored}
+                title="Download this Google Fonts family into the project"
+                onClick={async () => {
+                  setFetching(k)
+                  setError('')
+                  try {
+                    await api(`/api/v1/projects/${slug}/fonts`, {
+                      method: 'POST',
+                      json: { family },
+                    })
+                    onFontsChanged()
+                  } catch (err) {
+                    setError((err as Error).message)
+                  } finally {
+                    setFetching('')
+                  }
+                }}
+              >
+                {stored ? 'In project' : fetching === k ? 'Downloading…' : 'Download'}
+              </button>
+            </div>
+          )
+        })}
+        <p className="note">
+          Downloaded fonts are kept in media/fonts/, so renders look the same on any machine.
+        </p>
       </fieldset>
       <label className="check">
         <input

@@ -8,7 +8,7 @@ import { STORAGE } from '@forinda/kickjs-storage/adapter'
 import { createTestApp } from '@forinda/kickjs-testing'
 import express from 'express'
 import request from 'supertest'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import { starterProject } from '../../core/project'
 import type { RenderDriver } from '../../core/render/driver'
 import { createRegistry } from '../../core/render/registry'
@@ -258,5 +258,31 @@ describe('projects api', () => {
     const res = await http.get('/api/v1/projects/demo/file?path=media/logo.svg').expect(200)
     expect(res.headers['content-security-policy']).toMatch(/sandbox/)
     expect(res.headers['x-content-type-options']).toBe('nosniff')
+  })
+
+  test('downloads a Google font into the project', async () => {
+    const http = await boot()
+    vi.stubGlobal('fetch', async (url: string) =>
+      String(url).startsWith('https://fonts.googleapis.com')
+        ? new Response(
+            `/* latin */\n@font-face { font-weight: 400; src: url(https://fonts.gstatic.com/a.woff2) format('woff2'); }`,
+          )
+        : new Response(new Uint8Array([1, 2, 3])),
+    )
+    try {
+      const res = await http
+        .post('/api/v1/projects/demo/fonts')
+        .send({ family: 'Space Mono' })
+        .expect(200)
+      expect(res.body.files).toEqual([
+        { family: 'Space Mono', weight: 400, path: 'media/fonts/space-mono-400.woff2' },
+      ])
+      const { project } = (await http.get('/api/v1/projects/demo')).body
+      expect(project.theme.fonts.files).toEqual(res.body.files)
+      await http.get('/api/v1/projects/demo/file?path=media/fonts/space-mono-400.woff2').expect(200)
+      await http.post('/api/v1/projects/demo/fonts').send({ family: 'x&y=z' }).expect(400)
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 })

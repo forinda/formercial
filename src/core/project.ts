@@ -98,7 +98,21 @@ const ThemeSchema = z.object({
     good: color,
     bad: color,
   }),
-  fonts: z.object({ display: z.string(), body: z.string(), mono: z.string() }),
+  fonts: z.object({
+    display: z.string(),
+    body: z.string(),
+    mono: z.string(),
+    /** Font files stored in the project, from Google Fonts or added by hand. */
+    files: z
+      .array(
+        z.object({
+          family: z.string(),
+          weight: z.number().int(),
+          path: z.string().startsWith('media/fonts/'),
+        }),
+      )
+      .optional(),
+  }),
   logo: z.string().optional(),
 })
 

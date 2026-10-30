@@ -45,6 +45,7 @@ export function Preview(props: {
     host.current.innerHTML = ''
     player.current = createPlayer(host.current, project, timeline, format, {
       trusted: props.trusted,
+      fontUrl: (path) => fileUrl(props.slug, path),
     })
     player.current.frame(Math.min(tRef.current, timeline.total))
     return () => player.current?.destroy()

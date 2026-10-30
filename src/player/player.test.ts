@@ -172,4 +172,26 @@ describe('player', () => {
     const c = host.querySelector<HTMLElement>('[data-scene="c"]')!.shadowRoot!
     expect(c.getElementById('out')).toBeNull()
   })
+
+  test('stored fonts are declared for the stage', () => {
+    const base = project([scenes[1]])
+    const p = {
+      ...base,
+      theme: {
+        ...base.theme,
+        fonts: {
+          ...base.theme.fonts,
+          files: [{ family: 'Unbounded', weight: 800, path: 'media/fonts/unbounded-800.woff2' }],
+        },
+      },
+    }
+    const host = document.createElement('div')
+    document.body.append(host)
+    createPlayer(host, p, resolveTimeline(p, {}, sceneNeeds), '16:9', {
+      fontUrl: (path) => `/files/${path}`,
+    })
+    expect(host.querySelector('style')!.textContent).toContain(
+      "src: url('/files/media/fonts/unbounded-800.woff2')",
+    )
+  })
 })
