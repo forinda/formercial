@@ -7,7 +7,7 @@ import type { Timeline, TimelineScene } from '@/core/timeline'
 import { BLOCKS, reveal, type BlockCtx } from './blocks'
 import { compileDraw } from './custom'
 import { esc } from './highlight'
-import { SCENE_CSS, STAGE_CSS, UNIT } from './styles'
+import { SCENE_CSS, STAGE_CSS, UNIT, boxColors } from './styles'
 import {
   defaultSeconds,
   openingEffect,
@@ -58,6 +58,7 @@ export function createPlayer(
       : []),
     `--u: calc(${UNIT[format]} * 1cqw)`,
     ...Object.entries(colors).map(([k, v]) => `--${k}: ${v}`),
+    ...Object.entries(boxColors(colors.bg)).map(([k, v]) => `--${k}: ${v}`),
     `--display: '${fonts.display}', system-ui, sans-serif`,
     `--body: '${fonts.body}', system-ui, sans-serif`,
     `--mono: '${fonts.mono}', ui-monospace, monospace`,
