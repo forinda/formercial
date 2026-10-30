@@ -23,7 +23,7 @@ Says whether the driver can run on this machine, and if not, what to install or 
 
 ### render(job, dir, progress)
 
-`dir` is a work folder. The job's voice clips and music are already in it, at their project paths (`voice/s1.tts.mp3`, `media/music.mp3`). Write the MP4 and SRT under `dir`, and return their paths relative to it, like `renders/16x9-….mp4`. They're copied back into the project and the folder is removed.
+`dir` is a work folder. The job's voice clips and music are already in it, at their project paths (`voice/s1.tts.mp3`, `media/music.mp3`). Write the MP4 and SRT under `dir`, and return their paths relative to it, like `renders/16x9-….mp4`. When `job.project.captions` is on, keep the SRT away from the MP4 (the built-in driver uses `renders/srt/`), or players that auto-load it will show the captions twice. They're copied back into the project and the folder is removed.
 
 `job` holds:
 

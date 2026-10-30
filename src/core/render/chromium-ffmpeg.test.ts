@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { createServer, type Server } from 'node:http'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { memoryStorage } from '@forinda/kickjs-storage'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import { parseProject, starterProject } from '@/core/project'
@@ -101,6 +101,30 @@ describe('chromium-ffmpeg', () => {
       ]).toString(),
     )
     expect(Math.abs(duration - j.timeline.total)).toBeLessThan(0.15)
+    expect(existsSync(join(dir, out.srt))).toBe(true)
+  }, 60_000)
+
+  test('burned-in captions keep the srt away from players that auto-load it', async (ctx) => {
+    if (!ready) return ctx.skip()
+    const dir = mkdtempSync(join(tmpdir(), 'formercial-test-'))
+    const out = await chromiumFfmpeg.render(job(dir, base), dir, () => {})
+    // VLC and mpv show a same-named .srt beside the video: captions twice.
+    expect(dirname(out.srt)).toBe('renders/srt')
+    expect(basename(out.srt, '.srt')).toBe(basename(out.mp4, '.mp4'))
+    expect(existsSync(join(dir, out.srt))).toBe(true)
+    expect(existsSync(join(dir, out.mp4.replace(/\.mp4$/, '.srt')))).toBe(false)
+  }, 60_000)
+
+  test('without burned-in captions the srt sits beside the video, for players to load', async (ctx) => {
+    if (!ready) return ctx.skip()
+    const dir = mkdtempSync(join(tmpdir(), 'formercial-test-'))
+    const j = job(dir, base)
+    const out = await chromiumFfmpeg.render(
+      { ...j, project: { ...j.project, captions: false } },
+      dir,
+      () => {},
+    )
+    expect(out.srt).toBe(out.mp4.replace(/\.mp4$/, '.srt'))
     expect(existsSync(join(dir, out.srt))).toBe(true)
   }, 60_000)
 

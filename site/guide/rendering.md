@@ -1,6 +1,6 @@
 # Rendering
 
-A render makes an MP4 and an `.srt` subtitle file for each format, in the project's `renders/` folder.
+A render makes an MP4 and an `.srt` subtitle file for each format, under the project's `renders/` folder.
 
 ## From the editor
 
@@ -34,14 +34,15 @@ Rendering takes roughly 2–3 times the length of the spot at 30 fps. Use `--fps
 ```
 projects/my-product/renders/
   16x9-20261030-134300.mp4
-  16x9-20261030-134300.srt
   9x16-20261030-135512.mp4
-  ...
+  srt/
+    16x9-20261030-134300.srt
+    9x16-20261030-135512.srt
 ```
 
 - **Video:** H.264.
 - **Audio:** AAC at 192 kbps.
-- **Subtitles:** each `.srt` cue runs while its line is spoken.
-- **Captions:** with captions on, they're also drawn into the picture.
+- **Captions:** when on, they're drawn into the picture. The `.srt` then goes in `renders/srt/`, ready to upload. It isn't beside the video because players like VLC and mpv load a same-named `.srt` automatically, which would show the captions twice.
+- **Subtitles without burned-in captions:** with captions off, the `.srt` sits beside the MP4, so players do load it. Each cue runs while its line is spoken.
 
 Git ignores renders.
