@@ -13,7 +13,7 @@
     "@forinda/kickjs": "^10.14.0",
     "@forinda/kickjs-inertia": "^0.4.0",
     "@forinda/kickjs-schema": "^0.2.4",
-    "@forinda/kickjs-storage": "^0.3.1",
+    "@forinda/kickjs-storage": "^0.4.0",
     "@inertiajs/core": "^3.9.1",
     "@inertiajs/react": "^3.9.1",
     "dotenv": "^17.4.2",
@@ -34,6 +34,7 @@
     "@types/react-dom": "^19.3.0",
     "@types/supertest": "^7.2.1",
     "@vitejs/plugin-react": "^6.1.2",
+    "happy-dom": "^21.0.4",
     "oxfmt": "^0.75.0",
     "oxlint": "^1.90.0",
     "supertest": "^7.3.1",
@@ -41,5 +42,8 @@
     "unplugin-swc": "^2.0.0",
     "vite": "^8.3.5",
     "vitest": "^5.0.5"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

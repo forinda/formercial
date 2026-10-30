@@ -18,8 +18,6 @@ async function boot() {
   return request(app.handle.bind(app))
 }
 
-const inertiaVisit = { 'X-Inertia': 'true', 'X-Inertia-Version': 'test' }
-
 describe('PagesController', () => {
   it('renders the home page as HTML on a first visit', async () => {
     const res = await (await boot()).get('/').expect(200)
@@ -27,11 +25,5 @@ describe('PagesController', () => {
     expect(res.text).toContain('"component":"Home"')
     // The controller's meta is in the HTML a search engine reads.
     expect(res.text).toContain('<title data-inertia="">Home</title>')
-  })
-
-  it('answers an Inertia visit with the page as JSON', async () => {
-    const res = await (await boot()).get('/posts').set(inertiaVisit).expect(200)
-    expect(res.body.component).toBe('Posts/Index')
-    expect(res.body.props.posts).toEqual([{ id: 1, title: 'Hello from KickJS' }])
   })
 })

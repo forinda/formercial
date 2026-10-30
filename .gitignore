@@ -14,3 +14,9 @@ coverage/
 .vercel/
 uploads/
 .tus/
+
+# Commercial creator: generated per machine.
+projects/*/renders/
+projects/*/voice/*.tts.mp3
+projects/*/voice/.made.json
+.superpowers/

@@ -13,7 +13,6 @@ export function Layout({ children }: { children: ReactNode }) {
       <nav style={{ display: 'flex', gap: 12 }}>
         <strong>{page.props.appName}</strong>
         <Link href="/">Home</Link>
-        <Link href="/posts">Posts</Link>
       </nav>
       {flash.success && <p style={{ color: 'green' }}>{flash.success}</p>}
       {children}

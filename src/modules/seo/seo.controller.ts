@@ -9,7 +9,7 @@ export class SeoController {
   // repositories (`{ loc: `/posts/${id}`, lastmod: post.updatedAt }`).
   @Get('/sitemap.xml')
   sitemap() {
-    return sitemap([{ loc: '/', changefreq: 'weekly', priority: 1 }, { loc: '/posts' }], {
+    return sitemap([{ loc: '/', changefreq: 'weekly', priority: 1 }], {
       baseUrl: this.config.get('APP_URL'),
     })
   }
