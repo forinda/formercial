@@ -7,7 +7,14 @@ export default defineConfig({
   base: '/formercial/',
   cleanUrls: true,
   lastUpdated: true,
-  head: [['link', { rel: 'icon', href: '/formercial/favicon.svg' }]],
+  head: [
+    ['link', { rel: 'icon', href: '/formercial/favicon.svg' }],
+    [
+      'meta',
+      { name: 'google-site-verification', content: '7K2ToZEha4-8GYymarMDrEi5pbiAa8Bl8vsAWp4sr2M' },
+    ],
+  ],
+  sitemap: { hostname: 'https://forinda.github.io/formercial/' },
   themeConfig: {
     nav: [
       { text: 'Guide', link: '/guide/getting-started' },
