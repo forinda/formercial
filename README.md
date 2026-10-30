@@ -1,10 +1,19 @@
-# Formercial
+<p align="center">
+  <a href="https://forinda.github.io/formercial/">
+    <img alt="Formercial: short videos and lessons, made from programmable scenes" src=".github/assets/banner.svg" width="860">
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/forinda/formercial/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/forinda/formercial?style=flat-square&labelColor=12161b&color=f2c14e&label=release&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJGb3JtZXJjaWFsIj48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwIDApIHNjYWxlKDEpIj4KICA8cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHJ4PSIxNSIgZmlsbD0iIzEyMTYxYiIvPgogIDxwYXRoIGQ9Ik0xOSA1MSBWMTkgUTE5IDE0IDI0IDE0IEg0NyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZjJjMTRlIiBzdHJva2Utd2lkdGg9IjkiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0zMSAyOC41IEw0Ny41IDM4IEwzMSA0Ny41IFoiIGZpbGw9IiM3ZmQxYjkiIHN0cm9rZT0iIzdmZDFiOSIgc3Ryb2tlLXdpZHRoPSIzLjUiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9nPjwvc3ZnPgo%3D"></a>
+  <a href="https://github.com/forinda/formercial/actions/workflows/ci.yml"><img alt="CI status" src="https://img.shields.io/github/actions/workflow/status/forinda/formercial/ci.yml?branch=main&style=flat-square&labelColor=12161b&label=CI&logo=githubactions&logoColor=white"></a>
+  <a href="https://forinda.github.io/formercial/"><img alt="Documentation" src="https://img.shields.io/badge/docs-read%20the%20guide-7fd1b9?style=flat-square&labelColor=12161b&logo=vitepress&logoColor=white"></a>
+  <a href="LICENSE"><img alt="License: Apache 2.0" src="https://img.shields.io/badge/license-Apache%202.0-9aa6b1?style=flat-square&labelColor=12161b"></a>
+  <a href="https://nodejs.org"><img alt="Node 22 or newer" src="https://img.shields.io/badge/node-22%2B-9aa6b1?style=flat-square&labelColor=12161b&logo=nodedotjs&logoColor=white"></a>
+  <a href="https://forinda.github.io/formercial/guide/agents"><img alt="Works with agents over MCP" src="https://img.shields.io/badge/agents-MCP-9aa6b1?style=flat-square&labelColor=12161b"></a>
+</p>
 
 Make short product commercials on your own machine. Put scenes together in an editor, see and hear them play as you edit, and render MP4s in 16:9, 9:16 and 1:1. A project is a folder of plain files, so a script can write one as easily as the editor can.
-
-[![CI](https://github.com/forinda/formercial/actions/workflows/ci.yml/badge.svg)](https://github.com/forinda/formercial/actions/workflows/ci.yml)
-[![Docs](https://img.shields.io/badge/docs-forinda.github.io%2Fformercial-blue.svg)](https://forinda.github.io/formercial/)
-[![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
 **Documentation: [forinda.github.io/formercial](https://forinda.github.io/formercial/)**
 

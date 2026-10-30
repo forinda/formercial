@@ -55,6 +55,7 @@ export default defineConfig({
         ],
       },
     ],
+    logo: '/logo.svg',
     socialLinks: [{ icon: 'github', link: 'https://github.com/forinda/formercial' }],
     editLink: {
       pattern: 'https://github.com/forinda/formercial/edit/main/site/:path',
