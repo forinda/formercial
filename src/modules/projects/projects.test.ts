@@ -186,9 +186,15 @@ describe('projects api', () => {
     expect(first.body.jobs[0].state).toBe('running')
     expect(second.body.jobs[0].state).toBe('queued')
     release()
-    await new Promise((r) => setTimeout(r, 200))
+    // Waiting on the outcome, not a fixed time: a busy machine takes longer.
+    await vi.waitFor(
+      async () => {
+        const { jobs } = (await http.get('/api/v1/projects/demo/renders').expect(200)).body
+        expect(jobs.map((j: { state: string }) => j.state)).toEqual(['done', 'done'])
+      },
+      { timeout: 10_000, interval: 100 },
+    )
     const list = (await http.get('/api/v1/projects/demo/renders').expect(200)).body
-    expect(list.jobs.map((j: { state: string }) => j.state)).toEqual(['done', 'done'])
     expect(list.files).toContain('renders/16x9.mp4')
   })
 
@@ -339,6 +345,7 @@ describe('projects api', () => {
     const presets = (await http.get('/api/v1/presets').expect(200)).body
     expect(presets.map((p: { id: string }) => p.id)).toEqual([
       'showcase',
+      'doodle-light-bulb',
       'typescript-intro',
       'javascript-basics',
       'python-basics',

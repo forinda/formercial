@@ -16,7 +16,7 @@ Creates `projects/my-product/project.json` with one starter scene. The folder na
 pnpm kick formercial new "Learn Python" --preset python-basics
 ```
 
-`--preset` starts from a [preset](./getting-started#make-your-own) instead: `showcase`, `typescript-intro`, `javascript-basics` or `python-basics`.
+`--preset` starts from a [preset](./getting-started#make-your-own) instead: `showcase`, `doodle-light-bulb`, `typescript-intro`, `javascript-basics` or `python-basics`.
 
 ### voice
 

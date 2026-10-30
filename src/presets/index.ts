@@ -1,14 +1,19 @@
 // Ready-made commercials to start a project from. Each shows off what a project
 // can do, so you can keep what suits you and delete the rest. Every code sample
 // and its output is real, so a preset can be rendered as-is.
+import { storeGoogleFont } from '@/core/fonts'
 import { parseProject, type Project } from '@/core/project'
+import type { Workspace } from '@/core/workspace'
+import { doodleLesson } from './doodle'
 
 export interface Preset {
   id: string
   title: string
   description: string
-  /** The language its code blocks use; `mixed` shows them all. */
-  lang: 'ts' | 'js' | 'py' | 'mixed'
+  /** The language its code blocks use; `mixed` shows them all, `none` has no code. */
+  lang: 'ts' | 'js' | 'py' | 'mixed' | 'none'
+  /** Font families to download into a new project, because the look depends on them. */
+  fonts?: string[]
   project: Project
 }
 
@@ -778,6 +783,27 @@ const showcase = parseProject({
       { minSeconds: 5.5 },
     ),
     scene(
+      'doodle',
+      'Doodles draw themselves with a pen: lines, labels, colors that fill in, and dots that move.',
+      'Doodles draw themselves with a pen: lines, labels, colors that fill in, and dots that move.',
+      [
+        {
+          type: 'doodle',
+          strokes: [
+            { d: 'M250 130 H1350 V560 H250 Z', seconds: 1.4, fill: 'accent', fillOpacity: 0.15 },
+            { text: 'Drawn with a pen', x: 520, y: 320, size: 96, tone: 'accent', seconds: 1.2 },
+            {
+              d: 'M250 130 H1350 V560 H250 Z',
+              width: 0,
+              seconds: 0,
+              flow: { count: 12, speed: 260, tone: 'good' },
+            },
+          ],
+        },
+      ],
+      { minSeconds: 8 },
+    ),
+    scene(
       'chips',
       'Chips are good for lists of names.',
       'Chips are good for lists of names.',
@@ -867,6 +893,14 @@ export const PRESETS: Preset[] = [
     project: showcase,
   },
   {
+    id: 'doodle-light-bulb',
+    title: 'Doodle lesson: how a light bulb works',
+    description: 'A whiteboard explainer on current, resistance and why a filament glows',
+    lang: 'none',
+    fonts: ['Caveat', 'Patrick Hand'],
+    project: doodleLesson,
+  },
+  {
     id: 'typescript-intro',
     title: 'Intro to TypeScript',
     description: 'Types, a caught mistake and its fix, interfaces, tooling',
@@ -899,4 +933,18 @@ export function fromPreset(id: string, name: string, voice?: string): Project {
     name,
     voice: voice ? { ...project.voice, tts: voice } : project.voice,
   })
+}
+
+/**
+ * Download the fonts a preset's look depends on. A failure only costs the look:
+ * the project is already saved, and Project → Fonts can fetch them later.
+ */
+export async function storePresetFonts(ws: Workspace, slug: string, id: string): Promise<void> {
+  for (const family of PRESETS.find((p) => p.id === id)?.fonts ?? []) {
+    try {
+      await storeGoogleFont(ws, slug, family)
+    } catch (err) {
+      console.warn(`${slug}: couldn't download ${family}: ${(err as Error).message}`)
+    }
+  }
 }

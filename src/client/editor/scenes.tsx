@@ -26,7 +26,7 @@ import {
   IconPlus,
   IconTrash,
 } from '@tabler/icons-react'
-import type { ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type { Block, Scene } from '@/core/project'
 import { Button } from '@/client/components/ui/button'
 import { Input } from '@/client/components/ui/input'
@@ -139,6 +139,22 @@ const BLANK: { [T in Block['type']]: Extract<Block, { type: T }> } = {
   stamp: { type: 'stamp', text: 'Shipped', tone: 'good' },
   cards: { type: 'cards', items: [{ title: 'Title', sub: 'detail' }] },
   chips: { type: 'chips', label: 'Works with', items: ['One', 'Two'] },
+  doodle: {
+    type: 'doodle',
+    viewBox: '0 0 1600 720',
+    pen: true,
+    wobble: true,
+    strokes: [
+      {
+        d: 'M300 400 C500 150 900 650 1300 300',
+        tone: 'fg',
+        width: 6,
+        seconds: 1.5,
+        fillOpacity: 1,
+      },
+      { text: 'Your label', x: 300, y: 600, size: 72, tone: 'accent', seconds: 1 },
+    ],
+  },
   end: {
     type: 'end',
     wordmark: 'Product',
@@ -146,6 +162,67 @@ const BLANK: { [T in Block['type']]: Extract<Block, { type: T }> } = {
     command: 'npm i product',
     url: 'example.com',
   },
+}
+
+/** A value as JSON: nothing changes until what's typed is valid. */
+function JsonField<T>(props: {
+  id: string
+  label: string
+  value: T
+  /** Empty text means this; a field without it must always hold something. */
+  empty?: T
+  check(parsed: unknown): void
+  onChange(value: T): void
+}) {
+  const shown = (v: T) => (v === props.empty ? '' : JSON.stringify(v, null, 2))
+  const [text, setText] = useState(() => shown(props.value))
+  const [error, setError] = useState('')
+  // Another scene, an undo or a restore: show what's there now, unless it's what was typed.
+  useEffect(() => {
+    let same = false
+    try {
+      same = JSON.stringify(JSON.parse(text || 'null')) === JSON.stringify(props.value ?? null)
+    } catch {
+      // Mid-edit: same stays false only if the value really moved on, checked below.
+      same = error !== '' && lastGood.current === props.value
+    }
+    if (!same) {
+      setText(shown(props.value))
+      setError('')
+    }
+    lastGood.current = props.value
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.value])
+  const lastGood = useRef(props.value)
+  return (
+    <Field id={props.id} label={props.label}>
+      <Textarea
+        id={props.id}
+        rows={12}
+        spellCheck={false}
+        className="font-mono text-xs"
+        aria-invalid={!!error}
+        value={text}
+        onChange={(e) => {
+          setText(e.target.value)
+          try {
+            if (!e.target.value.trim() && 'empty' in props) {
+              setError('')
+              props.onChange(props.empty as T)
+              return
+            }
+            const parsed = JSON.parse(e.target.value)
+            props.check(parsed)
+            setError('')
+            props.onChange(parsed)
+          } catch (err) {
+            setError((err as Error).message)
+          }
+        }}
+      />
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </Field>
+  )
 }
 
 function BlockForm({
@@ -311,6 +388,32 @@ function BlockForm({
             'Chips (one per line)',
           )}
           {number('at', 'Appears at (s)')}
+        </>
+      )
+    case 'doodle':
+      return (
+        <>
+          <JsonField
+            id={`${id}-strokes`}
+            label="Strokes: a path with d, or a label with text, x and y"
+            value={block.strokes}
+            check={(v) => {
+              if (!Array.isArray(v)) throw new Error('a list of strokes, in [ ]')
+            }}
+            onChange={(strokes) => set({ strokes })}
+          />
+          <JsonField
+            id={`${id}-tall`}
+            label="Tall drawing for 9:16 (optional): { viewBox, strokes }"
+            value={block.tall}
+            empty={undefined}
+            check={(v) => {
+              const strokes = (v as { strokes?: unknown } | null)?.strokes
+              if (!Array.isArray(strokes)) throw new Error('needs strokes, a list in [ ]')
+            }}
+            onChange={(tall) => set({ tall })}
+          />
+          {number('at', 'Starts at (s)')}
         </>
       )
     case 'end':

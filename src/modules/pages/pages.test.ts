@@ -39,6 +39,7 @@ describe('PagesController', () => {
     expect(res.body.props.projects).toEqual([{ slug: 'demo', name: 'Demo' }])
     expect(res.body.props.presets.map((p: { id: string }) => p.id)).toEqual([
       'showcase',
+      'doodle-light-bulb',
       'typescript-intro',
       'javascript-basics',
       'python-basics',

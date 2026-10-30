@@ -2,6 +2,7 @@
 import { describe, expect, test } from 'vitest'
 import { parseProject, starterProject, type Project } from '@/core/project'
 import { resolveTimeline, type Clip } from '@/core/timeline'
+import { doodleTimes } from './blocks'
 import { createPlayer, sceneNeeds } from './player'
 
 const project = (scenes: unknown[]): Project => parseProject({ ...starterProject('T'), scenes })
@@ -213,5 +214,102 @@ describe('player', () => {
     const caption = host.querySelector<HTMLElement>('[data-caption]')!
     expect(css).toContain(`.${stage.className} {`)
     expect(css).toContain(`.${caption.className} {`)
+  })
+})
+
+describe('doodle block', () => {
+  const doodle = (strokes: unknown[], extra = {}) =>
+    project([
+      {
+        id: 'd',
+        kind: 'blocks',
+        minSeconds: 1,
+        caption: '',
+        blocks: [{ type: 'doodle', strokes, ...extra }],
+      },
+    ])
+  const parts = (host: HTMLElement) => host.querySelector<HTMLElement>('[data-scene]')!.shadowRoot!
+
+  test('items run in order, unless one says when, and the scene waits for them', () => {
+    const p = doodle([
+      { d: 'M0 0 H10', seconds: 2 },
+      { text: 'hi', x: 0, y: 0, seconds: 1 },
+      { d: 'M0 0 H10', at: 10, seconds: 1 },
+    ])
+    const block = p.scenes[0].kind === 'blocks' ? p.scenes[0].blocks[0] : null
+    expect(doodleTimes((block as unknown as { strokes: never }).strokes)).toEqual([
+      { start: 0, end: 2 },
+      { start: 2, end: 3 },
+      { start: 10, end: 11 },
+    ])
+    expect(sceneNeeds(p.scenes[0])).toBeGreaterThanOrEqual(11)
+  })
+
+  test('a line draws from its start, and a label writes itself', () => {
+    const { host, player } = mount(
+      doodle([
+        { d: 'M0 0 H10', seconds: 2 },
+        { text: 'abcd', x: 0, y: 0, seconds: 2 },
+      ]),
+    )
+    player.frame(1)
+    const root = parts(host)
+    expect(root.querySelector('path[pathLength]')!.getAttribute('stroke-dashoffset')).toBe('0.5')
+    expect(root.querySelector('text')!.textContent).toBe('')
+    player.frame(3)
+    expect(root.querySelector('text')!.textContent).toBe('ab')
+    player.frame(4)
+    expect(root.querySelector('text')!.textContent).toBe('abcd')
+  })
+
+  test('a fill fades in up to its opacity', () => {
+    const { host, player } = mount(
+      doodle([{ d: 'M0 0 H10', seconds: 2, fill: 'accent', fillOpacity: 0.5 }]),
+    )
+    player.frame(1)
+    const fill = parts(host).querySelector('path[fill="var(--accent)"]')!
+    expect(fill.getAttribute('opacity')).toBe('0.25')
+    player.frame(2)
+    expect(fill.getAttribute('opacity')).toBe('0.5')
+  })
+
+  test('the same time draws the same frame, whatever came before', () => {
+    const strokes = [
+      { d: 'M0 0 H10', seconds: 1, flow: { count: 3, speed: 5 } },
+      { text: 'abc', x: 0, y: 0 },
+    ]
+    const a = mount(doodle(strokes))
+    a.player.frame(0.5)
+    const b = mount(doodle(strokes))
+    b.player.frame(5)
+    b.player.frame(0.5)
+    expect(snapshot(a.host)).toBe(snapshot(b.host))
+  })
+
+  test('9:16 draws its tall art, other formats the wide one, on one timeline', () => {
+    const p = doodle([{ text: 'wide', x: 0, y: 0, seconds: 1 }], {
+      tall: { strokes: [{ text: 'tall', x: 0, y: 0, seconds: 9 }] },
+    })
+    expect(sceneNeeds(p.scenes[0])).toBeGreaterThanOrEqual(9)
+    const timeline = resolveTimeline(p, {}, sceneNeeds)
+    const words = (format: '16:9' | '9:16') => {
+      const host = document.createElement('div')
+      const player = createPlayer(host, p, timeline, format, { trusted: true })
+      player.frame(9)
+      return parts(host).querySelector('text')!.textContent
+    }
+    expect(words('16:9')).toBe('wide')
+    expect(words('9:16')).toBe('tall')
+  })
+
+  test('a label is text, never markup', () => {
+    const { host, player } = mount(doodle([{ text: '<img src=x onerror=alert(1)>', x: 0, y: 0 }]))
+    player.frame(5)
+    expect(parts(host).querySelector('img')).toBeNull()
+  })
+
+  test('a strange viewBox or an unknown field is refused', () => {
+    expect(() => doodle([], { viewBox: '"><script>' })).toThrow()
+    expect(() => doodle([{ d: 'M0 0', onclick: 'x' }])).toThrow()
   })
 })

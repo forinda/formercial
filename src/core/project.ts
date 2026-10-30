@@ -23,6 +23,45 @@ const format = z.enum(['16:9', '9:16', '1:1'])
 // Seconds into the scene when a block appears.
 const at = z.number().min(0).optional()
 
+const tone = z.enum(['fg', 'muted', 'accent', 'good', 'bad'])
+// One thing a doodle draws: a line along an SVG path, or a handwritten label.
+// Each starts when the last one ends, unless it says when with `at`.
+const DoodleItemSchema = z.union([
+  z.strictObject({
+    d: z.string().min(1),
+    tone: tone.default('fg'),
+    width: z.number().min(0).default(6),
+    at,
+    seconds: z.number().min(0).default(0.8),
+    /** A color that fades in inside the shape while it's drawn. */
+    fill: tone.optional(),
+    fillOpacity: z.number().min(0).max(1).default(1),
+    /** Dots moving along the path, in viewBox units a second; negative runs backwards. */
+    flow: z
+      .strictObject({
+        count: z.number().int().min(1).max(100),
+        speed: z.number(),
+        tone: tone.default('accent'),
+        size: z.number().positive().default(11),
+        at,
+      })
+      .optional(),
+  }),
+  z.strictObject({
+    text: z.string().min(1),
+    x: z.number(),
+    y: z.number(),
+    size: z.number().positive().default(56),
+    tone: tone.default('fg'),
+    at,
+    seconds: z.number().min(0).default(0.8),
+  }),
+])
+
+const viewBox = z.string().regex(/^-?\d+(\.\d+)? -?\d+(\.\d+)? \d+(\.\d+)? \d+(\.\d+)?$/, {
+  error: 'four numbers, like "0 0 1600 720"',
+})
+
 const BlockSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('eyebrow'), at, text: z.string() }),
   z.object({ type: z.literal('headline'), at, text: z.string(), accent: z.string().optional() }),
@@ -68,6 +107,24 @@ const BlockSchema = z.discriminatedUnion('type', [
     tagline: z.string().optional(),
     command: z.string().optional(),
     url: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal('doodle'),
+    at,
+    /** The drawing's own coordinates. Paths and labels are placed in them. */
+    viewBox: viewBox.default('0 0 1600 720'),
+    /** Show a pen drawing each line. */
+    pen: z.boolean().default(true),
+    /** Hand-drawn wobble on the lines; off is sharper and cheaper to render. */
+    wobble: z.boolean().default(true),
+    strokes: z.array(DoodleItemSchema),
+    /** A separate drawing for 9:16: wide art is tiny in a tall frame. */
+    tall: z
+      .strictObject({
+        viewBox: viewBox.default('0 0 900 1400'),
+        strokes: z.array(DoodleItemSchema),
+      })
+      .optional(),
   }),
 ])
 

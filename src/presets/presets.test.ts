@@ -20,14 +20,16 @@ const BLOCK_TYPES: Record<Block['type'], true> = {
   cards: true,
   chips: true,
   end: true,
+  doodle: true,
 }
 const TRANSITIONS: Scene['transition'][] = ['fade', 'cut', 'slide']
 const LANGS = ['ts', 'js', 'py', 'sql', 'json', 'plain']
 
 describe('presets', () => {
-  test('ships the showcase and the three language tours', () => {
+  test('ships the showcase, the doodle lesson and the three language tours', () => {
     expect(PRESETS.map((p) => p.id)).toEqual([
       'showcase',
+      'doodle-light-bulb',
       'typescript-intro',
       'javascript-basics',
       'python-basics',
@@ -38,12 +40,18 @@ describe('presets', () => {
     describe(preset.id, () => {
       const project = parseProject(preset.project)
 
-      test('uses every block type and every transition', () => {
-        expect(new Set(blocksOf(project).map((b) => b.type))).toEqual(
-          new Set(Object.keys(BLOCK_TYPES)),
-        )
+      test('uses every transition', () => {
         expect(new Set(project.scenes.map((s) => s.transition))).toEqual(new Set(TRANSITIONS))
       })
+
+      if (preset.id !== 'doodle-light-bulb') {
+        test('uses every block type', () => {
+          const wanted = Object.keys(BLOCK_TYPES).filter(
+            (t) => t !== 'doodle' || preset.id === 'showcase',
+          )
+          expect(new Set(blocksOf(project).map((b) => b.type))).toEqual(new Set(wanted))
+        })
+      }
 
       test('has enough scenes to choose from, in about a minute or more', () => {
         expect(project.scenes.length).toBeGreaterThanOrEqual(10)
@@ -71,18 +79,53 @@ describe('presets', () => {
         }
       })
 
-      if (preset.lang !== 'mixed') {
+      if (preset.lang !== 'mixed' && preset.lang !== 'none') {
         test('shows code in its own language', () => {
           const langs = blocksOf(project).flatMap((b) => (b.type === 'code' ? [b.lang] : []))
           expect(new Set(langs)).toEqual(new Set([preset.lang]))
         })
+      }
 
+      if (preset.id !== 'showcase') {
         test('renders as-is, with no custom code to trust', () => {
           expect(project.scenes.every((s) => s.kind === 'blocks')).toBe(true)
         })
       }
     })
   }
+
+  describe('doodle-light-bulb', () => {
+    const preset = PRESETS.find((p) => p.id === 'doodle-light-bulb')!
+    test('teaches with doodles, and asks for its handwriting font', () => {
+      const types = blocksOf(preset.project).map((b) => b.type)
+      expect(types.filter((t) => t === 'doodle').length).toBeGreaterThanOrEqual(14)
+      const { display, body } = preset.project.theme.fonts
+      expect(preset.fonts).toEqual([display, body])
+    })
+    test('every drawing has a tall version for TikTok and Shorts', () => {
+      for (const b of blocksOf(preset.project)) {
+        if (b.type === 'doodle') expect(b.tall?.strokes.length).toBeGreaterThan(0)
+      }
+    })
+    test('every label fits inside its drawing', () => {
+      // Caveat runs about 0.42 of its size per character at this weight.
+      const check = (strokes: Extract<Block, { type: 'doodle' }>['strokes'], width: number) => {
+        for (const s of strokes) {
+          if ('text' in s) {
+            expect(s.x + s.text.length * s.size * 0.42, s.text).toBeLessThanOrEqual(width)
+          }
+        }
+      }
+      for (const b of blocksOf(preset.project)) {
+        if (b.type !== 'doodle') continue
+        check(b.strokes, 1600)
+        check(b.tall!.strokes, 900)
+      }
+    })
+    test('runs long enough to explain it', () => {
+      expect(resolveTimeline(preset.project, {}, sceneNeeds).total).toBeGreaterThanOrEqual(100)
+    })
+  })
 
   describe('showcase', () => {
     const project = PRESETS.find((p) => p.id === 'showcase')!.project
@@ -115,7 +158,7 @@ describe('presets', () => {
 
   test('fromPreset refuses an unknown preset and lists the real ones', () => {
     expect(() => fromPreset('cobol', 'x')).toThrow(
-      /showcase, typescript-intro, javascript-basics, python-basics/,
+      /showcase, doodle-light-bulb, typescript-intro, javascript-basics, python-basics/,
     )
   })
 
