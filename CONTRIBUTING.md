@@ -75,6 +75,10 @@ It's usually best to publish a driver as its own package that people add in `src
 
 Add it under `projects/<name>/`. Use fonts with a license that allows redistribution (Google Fonts are fine), and only media you have the right to share.
 
+## Changing the history database
+
+The tables are declared in `src/db/schema.ts`. After changing them, run `pnpm kick db generate <name>` and commit what it writes to `db/migrations/`. Don't run the migrations yourself or ask users to: `createHistory` applies any pending ones each time it opens the database.
+
 ## Reviews
 
 A maintainer reviews every pull request. Expect questions: they're about the change, not about you. Small pull requests get reviewed sooner.

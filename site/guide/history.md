@@ -37,6 +37,8 @@ History is local and isn't part of the project, so it doesn't travel with a copi
 
 ## Where it's kept
 
+There's nothing to set up. `pnpm install` builds the SQLite driver, and the first time the app or the command line opens a projects folder, it creates the database and brings its tables up to date. A newer version of Formercial updates them the same way.
+
 In a SQLite file under `.formercial/` in the app's folder, which git ignores, unless `FORMERCIAL_HISTORY_FILE` says otherwise. Each projects folder has its own file, so moving a projects folder starts its history fresh. Deleting the file erases the history, and your projects are untouched.
 
 If SQLite can't start on your machine, the app prints a warning and runs without history. Your projects still save.

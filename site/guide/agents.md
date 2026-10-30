@@ -39,7 +39,7 @@ This runs the built app, building it first if there's no `dist/`. **Run `pnpm bu
 
 | Tool | What it does |
 |---|---|
-| `list_presets` | The 30-second commercials a project can start from |
+| `list_presets` | The commercials a project can start from |
 | `list_projects` | Every commercial in the workspace |
 | `project_schema` | The JSON Schema of `project.json`, so an agent can write a valid one |
 | `create_project` | A new commercial: `name`, and optionally a `preset` |
