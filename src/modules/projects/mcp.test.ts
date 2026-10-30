@@ -87,6 +87,30 @@ describe('mcp tools', () => {
     expect(JSON.stringify(tool('render_project').inputSchema)).toContain('slug')
   })
 
+  test('an agent can read the history and put a project back', async () => {
+    const { call } = await boot()
+    const made = await call('create_project', { name: 'Hist', preset: 'python-basics' })
+    const { slug } = made.json
+    const read = await call('get_project', { slug })
+    await call('update_project', {
+      slug,
+      project: { ...read.json.project, name: 'Renamed' },
+      baseVersion: read.json.version,
+    })
+    const history = await call('list_history', { slug })
+    expect(history.json.older).toBe(false)
+    expect(history.json.revisions.map((r: { source: string }) => r.source)).toEqual([
+      'agent',
+      expect.any(String),
+    ])
+    const older = await call('list_history', { slug, before: history.json.revisions[0].id })
+    expect(older.json.revisions.length).toBe(1)
+    const restored = await call('restore_revision', { slug, id: older.json.revisions[0].id })
+    expect(restored.isError).toBe(false)
+    expect(restored.json.version).toBe(read.json.version)
+    expect((await call('get_project', { slug })).json.project.name).toBe('Hist')
+  })
+
   test('an agent can start from a preset, read it, and change it', async () => {
     const { call } = await boot()
     const made = await call('create_project', { name: 'Py Ad', preset: 'python-basics' })

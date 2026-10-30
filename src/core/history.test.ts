@@ -152,6 +152,19 @@ describe('history', () => {
     expect(await ws.getFile('a', 'project.json')).toEqual(kept)
   })
 
+  test('list pages through every step, newest first', async () => {
+    const { history, ws } = setup()
+    await ws.write('a', project(scene('a')), null, 'editor')
+    await edit(ws, project(scene('a'), scene('b')))
+    await edit(ws, project(scene('a'), scene('b'), scene('c')))
+    const all = await history.list('a')
+    expect(all.length).toBe(3)
+    const first = await history.list('a', { limit: 2 })
+    expect(first.map((r) => r.id)).toEqual([all[0].id, all[1].id])
+    const rest = await history.list('a', { limit: 2, before: first[1].id })
+    expect(rest.map((r) => r.id)).toEqual([all[2].id])
+  })
+
   test('a named step does not merge with the next save', async () => {
     const { history, ws } = setup()
     await ws.write('a', project(scene('a')), null, 'editor')

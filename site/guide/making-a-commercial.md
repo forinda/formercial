@@ -6,7 +6,7 @@ A commercial is a list of scenes. Each scene has a picture, a caption and a spok
 
 - **Preview:** the picture, with the format switch.
 - **Timeline, along the bottom:** each scene as a clip as long as it runs, with a bar under it showing how much the voice fills. Click a clip to jump to it, and drag it to reorder. Beside the play button, add a scene (**Scene** for blocks, **Custom scene** for code), or move, duplicate or delete the selected one.
-- **Panel on the right:** four tabs.
+- **Panel on the right:** five tabs.
   - **Scene:** the selected scene's caption, timing, transition and blocks. Drag a block by its handle to reorder it, or focus the handle and use the arrow keys.
   - **Voice:** the spoken line, generating it, and recording it.
   - **Project:** name, formats, colors, fonts, captions, logo, music.

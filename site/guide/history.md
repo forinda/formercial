@@ -5,7 +5,7 @@ Every change to a project is kept on your machine, so you can go back after a mi
 ## In the editor
 
 - **Undo** and **Redo** are at the top of the editor. So are Ctrl+Z and Ctrl+Shift+Z (⌘ on a Mac), except while you're typing in a field, where they undo your typing.
-- The **History** tab lists every step: what changed, who changed it, and when.
+- The **History** tab lists every step, newest first, 200 at a time: what changed, who changed it, and when.
   - **Restore** puts the project back to that step.
   - **Name** marks a step, like `v1` or `sent to client`.
 

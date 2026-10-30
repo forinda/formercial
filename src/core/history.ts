@@ -212,14 +212,15 @@ export function createHistory(file: string, now: () => number = Date.now) {
 
     head,
 
-    /** Newest first. */
-    async list(slug: string, limit = 200): Promise<Revision[]> {
+    /** Newest first: all of them, or a page of `limit` older than step `before`. */
+    async list(slug: string, page: { limit?: number; before?: number } = {}): Promise<Revision[]> {
       await ready
       return (await db
         .selectFrom('revisions')
         .where('slug', '=', slug)
+        .$if(page.before !== undefined, (q) => q.where('id', '<', page.before!))
         .orderBy('id', 'desc')
-        .limit(limit)
+        .$if(page.limit !== undefined, (q) => q.limit(page.limit!))
         .select(['id', 'parent', 'hash', 'source', 'summary', 'label', 'createdAt'])
         .execute()) as Revision[]
     },

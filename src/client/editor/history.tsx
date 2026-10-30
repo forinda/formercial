@@ -14,6 +14,8 @@ type Revision = {
   createdAt: number
 }
 
+type Page = { current: number | null; revisions: Revision[]; older: boolean }
+
 const WHO: Record<string, string> = {
   editor: 'you',
   app: 'the app',
@@ -32,16 +34,24 @@ export function HistoryPanel(props: {
   onRestore(id: number): void
 }) {
   const { slug } = props
-  const [data, setData] = useState<{ current: number | null; revisions: Revision[] } | null>(null)
+  const [data, setData] = useState<Page | null>(null)
   const [naming, setNaming] = useState<number | null>(null)
   const [name, setName] = useState('')
   const [error, setError] = useState('')
 
   const load = () =>
-    api<{ current: number | null; revisions: Revision[] }>(`/api/v1/projects/${slug}/history`).then(
-      setData,
-      (err: Error) => setError(err.message),
+    api<Page>(`/api/v1/projects/${slug}/history`).then(setData, (err: Error) =>
+      setError(err.message),
     )
+
+  async function loadOlder() {
+    if (!data) return
+    const before = data.revisions.at(-1)!.id
+    const next = await api<Page>(`/api/v1/projects/${slug}/history?before=${before}`).catch(
+      (err: Error) => void setError(err.message),
+    )
+    if (next) setData({ ...next, revisions: [...data.revisions, ...next.revisions] })
+  }
   useEffect(() => {
     void load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -127,6 +137,11 @@ export function HistoryPanel(props: {
           )
         })}
       </ol>
+      {data.older && (
+        <Button variant="secondary" className="justify-self-start" onClick={() => void loadOlder()}>
+          Show older steps
+        </Button>
+      )}
     </section>
   )
 }

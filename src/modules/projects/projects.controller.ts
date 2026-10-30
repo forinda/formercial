@@ -26,6 +26,7 @@ import { renderOrigin } from './render-origin'
 import { Studio } from './studio.service'
 
 const MAX_UPLOAD = 50 * 1024 * 1024
+const HISTORY_PAGE = 200
 const AUDIO = /^audio\/(webm|ogg)\b/
 
 const TYPES: Record<string, string> = {
@@ -215,7 +216,10 @@ export class ProjectsController {
   @McpTool({
     name: 'list_history',
     description:
-      'The steps a project has been through, newest first, and which one is current. Each has an id, what changed, who changed it, when, and its name if it has one.',
+      'The steps a project has been through, newest first, and which one is current. Each has an id, what changed, who changed it, when, and its name if it has one. When `older` is true there are more: ask again with `before` set to the last id.',
+    inputSchema: z.object({
+      before: z.number().int().optional().describe('Only steps older than this id'),
+    }),
     annotations: { readOnlyHint: true },
   })
   @Get('/:slug/history')
@@ -229,9 +233,16 @@ export class ProjectsController {
         await this.studio.ws.getFile(slug, 'project.json'),
         'outside',
       )
+      const before = ctx.query.before ?? ctx.body?.before
+      // One more than a page, to know whether there are older ones.
+      const found = await history.list(slug, {
+        limit: HISTORY_PAGE + 1,
+        before: before === undefined ? undefined : Number(before),
+      })
       return ctx.json({
         current: (await history.head(slug))?.id ?? null,
-        revisions: await history.list(slug),
+        revisions: found.slice(0, HISTORY_PAGE),
+        older: found.length > HISTORY_PAGE,
       })
     })
   }

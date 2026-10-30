@@ -65,7 +65,9 @@ export class Studio {
           this.ws.read(slug).then(
             async ({ version }) => {
               // An edit from outside the app becomes a step, so it can be undone too.
-              await this.ws.remember(slug, await this.ws.getFile(slug, 'project.json'), 'outside')
+              // The file may be gone already: editors still hear about the change.
+              const bytes = await this.ws.getFile(slug, 'project.json').catch(() => null)
+              await this.ws.remember(slug, bytes, 'outside')
               this.emit(slug, 'project-changed', { version })
             },
             () => {},
