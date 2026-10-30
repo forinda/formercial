@@ -48,19 +48,20 @@ That renders the first 10 seconds to `projects/kickjs-db/renders/`. Leave out `-
 
 ## Make your own
 
-Start blank, or from one of the 30-second presets:
+Start blank, or from a preset. Presets are full commercials that use every block and transition, so you can keep what suits you and delete the rest:
 
 | Preset | What it shows |
 |---|---|
-| `typescript-intro` | Types on variables, a mistake `tsc` catches before the code runs, an interface |
-| `javascript-basics` | `const` and `let`, `console.log` and its output, what happens when you change a `const` |
-| `python-basics` | Hello world, then a dictionary: create, read, add and loop over it |
+| `showcase` | Everything: every block, every code language, stamps that come and go, a silent scene, a scene with no caption, and a custom scene. Each caption says what the scene shows. |
+| `typescript-intro` | Types on variables, a mistake `tsc` catches and its fix, an interface, what to learn next |
+| `javascript-basics` | `const` and `let`, `console.log` and its output, changing a `const` and fixing it |
+| `python-basics` | Hello world, then a dictionary: create, read, add and loop over it, and handle a missing key |
 
 ```bash
 pnpm kick formercial new "My Product"
 pnpm kick formercial new "Learn TypeScript" --preset typescript-intro
 ```
 
-Or use **New commercial** on the projects page, with **Start from** set to a preset. Each preset is five 6-second scenes, ready to render as-is. Change the text, code and colors to make it yours, then press **Download** next to each font under **Project** so renders look the same everywhere.
+Or use **New commercial** on the projects page, with **Start from** set to a preset. The language presets are ready to render as-is. `showcase` has a custom scene, so [trust](./custom-scenes#trust) it first or delete that scene. Change the text, code and colors to make it yours, then press **Download** next to each font under **Project** so renders look the same everywhere.
 
 Then read [Making a commercial](./making-a-commercial).

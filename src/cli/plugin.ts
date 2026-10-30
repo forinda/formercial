@@ -113,7 +113,7 @@ export function formercialCliPlugin(config: FormercialConfig): KickCliPlugin {
 
       group
         .command('new <name>')
-        .description('Create a project: one starter scene, or a 30s preset')
+        .description('Create a project: one starter scene, or a preset')
         .option('--preset <id>', `start from a preset: ${PRESETS.map((p) => p.id).join(', ')}`)
         .action(async (name: string, opts: { preset?: string }) => {
           const { root, slug, ws } = open(slugFrom(name))

@@ -338,6 +338,7 @@ describe('projects api', () => {
     const http = await boot()
     const presets = (await http.get('/api/v1/presets').expect(200)).body
     expect(presets.map((p: { id: string }) => p.id)).toEqual([
+      'showcase',
       'typescript-intro',
       'javascript-basics',
       'python-basics',

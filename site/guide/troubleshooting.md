@@ -11,6 +11,10 @@
 
 Install it with `pipx install edge-tts` (or `uv tool install edge-tts`), and check that `edge-tts --help` works in the same terminal. Until then you can record lines in the editor, and renders use the clips you already have.
 
+## "history is off"
+
+SQLite couldn't start, usually because `better-sqlite3` didn't build during install. Run `pnpm rebuild better-sqlite3` and read its error: it needs a C++ compiler if there's no prebuilt binary for your machine. Until then your projects still save, but undo and [history](./history) aren't available.
+
 ## A render fails with "chromium didn't answer … within 30s"
 
 The render page stopped responding. This usually means:
