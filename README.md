@@ -39,7 +39,7 @@ pnpm kick formercial new "Learn TypeScript" --preset typescript-intro   # or jav
 - **Scenes from blocks or code:** headlines, code that types itself, terminals, file trees, cards and end cards, or your own HTML, CSS and `draw(t, ctx)`.
 - **Voice:** generated per line, or recorded in the browser. Scenes last as long as their lines.
 - **Preview is the render:** both run the same player, frame for frame.
-- **Three shapes from one project,** with captions, music that dips under the voice, and fonts kept in the project.
+- **Three shapes from one project,** with captions, music that dips under the voice, and fonts kept in the project: pick a Google Fonts family, or paste a link to any stylesheet or font file.
 - **Scriptable:** plain `project.json`, `kick formercial` commands, and your own commands through a kick CLI plugin.
 - **Pluggable rendering:** bring your own render driver.
 - **Agents:** an MCP server, so agents can create projects and run renders. Custom code an agent writes waits for your approval.

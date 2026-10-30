@@ -38,6 +38,30 @@ export function ThemePanel({
   const { theme } = project
   const [error, setError] = useState('')
   const [fetching, setFetching] = useState('')
+  const [link, setLink] = useState('')
+  const [linkFamily, setLinkFamily] = useState('')
+  const isFontFile = /\.(woff2?|ttf|otf)([?#]|$)/i.test(link)
+  const stored = new Map<string, number[]>()
+  for (const f of theme.fonts.files ?? []) {
+    stored.set(f.family, [...(stored.get(f.family) ?? []), f.weight])
+  }
+  const addLink = async () => {
+    setFetching('link')
+    setError('')
+    try {
+      await api(`/api/v1/projects/${slug}/fonts`, {
+        method: 'POST',
+        json: { url: link.trim(), family: isFontFile ? linkFamily.trim() : undefined },
+      })
+      setLink('')
+      setLinkFamily('')
+      onFontsChanged()
+    } catch (err) {
+      setError((err as Error).message)
+    } finally {
+      setFetching('')
+    }
+  }
   const setColor = (key: keyof Project['theme']['colors'], value: string) =>
     onChange({ ...project, theme: { ...theme, colors: { ...theme.colors, [key]: value } } })
   return (
@@ -87,7 +111,7 @@ export function ThemePanel({
       <Group title="Fonts">
         {(['display', 'body', 'mono'] as const).map((k) => {
           const family = theme.fonts[k]
-          const stored = theme.fonts.files?.some((f) => f.family === family)
+          const inProject = stored.has(family)
           return (
             <div className="flex items-end gap-2" key={k}>
               <Field id={`font-${k}`} label={k}>
@@ -104,7 +128,7 @@ export function ThemePanel({
               </Field>
               <Button
                 variant="secondary"
-                disabled={!!fetching || stored}
+                disabled={!!fetching || inProject}
                 title="Download this Google Fonts family into the project"
                 onClick={async () => {
                   setFetching(k)
@@ -122,7 +146,7 @@ export function ThemePanel({
                   }
                 }}
               >
-                {stored ? 'In project' : fetching === k ? 'Downloading…' : 'Download'}
+                {inProject ? 'In project' : fetching === k ? 'Downloading…' : 'Download'}
               </Button>
             </div>
           )
@@ -130,6 +154,83 @@ export function ThemePanel({
         <p className="text-xs text-muted-foreground">
           Downloaded fonts are kept in media/fonts/, so renders look the same on any machine.
         </p>
+        <Field id="font-link" label="Add from a link (stylesheet or font file)">
+          <div className="flex gap-2">
+            <Input
+              id="font-link"
+              type="url"
+              placeholder="https://fonts.bunny.net/css?family=inter:400,700"
+              value={link}
+              onChange={(e) => setLink(e.target.value)}
+            />
+            <Button
+              variant="secondary"
+              disabled={!!fetching || !link.trim() || (isFontFile && !linkFamily.trim())}
+              onClick={addLink}
+            >
+              {fetching === 'link' ? 'Adding…' : 'Add'}
+            </Button>
+          </div>
+        </Field>
+        {isFontFile && (
+          <Field id="font-link-family" label="Family name for this file">
+            <Input
+              id="font-link-family"
+              value={linkFamily}
+              onChange={(e) => setLinkFamily(e.target.value)}
+            />
+          </Field>
+        )}
+        {stored.size > 0 && (
+          <ul className="grid gap-1.5">
+            {[...stored].map(([family, weights]) => (
+              <li key={family} className="flex flex-wrap items-center gap-1">
+                <span className="w-full">
+                  {family}{' '}
+                  <span className="text-xs text-muted-foreground">
+                    {[...weights].sort((a, b) => a - b).join(', ')}
+                  </span>
+                </span>
+                {(['display', 'body', 'mono'] as const).map((k) => (
+                  <Button
+                    key={k}
+                    variant="outline"
+                    size="sm"
+                    disabled={theme.fonts[k] === family}
+                    title={`Use ${family} for ${k}`}
+                    onClick={() =>
+                      onChange({
+                        ...project,
+                        theme: { ...theme, fonts: { ...theme.fonts, [k]: family } },
+                      })
+                    }
+                  >
+                    {k}
+                  </Button>
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  title={`Remove ${family} from this project`}
+                  onClick={() =>
+                    onChange({
+                      ...project,
+                      theme: {
+                        ...theme,
+                        fonts: {
+                          ...theme.fonts,
+                          files: theme.fonts.files?.filter((f) => f.family !== family),
+                        },
+                      },
+                    })
+                  }
+                >
+                  Remove
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
       </Group>
       <div className="flex items-center gap-2 border-t pt-3">
         <Switch

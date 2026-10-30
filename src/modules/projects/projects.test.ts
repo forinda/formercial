@@ -268,6 +268,98 @@ describe('projects api', () => {
     expect(res.headers['x-content-type-options']).toBe('nosniff')
   })
 
+  describe('fonts from a link', () => {
+    const WOFF2 = new Uint8Array([0x77, 0x4f, 0x46, 0x32, 1])
+    const TTF = new Uint8Array([0, 1, 0, 0, 1])
+
+    test('stores every face of a stylesheet, and serves it', async () => {
+      const http = await boot()
+      const asked: { url: string; redirect?: string }[] = []
+      vi.stubGlobal('fetch', async (url: string, init: RequestInit) => {
+        asked.push({ url: String(url), redirect: init.redirect })
+        return String(url).endsWith('.css')
+          ? new Response(
+              `@font-face { font-family: 'Lato'; font-weight: 400; src: url(lato.woff2) }
+               @font-face { font-family: 'Lato'; font-weight: 700; src: url(lato-bold.ttf) }`,
+            )
+          : new Response(String(url).endsWith('.ttf') ? TTF : WOFF2)
+      })
+      try {
+        const res = await http
+          .post('/api/v1/projects/demo/fonts')
+          .send({ url: 'https://cdn.example.invalid/f/lato.css' })
+          .expect(200)
+        expect(res.body.files).toEqual([
+          { family: 'Lato', weight: 400, path: 'media/fonts/lato-400.woff2' },
+          { family: 'Lato', weight: 700, path: 'media/fonts/lato-700.ttf' },
+        ])
+        expect(asked[1].url).toBe('https://cdn.example.invalid/f/lato.woff2')
+        expect(asked.every((a) => a.redirect === 'error')).toBe(true)
+        await http.get('/api/v1/projects/demo/file?path=media/fonts/lato-700.ttf').expect(200)
+        const { project } = (await http.get('/api/v1/projects/demo')).body
+        expect(project.theme.fonts.files).toEqual(res.body.files)
+      } finally {
+        vi.unstubAllGlobals()
+      }
+    })
+
+    test('a font file needs a family, and keeps other weights of it', async () => {
+      const http = await boot()
+      vi.stubGlobal('fetch', async () => new Response(WOFF2))
+      try {
+        const url = 'https://cdn.example.invalid/my.woff2'
+        await http.post('/api/v1/projects/demo/fonts').send({ url }).expect(400)
+        const post = (weight: number) =>
+          http.post('/api/v1/projects/demo/fonts').send({ url, family: 'My Font', weight })
+        await post(400).expect(200)
+        await post(700).expect(200)
+        await post(5000).expect(400)
+        const { project } = (await http.get('/api/v1/projects/demo')).body
+        expect(project.theme.fonts.files.map((f: { weight: number }) => f.weight)).toEqual([
+          400, 700,
+        ])
+      } finally {
+        vi.unstubAllGlobals()
+      }
+    })
+
+    test.each([
+      'http://cdn.example.invalid/a.css',
+      'https://127.0.0.1/a.css',
+      'https://[::1]/a.css',
+      'https://192.168.1.10/a.css',
+      'https://169.254.169.254/latest',
+      'https://localhost/a.css',
+      'not a link',
+    ])('refuses %s without fetching it', async (url) => {
+      const http = await boot()
+      const fetched = vi.fn(async () => new Response(WOFF2))
+      vi.stubGlobal('fetch', fetched)
+      try {
+        await http.post('/api/v1/projects/demo/fonts').send({ url, family: 'X' }).expect(400)
+        expect(fetched).not.toHaveBeenCalled()
+      } finally {
+        vi.unstubAllGlobals()
+      }
+    })
+
+    test('refuses anything that is not a font', async () => {
+      const http = await boot()
+      vi.stubGlobal('fetch', async (url: string) =>
+        String(url).endsWith('.css')
+          ? new Response(`@font-face { font-family: A; src: url(a.woff2) }`)
+          : new Response('<html>nope</html>'),
+      )
+      try {
+        const post = (url: string) => http.post('/api/v1/projects/demo/fonts').send({ url })
+        await post('https://cdn.example.invalid/a.css').expect(400)
+        await post('https://cdn.example.invalid/page.html').expect(400)
+      } finally {
+        vi.unstubAllGlobals()
+      }
+    })
+  })
+
   test('downloads a Google font into the project', async () => {
     const http = await boot()
     vi.stubGlobal('fetch', async (url: string) =>

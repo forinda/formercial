@@ -5,6 +5,7 @@ import { Controller, Delete, Get, Post, Put, getEnv, type RequestContext } from 
 import { McpTool } from '@forinda/kickjs-mcp'
 import { z } from 'zod'
 import { checkRange } from '@forinda/kickjs-storage'
+import { storeFontFromUrl } from '@/core/font-links'
 import { storeGoogleFont } from '@/core/fonts'
 import { probeSeconds } from '@/core/media'
 import { FormercialSettings, checkFps } from '@/core/settings'
@@ -311,14 +312,26 @@ export class ProjectsController {
     })
   }
 
-  /** Download a Google Fonts family into the project's media/fonts/. */
+  /** Download a Google Fonts family, or what a link holds, into the project's media/fonts/. */
   @Post('/:slug/fonts')
   addFont(ctx: RequestContext) {
     return this.handle(ctx, async () => {
+      const url = String(ctx.body?.url ?? '').trim()
       const family = String(ctx.body?.family ?? '').trim()
-      if (!/^[A-Za-z0-9 ]{1,60}$/.test(family))
+      if ((family || !url) && !/^[A-Za-z0-9 ]{1,60}$/.test(family))
         throw new HttpError(400, 'a font family is letters, digits and spaces')
-      const files = await storeGoogleFont(this.studio.ws, ctx.params.slug, family)
+      const weight = ctx.body?.weight === undefined ? undefined : Number(ctx.body.weight)
+      if (weight !== undefined && !(Number.isInteger(weight) && weight >= 1 && weight <= 1000))
+        throw new HttpError(400, 'a font weight is a whole number from 1 to 1000')
+      const files = url
+        ? await storeFontFromUrl(this.studio.ws, ctx.params.slug, {
+            url,
+            family: family || undefined,
+            weight,
+          }).catch((err: Error) => {
+            throw new HttpError(400, err.message)
+          })
+        : await storeGoogleFont(this.studio.ws, ctx.params.slug, family)
       this.studio.emit(ctx.params.slug, 'project-changed', {
         version: (await this.studio.ws.read(ctx.params.slug)).version,
       })
