@@ -1,0 +1,186 @@
+// project.json: what a commercial is. The app, the CLI and hand edits all go
+// through parseProject, so a file that loads anywhere loads everywhere.
+import { z } from 'zod'
+
+export const FORMATS = {
+  '16:9': [1920, 1080],
+  '9:16': [1080, 1920],
+  '1:1': [1080, 1080],
+} as const
+export type Format = keyof typeof FORMATS
+
+export const SLUG = /^[a-z0-9][a-z0-9-]{0,62}$/
+
+const format = z.enum(['16:9', '9:16', '1:1'])
+// Seconds into the scene when a block appears.
+const at = z.number().min(0).optional()
+
+const BlockSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('eyebrow'), at, text: z.string() }),
+  z.object({ type: z.literal('headline'), at, text: z.string(), accent: z.string().optional() }),
+  z.object({ type: z.literal('text'), at, text: z.string() }),
+  z.object({
+    type: z.literal('code'),
+    at,
+    label: z.string().optional(),
+    lang: z.enum(['ts', 'sql', 'json', 'plain']).default('ts'),
+    source: z.string(),
+    cps: z.number().positive().optional(),
+  }),
+  z.object({
+    type: z.literal('terminal'),
+    at,
+    label: z.string().optional(),
+    source: z.string(),
+    cps: z.number().positive().optional(),
+  }),
+  z.object({ type: z.literal('tree'), at, lines: z.array(z.string()) }),
+  z.object({
+    type: z.literal('stamp'),
+    at,
+    text: z.string(),
+    tone: z.enum(['good', 'bad']),
+    until: z.number().min(0).optional(),
+  }),
+  z.object({
+    type: z.literal('cards'),
+    at,
+    items: z.array(z.object({ title: z.string(), sub: z.string().optional() })),
+  }),
+  z.object({
+    type: z.literal('chips'),
+    at,
+    label: z.string().optional(),
+    items: z.array(z.string()),
+  }),
+  z.object({
+    type: z.literal('end'),
+    at,
+    wordmark: z.string(),
+    tagline: z.string().optional(),
+    command: z.string().optional(),
+    url: z.string().optional(),
+  }),
+])
+
+const sceneBase = {
+  id: z.string().min(1),
+  minSeconds: z.number().min(0).default(4),
+  transition: z.enum(['cut', 'fade', 'slide']).default('fade'),
+  caption: z.string(),
+  spoken: z.string().optional(),
+  voice: z.enum(['tts', 'recording']).default('tts'),
+}
+
+const SceneSchema = z.discriminatedUnion('kind', [
+  z.object({ ...sceneBase, kind: z.literal('blocks'), blocks: z.array(BlockSchema) }),
+  z.object({
+    ...sceneBase,
+    kind: z.literal('custom'),
+    html: z.string().default(''),
+    css: z.string().default(''),
+    script: z.string(),
+  }),
+])
+
+const color = z.string().min(1)
+const ThemeSchema = z.object({
+  colors: z.object({
+    bg: color,
+    panel: color,
+    line: color,
+    fg: color,
+    muted: color,
+    accent: color,
+    good: color,
+    bad: color,
+  }),
+  fonts: z.object({ display: z.string(), body: z.string(), mono: z.string() }),
+  logo: z.string().optional(),
+})
+
+export const ProjectSchema = z
+  .object({
+    version: z.literal(1),
+    name: z.string().min(1),
+    formats: z.array(format).min(1),
+    theme: ThemeSchema,
+    voice: z.object({ tts: z.string(), rate: z.string() }),
+    music: z
+      .object({
+        file: z.string(),
+        volume: z.number().min(0).max(1).default(0.25),
+        duck: z.number().min(0).max(1).default(0.35),
+      })
+      .optional(),
+    captions: z.boolean().default(true),
+    scenes: z.array(SceneSchema).min(1),
+  })
+  .superRefine((p, ctx) => {
+    const seen = new Set<string>()
+    p.scenes.forEach((s, i) => {
+      if (seen.has(s.id)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['scenes', i, 'id'],
+          message: `duplicate scene id "${s.id}"`,
+        })
+      }
+      seen.add(s.id)
+    })
+  })
+  .transform((p) => ({
+    ...p,
+    scenes: p.scenes.map((s) => ({ ...s, spoken: s.spoken ?? s.caption })),
+  }))
+
+export type Project = z.output<typeof ProjectSchema>
+export type Scene = Project['scenes'][number]
+export type Block = z.output<typeof BlockSchema>
+export type Theme = Project['theme']
+
+export class ProjectError extends Error {
+  constructor(readonly issues: z.core.$ZodIssue[]) {
+    super(issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; '))
+    this.name = 'ProjectError'
+  }
+}
+
+export function parseProject(json: unknown): Project {
+  const result = ProjectSchema.safeParse(json)
+  if (!result.success) throw new ProjectError(result.error.issues)
+  return result.data
+}
+
+export const DEFAULT_THEME: Theme = {
+  colors: {
+    bg: '#0d2226',
+    panel: '#13313a',
+    line: '#24505a',
+    fg: '#efe9da',
+    muted: '#9db4b3',
+    accent: '#f2c14e',
+    good: '#7fd1b9',
+    bad: '#e3735e',
+  },
+  fonts: { display: 'Unbounded', body: 'IBM Plex Sans', mono: 'JetBrains Mono' },
+}
+
+export function starterProject(name: string): Project {
+  return parseProject({
+    version: 1,
+    name,
+    formats: ['16:9'],
+    theme: DEFAULT_THEME,
+    voice: { tts: 'en-US-AvaNeural', rate: '-4%' },
+    captions: true,
+    scenes: [
+      {
+        id: 's1',
+        kind: 'blocks',
+        caption: `Meet ${name}.`,
+        blocks: [{ type: 'headline', text: `Meet ${name}.`, accent: name }],
+      },
+    ],
+  })
+}
