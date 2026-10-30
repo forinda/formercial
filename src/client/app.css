@@ -116,6 +116,13 @@
   }
 }
 
+/* Labels on the drawing board, in the same face as in the video. */
+.doodle-board-label {
+  font-family: var(--display);
+  font-weight: 700;
+  user-select: none;
+}
+
 /* The scrubber is the playhead: a line that lines up with the clips below it. */
 .scrub {
   appearance: none;

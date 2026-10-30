@@ -12,24 +12,20 @@ Creating it downloads two handwriting fonts from Google Fonts into the project. 
 
 ## Draw your own
 
-Add a **doodle** block to a scene and edit its strokes:
+Add a **doodle** block to a scene, then press **Open drawing board**.
 
-```json
-[
-  { "d": "M250 400 H1350", "seconds": 1.5 },
-  { "text": "a wire", "x": 650, "y": 340, "size": 80, "tone": "accent" },
-  {
-    "d": "M250 400 H1350",
-    "width": 0,
-    "seconds": 0,
-    "flow": { "count": 8, "speed": 200, "tone": "good" }
-  }
-]
-```
+- **Draw** with the pen, or drag out a line, arrow, rectangle or ellipse. A tablet or touch screen works too.
+- **Add a label:** choose the label tool, click where it goes, type and press Enter.
+- **Place a part:** pick one from the left, like a server, database or battery, then click to place it. **Size** scales it first.
+- **Import an SVG** from Figma or Inkscape. Its shapes are added as lines. Shapes inside a group with a transform are left out, and the board says how many, so flatten transforms when you export.
+- **Move something:** choose **Select and move**, then drag it.
+- **Change the order:** the list on the right is the order things get drawn. Drag a row to change it.
+- **Fine-tune:** click a row to set how long it takes, when it starts, its fill, or dots that move along it, which is useful for showing current, data or requests.
+- **Watch** plays the drawing as it will look in the video.
 
-Each item starts when the one before it ends, so a drawing tells its story in order. The [block reference](../reference/blocks#doodle) lists every option.
+Everything saves as you go, like any other edit. **Undo** on the board steps back through your drawing.
 
-A line's `d` is an ordinary SVG path, so you can export one from Figma or Inkscape, or ask an [agent](./agents) to write the strokes and add them to your project.
+You can still edit the strokes directly, under **Edit as JSON**, or have an [agent](./agents) write them. The [block reference](../reference/blocks#doodle) lists every option.
 
 ## Vertical videos
 
@@ -43,7 +39,7 @@ Wide art looks tiny in a tall frame, and it can't rearrange itself. For TikTok, 
 }
 ```
 
-Every format shares one timeline, so keep both drawings about the same length: the slower one sets it. In 9:16, captions sit higher and larger, clear of the buttons those apps put over the bottom of the video.
+On the drawing board, switch to **Tall (9:16)** to draw it. **Start from the wide drawing** gives you a scaled copy to rearrange. Every format shares one timeline, so keep both drawings about the same length: the slower one sets it. In 9:16, captions sit higher and larger, clear of the buttons those apps put over the bottom of the video.
 
 ## Tips
 

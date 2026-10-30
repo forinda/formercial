@@ -23,17 +23,25 @@ import {
   IconCode,
   IconCopy,
   IconGripVertical,
+  IconPencil,
   IconPlus,
   IconTrash,
 } from '@tabler/icons-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type { z } from 'zod'
-import { DoodleStrokesSchema, DoodleTallSchema, type Block, type Scene } from '@/core/project'
+import {
+  DoodleStrokesSchema,
+  DoodleTallSchema,
+  type Block,
+  type Project,
+  type Scene,
+} from '@/core/project'
 import { Button } from '@/client/components/ui/button'
 import { Input } from '@/client/components/ui/input'
 import { Select } from '@/client/components/ui/select'
 import { Textarea } from '@/client/components/ui/textarea'
 import { cn } from '@/client/lib/utils'
+import { DoodleBoard } from './doodle/board'
 import { Field } from './field'
 import { IconButton } from './icon-button'
 
@@ -220,13 +228,45 @@ function JsonField<T>(props: {
   )
 }
 
+/** Opens the drawing board, and says what's in the drawing. */
+function DoodleDraw(props: {
+  block: Extract<Block, { type: 'doodle' }>
+  project: Project
+  onChange(block: Extract<Block, { type: 'doodle' }>): void
+}) {
+  const [open, setOpen] = useState(false)
+  const { block } = props
+  const tall = block.tall?.strokes.length ?? 0
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <Button variant="secondary" onClick={() => setOpen(true)}>
+        <IconPencil />
+        Open drawing board
+      </Button>
+      <span className="text-xs text-muted-foreground">
+        {block.strokes.length} wide, {tall} tall
+      </span>
+      {open && (
+        <DoodleBoard
+          block={block}
+          project={props.project}
+          onChange={props.onChange}
+          onClose={() => setOpen(false)}
+        />
+      )}
+    </div>
+  )
+}
+
 function BlockForm({
   block,
   id,
+  project,
   onChange,
 }: {
   block: Block
   id: string
+  project: Project
   onChange(b: Block): void
 }) {
   const set = (patch: Record<string, unknown>) => onChange({ ...block, ...patch } as Block)
@@ -388,21 +428,27 @@ function BlockForm({
     case 'doodle':
       return (
         <>
-          <JsonField
-            id={`${id}-strokes`}
-            label="Strokes: a path with d, or a label with text, x and y"
-            value={block.strokes}
-            schema={DoodleStrokesSchema}
-            onChange={(strokes) => set({ strokes })}
-          />
-          <JsonField
-            id={`${id}-tall`}
-            label="Tall drawing for 9:16 (optional): { viewBox, strokes }"
-            value={block.tall}
-            schema={DoodleTallSchema.optional()}
-            empty={undefined}
-            onChange={(tall) => set({ tall })}
-          />
+          <DoodleDraw block={block} project={project} onChange={(b) => set(b)} />
+          <details className="grid gap-2.5">
+            <summary className="cursor-pointer text-muted-foreground">Edit as JSON</summary>
+            <div className="mt-2 grid gap-2.5">
+              <JsonField
+                id={`${id}-strokes`}
+                label="Strokes: a path with d, or a label with text, x and y"
+                value={block.strokes}
+                schema={DoodleStrokesSchema}
+                onChange={(strokes) => set({ strokes })}
+              />
+              <JsonField
+                id={`${id}-tall`}
+                label="Tall drawing for 9:16 (optional): { viewBox, strokes }"
+                value={block.tall}
+                schema={DoodleTallSchema.optional()}
+                empty={undefined}
+                onChange={(tall) => set({ tall })}
+              />
+            </div>
+          </details>
           {number('at', 'Starts at (s)')}
         </>
       )
@@ -451,7 +497,15 @@ function BlockCard(props: { index: number; type: string; onRemove(): void; child
   )
 }
 
-export function SceneForm({ scene, onChange }: { scene: Scene; onChange(s: Scene): void }) {
+export function SceneForm({
+  scene,
+  project,
+  onChange,
+}: {
+  scene: Scene
+  project: Project
+  onChange(s: Scene): void
+}) {
   const set = (patch: Partial<Scene>) => onChange({ ...scene, ...patch } as Scene)
   const id = `scene-${scene.id}`
   const sensors = useSensors(
@@ -517,6 +571,7 @@ export function SceneForm({ scene, onChange }: { scene: Scene; onChange(s: Scene
                   <BlockForm
                     id={`${id}-b${i}`}
                     block={block}
+                    project={project}
                     onChange={(b) => set({ blocks: scene.blocks.map((x, j) => (j === i ? b : x)) })}
                   />
                 </BlockCard>
