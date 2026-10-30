@@ -25,9 +25,9 @@ export function reveal(el: HTMLElement, since: number) {
 }
 
 /** Shrink an element's font until its content fits its width; once, when first visible. */
-export function fitOnce(el: HTMLElement): () => void {
+export function fitOnce(el: HTMLElement): (() => void) & { done: boolean } {
   let done = false
-  return () => {
+  const fit = () => {
     // Measure with the real fonts: a fallback font would size it wrong for good.
     if (done || !el.clientWidth || document.fonts?.status === 'loading') return
     done = true
@@ -37,6 +37,7 @@ export function fitOnce(el: HTMLElement): () => void {
       el.style.fontSize = `${size}px`
     }
   }
+  return Object.defineProperty(fit, 'done', { get: () => done }) as typeof fit & { done: boolean }
 }
 
 const el = (tag: string, cls: string, html = '') => {
@@ -60,12 +61,15 @@ function typer(
     const caret = el('span', 'caret')
     box.append(typed, caret)
     root.append(box)
-    // Measure with the whole text in place, so the font fits the longest line.
-    typed.innerHTML = paint(source)
     const fit = fitOnce(box)
     let shown = -1
     return (local: number) => {
-      fit()
+      // Measure with the whole text in place, so the font fits the longest line.
+      if (!fit.done) {
+        typed.innerHTML = paint(source)
+        fit()
+        shown = -1
+      }
       const n = Math.max(0, Math.min(source.length, Math.floor((local - at) * cps)))
       if (n !== shown) {
         typed.innerHTML = paint(source.slice(0, n))

@@ -15,14 +15,16 @@ export const STAGE_CSS = `
 export const SCENE_CSS = `
 :host { display: block; overflow: hidden; background: radial-gradient(120% 90% at 85% 10%, color-mix(in srgb, var(--panel) 70%, var(--line)) 0%, transparent 55%), var(--panel) }
 * { box-sizing: border-box }
-.scene { position: absolute; inset: 0; padding: calc(4.5 * var(--u)) calc(6 * var(--u)) calc(7 * var(--u)); display: flex; flex-direction: column; gap: calc(2.2 * var(--u)) }
+.scene { position: absolute; inset: 0; padding: calc(4.5 * var(--u)) calc(6 * var(--u)) var(--below, calc(7 * var(--u))); display: flex; flex-direction: column; gap: calc(2.2 * var(--u)) }
+.stack { flex: 1 0 auto; display: flex; flex-direction: column; gap: calc(2.2 * var(--u)); min-width: 0 }
 .block { min-width: 0 }
 .eyebrow { font-family: var(--mono); font-size: calc(1.25 * var(--u)); letter-spacing: .14em; text-transform: uppercase; color: var(--accent) }
 .headline { font-family: var(--display); font-weight: 800; font-size: calc(3.9 * var(--u)); line-height: 1.05; letter-spacing: -0.02em; margin: 0; text-wrap: balance }
 .headline em { font-style: normal; color: var(--accent) }
 .text { font-size: calc(1.8 * var(--u)); color: var(--muted); margin: 0; max-width: 70ch }
-.code, .term, .tree { font-family: var(--mono); font-size: calc(1.3 * var(--u)); line-height: 1.55; background: color-mix(in srgb, var(--bg) 80%, black); border: 1px solid var(--line); border-radius: 4px; padding: calc(1.6 * var(--u)) calc(2 * var(--u)); margin: 0; white-space: pre; overflow: hidden }
+.code, .term, .tree { font-family: var(--mono); font-size: calc(1.3 * var(--u)); line-height: 1.55; background: color-mix(in srgb, var(--bg) 80%, black); border: 1px solid var(--line); border-radius: 4px; padding: calc(1.6 * var(--u)) calc(2 * var(--u)); margin: 0; white-space: pre; overflow: hidden; font-variant-ligatures: none }
 .label { display: block; font-size: calc(1.05 * var(--u)); color: var(--muted); letter-spacing: .08em; text-transform: uppercase; margin-bottom: calc(.8 * var(--u)) }
+.caret[hidden] { display: none }
 .caret { display: inline-block; width: .6em; height: 1.1em; background: var(--accent); vertical-align: -0.2em }
 .k { color: #c9a8ff } .s { color: var(--good) } .c { color: var(--muted); font-style: italic } .n { color: var(--accent) } .f { color: #8ec5ff }
 .prompt { color: var(--accent) } .ok { color: var(--good) } .bad { color: var(--bad) }

@@ -46,6 +46,8 @@ export function createPlayer(
   stage.dataset.format = format
   stage.style.cssText = [
     `--ratio: ${width} / ${height}`,
+    // Burned-in captions take the bottom band: scenes keep clear of it.
+    ...((opts.captions ?? project.captions) ? ['--below: calc(12 * var(--u))'] : []),
     `--u: calc(${UNIT[format]} * 1cqw)`,
     ...Object.entries(colors).map(([k, v]) => `--${k}: ${v}`),
     `--display: '${fonts.display}', system-ui, sans-serif`,
@@ -80,8 +82,9 @@ export function createPlayer(
     }
     let draw: (local: number) => void = () => {}
     if (scene.kind === 'blocks') {
-      root.innerHTML = `<style>${SCENE_CSS}</style><div class="scene"></div>`
-      const body = root.querySelector<HTMLElement>('.scene')!
+      root.innerHTML = `<style>${SCENE_CSS}</style><div class="scene"><div class="stack"></div></div>`
+      const frame = root.querySelector<HTMLElement>('.scene')!
+      const body = root.querySelector<HTMLElement>('.stack')!
       const draws = scene.blocks.map((block) => {
         const wrap = document.createElement('div')
         wrap.className = 'block'
@@ -103,7 +106,24 @@ export function createPlayer(
           return () => {}
         }
       })
-      draw = (local) => draws.forEach((d) => d(local))
+      // A scene with more than fits is zoomed down once (never below 55%),
+      // measured with real fonts and every block at its final size.
+      let fitted = false
+      const fitScene = () => {
+        if (fitted || !frame.clientHeight || document.fonts?.status === 'loading') return
+        fitted = true
+        draws.forEach((d) => d(at.length))
+        const css = getComputedStyle(frame)
+        const room = frame.clientHeight - parseFloat(css.paddingTop) - parseFloat(css.paddingBottom)
+        if (body.scrollHeight > room)
+          body.style.zoom = String(
+            Math.max(0.55, Math.floor((room / body.scrollHeight) * 1000) / 1000),
+          )
+      }
+      draw = (local) => {
+        fitScene()
+        draws.forEach((d) => d(local))
+      }
     } else if (!opts.trusted) {
       const css = document.createElement('style')
       css.textContent = SCENE_CSS

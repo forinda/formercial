@@ -1,0 +1,441 @@
+{
+  "version": 1,
+  "name": "@forinda/kickjs-db",
+  "formats": [
+    "16:9",
+    "9:16",
+    "1:1"
+  ],
+  "theme": {
+    "colors": {
+      "bg": "#0d2226",
+      "panel": "#13313a",
+      "line": "#24505a",
+      "fg": "#efe9da",
+      "muted": "#9db4b3",
+      "accent": "#f2c14e",
+      "good": "#7fd1b9",
+      "bad": "#e3735e"
+    },
+    "fonts": {
+      "display": "Unbounded",
+      "body": "IBM Plex Sans",
+      "mono": "JetBrains Mono",
+      "files": [
+        {
+          "family": "Unbounded",
+          "weight": 400,
+          "path": "media/fonts/unbounded-400.woff2"
+        },
+        {
+          "family": "Unbounded",
+          "weight": 500,
+          "path": "media/fonts/unbounded-400.woff2"
+        },
+        {
+          "family": "Unbounded",
+          "weight": 600,
+          "path": "media/fonts/unbounded-400.woff2"
+        },
+        {
+          "family": "Unbounded",
+          "weight": 700,
+          "path": "media/fonts/unbounded-400.woff2"
+        },
+        {
+          "family": "Unbounded",
+          "weight": 800,
+          "path": "media/fonts/unbounded-400.woff2"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": 400,
+          "path": "media/fonts/ibm-plex-sans-400.woff2"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": 500,
+          "path": "media/fonts/ibm-plex-sans-400.woff2"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": 600,
+          "path": "media/fonts/ibm-plex-sans-400.woff2"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": 700,
+          "path": "media/fonts/ibm-plex-sans-400.woff2"
+        },
+        {
+          "family": "JetBrains Mono",
+          "weight": 400,
+          "path": "media/fonts/jetbrains-mono-400.woff2"
+        },
+        {
+          "family": "JetBrains Mono",
+          "weight": 500,
+          "path": "media/fonts/jetbrains-mono-400.woff2"
+        },
+        {
+          "family": "JetBrains Mono",
+          "weight": 600,
+          "path": "media/fonts/jetbrains-mono-400.woff2"
+        },
+        {
+          "family": "JetBrains Mono",
+          "weight": 700,
+          "path": "media/fonts/jetbrains-mono-400.woff2"
+        },
+        {
+          "family": "JetBrains Mono",
+          "weight": 800,
+          "path": "media/fonts/jetbrains-mono-400.woff2"
+        }
+      ]
+    }
+  },
+  "voice": {
+    "tts": "en-US-AvaNeural",
+    "rate": "-4%"
+  },
+  "captions": true,
+  "scenes": [
+    {
+      "id": "three-places",
+      "minSeconds": 9,
+      "transition": "fade",
+      "caption": "Your schema lives in three places: the database, the migrations folder, and the types you hope still match.",
+      "spoken": "Your schema lives in three places. The database... the migrations folder... and the types you hope still match.",
+      "voice": "tts",
+      "kind": "blocks",
+      "blocks": [
+        {
+          "type": "eyebrow",
+          "text": "Monday, 9:04am"
+        },
+        {
+          "type": "headline",
+          "text": "Your schema lives in three places.",
+          "accent": "three places."
+        },
+        {
+          "type": "cards",
+          "at": 1.5,
+          "items": [
+            {
+              "title": "The database",
+              "sub": "email text NULL"
+            },
+            {
+              "title": "migrations/",
+              "sub": "email varchar(255)"
+            },
+            {
+              "title": "types.ts",
+              "sub": "email: string"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "at": 5.5,
+          "text": "Only one of them is right. Nobody knows which."
+        }
+      ]
+    },
+    {
+      "id": "one-schema",
+      "minSeconds": 11,
+      "transition": "slide",
+      "caption": "@forinda/kickjs-db puts it in one place. You write your tables in TypeScript, once.",
+      "spoken": "KickJS D-B puts it in one place. You write your tables in TypeScript, once.",
+      "voice": "tts",
+      "kind": "blocks",
+      "blocks": [
+        {
+          "type": "eyebrow",
+          "text": "@forinda/kickjs-db"
+        },
+        {
+          "type": "headline",
+          "text": "One schema. In TypeScript.",
+          "accent": "In TypeScript."
+        },
+        {
+          "type": "code",
+          "at": 1.2,
+          "label": "src/db/schema.ts",
+          "lang": "ts",
+          "source": "const users = table('users', {\n  id: uuid().primaryKey().defaultRandom(),\n  email: varchar(255).notNull().unique(),\n  createdAt: timestamp().notNull().defaultNow(),\n})\n\nconst posts = table('posts', {\n  id: serial().primaryKey(),\n  authorId: uuid().notNull().references(() => users.id),\n  title: text().notNull(),\n})",
+          "cps": 34
+        }
+      ]
+    },
+    {
+      "id": "typed-queries",
+      "minSeconds": 12,
+      "transition": "fade",
+      "caption": "Queries are typed from that schema. Load a user with their latest posts in one query, and your editor knows every field.",
+      "spoken": "Queries are typed from that schema. Load a user with their latest posts in one query, and your editor knows every field.",
+      "voice": "tts",
+      "kind": "blocks",
+      "blocks": [
+        {
+          "type": "eyebrow",
+          "text": "Typed queries"
+        },
+        {
+          "type": "headline",
+          "text": "Ask for it. Get its type.",
+          "accent": "Get its type."
+        },
+        {
+          "type": "code",
+          "at": 1,
+          "label": "users.service.ts",
+          "lang": "ts",
+          "source": "const user = await db.query.users.findFirst({\n  where: (_u, eb) => eb('email', '=', 'ada@acme.dev'),\n  with: { posts: { limit: 5 } },\n})",
+          "cps": 30
+        },
+        {
+          "type": "code",
+          "at": 6.5,
+          "label": "type of user",
+          "lang": "plain",
+          "source": "{ id: string; email: string; createdAt: Date; posts: Post[] } | undefined",
+          "cps": 120
+        }
+      ]
+    },
+    {
+      "id": "migrations",
+      "minSeconds": 14,
+      "transition": "fade",
+      "caption": "Change the schema and run kick db generate. You get the SQL to apply, a draft to undo it, and a snapshot of what the database should look like.",
+      "spoken": "Change the schema, and run kick D-B generate. You get the SQL to apply, a draft to undo it, and a snapshot of what the database should look like.",
+      "voice": "tts",
+      "kind": "blocks",
+      "blocks": [
+        {
+          "type": "eyebrow",
+          "text": "Migrations · change the schema"
+        },
+        {
+          "type": "headline",
+          "text": "Generate the SQL.",
+          "accent": "the SQL."
+        },
+        {
+          "type": "terminal",
+          "at": 1,
+          "label": "terminal",
+          "source": "$ kick db generate --name add_bookings",
+          "cps": 22
+        },
+        {
+          "type": "tree",
+          "at": 3.4,
+          "lines": [
+            "db/migrations/20261030_add_bookings/",
+            "├ up.sql",
+            "├ down.sql (draft)",
+            "└ meta.json, snapshot.json"
+          ]
+        },
+        {
+          "type": "code",
+          "at": 6.6,
+          "label": "up.sql",
+          "lang": "sql",
+          "source": "CREATE TABLE \"bookings\" (\n  \"id\" serial PRIMARY KEY,\n  \"user_id\" uuid REFERENCES \"users\" (\"id\")\n);",
+          "cps": 40
+        }
+      ]
+    },
+    {
+      "id": "review-gate",
+      "minSeconds": 13,
+      "transition": "fade",
+      "caption": "Generated SQL waits for a person. Outside development, the runner refuses any migration nobody has reviewed. Read it, approve it, ship it.",
+      "spoken": "Generated SQL waits for a person. Outside development, the runner refuses any migration nobody has reviewed. Read it, approve it, ship it.",
+      "voice": "tts",
+      "kind": "blocks",
+      "blocks": [
+        {
+          "type": "eyebrow",
+          "text": "The review gate"
+        },
+        {
+          "type": "headline",
+          "text": "Nothing reaches production unread.",
+          "accent": "unread."
+        },
+        {
+          "type": "code",
+          "at": 1,
+          "label": "meta.json",
+          "lang": "json",
+          "source": "{ \"reviewed\": false }",
+          "cps": 30
+        },
+        {
+          "type": "stamp",
+          "at": 3,
+          "text": "Refused",
+          "tone": "bad",
+          "until": 8.5
+        },
+        {
+          "type": "terminal",
+          "at": 6,
+          "label": "terminal",
+          "source": "$ kick db migrate review 20261030_101500_add_bookings",
+          "cps": 26
+        },
+        {
+          "type": "stamp",
+          "at": 9,
+          "text": "Applies",
+          "tone": "good"
+        }
+      ]
+    },
+    {
+      "id": "drift",
+      "minSeconds": 13,
+      "transition": "fade",
+      "caption": "At boot, @forinda/kickjs-db compares the live database with the last snapshot. If someone changed it by hand, you hear about it first. Indexes you add on purpose? Leave them out by name.",
+      "spoken": "At boot, KickJS D-B compares the live database with the last snapshot. If someone changed it by hand, you hear about it first. Indexes you add on purpose? Leave them out by name.",
+      "voice": "tts",
+      "kind": "blocks",
+      "blocks": [
+        {
+          "type": "eyebrow",
+          "text": "Drift check at boot"
+        },
+        {
+          "type": "headline",
+          "text": "Hand-run DDL gets caught.",
+          "accent": "gets caught."
+        },
+        {
+          "type": "terminal",
+          "at": 1,
+          "label": "kick dev",
+          "source": "$ kick dev\n  checking schema against 20261030_101500_add_bookings …\n✗ Schema drift detected: 1 added, 0 removed, 0 changed\n  (added: bookings#bookings_tmp_idx)",
+          "cps": 60
+        },
+        {
+          "type": "code",
+          "at": 7.5,
+          "label": "kick.config.ts",
+          "lang": "ts",
+          "source": "db: { driftIgnore: { indexes: /_search$/ } }",
+          "cps": 34
+        }
+      ]
+    },
+    {
+      "id": "transactions",
+      "minSeconds": 11,
+      "transition": "fade",
+      "caption": "Transactions commit when your code finishes and roll back when it throws. Isolation levels and savepoints are there when you need them.",
+      "spoken": "Transactions commit when your code finishes, and roll back when it throws. Isolation levels and savepoints are there when you need them.",
+      "voice": "tts",
+      "kind": "blocks",
+      "blocks": [
+        {
+          "type": "eyebrow",
+          "text": "Transactions"
+        },
+        {
+          "type": "headline",
+          "text": "All of it, or none of it.",
+          "accent": "or none of it."
+        },
+        {
+          "type": "code",
+          "at": 1,
+          "label": "checkout.ts",
+          "lang": "ts",
+          "source": "await db.transaction({ isolation: 'serializable' }, async (tx) => {\n  const user = await tx.insertInto('users').values({ email })\n    .returningAll().executeTakeFirstOrThrow()\n  await tx.insertInto('profiles').values({ userId: user.id }).execute()\n}) // commits on success, rolls back on throw",
+          "cps": 40
+        }
+      ]
+    },
+    {
+      "id": "dialects",
+      "minSeconds": 12,
+      "transition": "slide",
+      "caption": "PostgreSQL, MySQL or SQLite, with one API. Moving from Prisma, Drizzle, TypeORM or Sequelize? There's a guide for each.",
+      "spoken": "Postgres, MySQL, or S-Q-Lite, with one API. Moving from Prisma, Drizzle, Type O-R-M, or Sequelize? There's a guide for each.",
+      "voice": "tts",
+      "kind": "blocks",
+      "blocks": [
+        {
+          "type": "eyebrow",
+          "text": "Your database"
+        },
+        {
+          "type": "headline",
+          "text": "Three dialects. One API.",
+          "accent": "One API."
+        },
+        {
+          "type": "cards",
+          "at": 1,
+          "items": [
+            {
+              "title": "PostgreSQL",
+              "sub": "@forinda/kickjs-db/pg"
+            },
+            {
+              "title": "MySQL",
+              "sub": "@forinda/kickjs-db/mysql"
+            },
+            {
+              "title": "SQLite",
+              "sub": "@forinda/kickjs-db/sqlite"
+            }
+          ]
+        },
+        {
+          "type": "chips",
+          "at": 5,
+          "label": "Coming from",
+          "items": [
+            "Prisma",
+            "Drizzle",
+            "TypeORM",
+            "Sequelize"
+          ]
+        },
+        {
+          "type": "text",
+          "at": 6.5,
+          "text": "There's a guide for each."
+        }
+      ]
+    },
+    {
+      "id": "end",
+      "minSeconds": 12,
+      "transition": "fade",
+      "caption": "@forinda/kickjs-db. One schema, typed queries, and migrations you can read. Run kick add db.",
+      "spoken": "KickJS D-B. One schema. Typed queries. And migrations you can read. Run: kick add D-B.",
+      "voice": "tts",
+      "kind": "blocks",
+      "blocks": [
+        {
+          "type": "end",
+          "at": 0.4,
+          "wordmark": "@forinda/kickjs-db",
+          "tagline": "One schema. Typed queries. Migrations you can read.",
+          "command": "kick add db",
+          "url": "kickjs.app/guide/database"
+        }
+      ]
+    }
+  ]
+}
