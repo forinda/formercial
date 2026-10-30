@@ -3,6 +3,17 @@
 // reword it, redraw it or delete scenes, with no code to trust.
 import { parseProject } from '@/core/project'
 
+/** Labels don't wrap, so one too long for its drawing is drawn smaller. Kalam runs about 0.5 of its size per character. */
+const fit = (strokes: unknown[], width: number) =>
+  (strokes as { text?: string; x?: number; size?: number }[]).map((s) =>
+    s.text
+      ? {
+          ...s,
+          size: Math.min(s.size ?? 56, Math.floor((width - 30 - s.x!) / (s.text.length * 0.5))),
+        }
+      : s,
+  )
+
 /** Each scene draws twice: wide for 16:9 and 1:1, tall for TikTok and Shorts. */
 const scene = (
   id: string,
@@ -19,7 +30,7 @@ const scene = (
   transition: 'fade',
   caption,
   spoken,
-  blocks: [{ type: 'doodle', strokes, tall: { strokes: tall } }],
+  blocks: [{ type: 'doodle', strokes: fit(strokes, 1600), tall: { strokes: fit(tall, 900) } }],
   ...extra,
 })
 
@@ -28,7 +39,7 @@ const wireLeft = { d: 'M650 600 H250 V150 H720', seconds: 1.2 }
 const battery = [
   { d: 'M650 540 H950 V660 H650 Z', seconds: 0.8 },
   { text: '−', x: 672, y: 620, size: 72, seconds: 0.2 },
-  { text: 'battery', x: 730, y: 618, size: 52, seconds: 0.5 },
+  { text: 'battery', x: 725, y: 615, size: 44, seconds: 0.5 },
   { text: '+', x: 900, y: 620, size: 64, seconds: 0.2 },
 ]
 const bulb = [
@@ -144,8 +155,8 @@ export const doodleLesson = parseProject({
       good: '#1f8a70',
       bad: '#cf3f50',
     },
-    // Handwriting for the drawings; a plainer hand for captions, which must read on a phone.
-    fonts: { display: 'Caveat', body: 'Patrick Hand', mono: 'JetBrains Mono' },
+    // Sturdy handwriting for the drawings, and a plainer hand for captions: both must read on a phone.
+    fonts: { display: 'Kalam', body: 'Patrick Hand', mono: 'JetBrains Mono' },
   },
   scenes: [
     scene(
@@ -154,9 +165,9 @@ export const doodleLesson = parseProject({
       'Flip a switch and a bulb lights up. But why does it glow at all?',
       7,
       [
-        { text: 'Why does a', x: 90, y: 230, size: 110, seconds: 0.8 },
-        { text: 'light bulb', x: 90, y: 340, size: 110, seconds: 0.8 },
-        { text: 'glow?', x: 90, y: 450, size: 110, tone: 'accent', seconds: 0.5 },
+        { text: 'Why does a', x: 60, y: 230, size: 92, seconds: 0.8 },
+        { text: 'light bulb', x: 60, y: 340, size: 92, seconds: 0.8 },
+        { text: 'glow?', x: 60, y: 450, size: 92, tone: 'accent', seconds: 0.5 },
         { d: glass, seconds: 1.2 },
         { d: 'M700 490 H900 M712 530 H888 M730 570 H870', seconds: 0.4 },
         { text: '?', x: 1120, y: 340, size: 190, tone: 'accent', seconds: 0.4 },
@@ -183,7 +194,7 @@ export const doodleLesson = parseProject({
         ...tCircuit,
         tSwitchClosed,
         tWireBack,
-        { text: 'a complete loop', x: 200, y: 640, size: 90, tone: 'muted', seconds: 0.8 },
+        { text: 'a complete loop', x: 170, y: 640, size: 72, tone: 'muted', seconds: 0.8 },
       ],
     ),
     scene(
@@ -659,8 +670,8 @@ export const doodleLesson = parseProject({
         },
         { text: 'voltage pushes', x: 170, y: 480, size: 84, tone: 'accent', at: 2.2, seconds: 0.7 },
         { text: 'current flows', x: 195, y: 620, size: 84, tone: 'good', seconds: 0.6 },
-        { text: 'resistance heats', x: 150, y: 760, size: 84, tone: 'bad', seconds: 0.7 },
-        { text: 'heat makes light', x: 150, y: 900, size: 84, tone: 'accent', seconds: 0.7 },
+        { text: 'resistance heats', x: 170, y: 760, size: 72, tone: 'bad', seconds: 0.7 },
+        { text: 'heat makes light', x: 170, y: 900, size: 72, tone: 'accent', seconds: 0.7 },
       ],
     ),
     {
