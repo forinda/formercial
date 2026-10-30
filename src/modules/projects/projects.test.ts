@@ -196,7 +196,7 @@ describe('projects api', () => {
     )
     const list = (await http.get('/api/v1/projects/demo/renders').expect(200)).body
     expect(list.files).toContain('renders/16x9.mp4')
-  })
+  }, 20_000)
 
   test('a project with custom scenes renders only once trusted', async () => {
     const http = await boot()

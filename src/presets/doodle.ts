@@ -599,7 +599,7 @@ export const doodleLesson = parseProject({
           text: 'LEDs make light without a hot wire, so they waste far less.',
           x: 200,
           y: 560,
-          size: 58,
+          size: 54,
           tone: 'muted',
           at: 5,
           seconds: 1.6,
