@@ -11,6 +11,14 @@ export type Format = keyof typeof FORMATS
 
 export const SLUG = /^[a-z0-9][a-z0-9-]{0,62}$/
 
+/** A project folder name from a display name: "@forinda/kickjs-db" → "forinda-kickjs-db". */
+export const slugFrom = (name: string) =>
+  name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 56) || 'project'
+
 const format = z.enum(['16:9', '9:16', '1:1'])
 // Seconds into the scene when a block appears.
 const at = z.number().min(0).optional()

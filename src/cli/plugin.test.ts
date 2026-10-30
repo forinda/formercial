@@ -1,0 +1,75 @@
+import { mkdirSync, mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { diskStorage } from '@forinda/kickjs-storage/disk'
+import { Command } from 'commander'
+import { describe, expect, test } from 'vitest'
+import type { RenderDriver } from '../core/render/driver'
+import { createWorkspace } from '../core/workspace'
+import { cxcCliPlugin, resolveProject } from './plugin'
+
+const fakeDriver: RenderDriver = {
+  name: 'farm',
+  check: async () => ({ ok: false, missing: ['a render farm'] }),
+  render: async () => ({ mp4: 'a.mp4', srt: 'a.srt' }),
+}
+
+async function run(args: string[], projectRoot: string) {
+  const out: string[] = []
+  const program = new Command().exitOverride()
+  const plugin = cxcCliPlugin({ drivers: [fakeDriver] })
+  await plugin.register!(program, {
+    cwd: projectRoot,
+    projectRoot,
+    config: null,
+    log: (m) => out.push(m),
+  })
+  await program.parseAsync(['node', 'kick', ...args])
+  return out.join('\n')
+}
+
+describe('kick cxc', () => {
+  test('new creates a valid project', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'cxc-cli-'))
+    const out = await run(['cxc', 'new', 'My Product'], root)
+    expect(out).toContain('projects/my-product')
+    const ws = createWorkspace(diskStorage({ root: join(root, 'projects') }))
+    expect((await ws.read('my-product')).project.name).toBe('My Product')
+  })
+
+  test('drivers prints each driver with ready or missing', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'cxc-cli-'))
+    const out = await run(['cxc', 'drivers'], root)
+    expect(out).toMatch(/chromium-ffmpeg/)
+    expect(out).toMatch(/farm\s+missing: a render farm/)
+  })
+
+  test('resolves a folder path to root and slug', () => {
+    const root = mkdtempSync(join(tmpdir(), 'cxc-cli-'))
+    mkdirSync(join(root, 'elsewhere', 'promo'), { recursive: true })
+    expect(resolveProject(join(root, 'elsewhere', 'promo'), root)).toEqual({
+      root: join(root, 'elsewhere'),
+      slug: 'promo',
+    })
+    expect(resolveProject('promo', root)).toEqual({ root: join(root, 'projects'), slug: 'promo' })
+  })
+
+  test('registers exactly the cxc command group', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'cxc-cli-'))
+    const program = new Command()
+    await cxcCliPlugin({}).register!(program, {
+      cwd: root,
+      projectRoot: root,
+      config: null,
+      log: () => {},
+    })
+    expect(program.commands.map((c) => c.name())).toEqual(['cxc'])
+    expect(program.commands[0].commands.map((c) => c.name())).toEqual([
+      'new',
+      'voice',
+      'render',
+      'drivers',
+      'preview',
+    ])
+  })
+})

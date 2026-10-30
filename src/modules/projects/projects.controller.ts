@@ -9,6 +9,7 @@ import {
   FORMATS,
   ProjectError,
   SLUG,
+  slugFrom,
   starterProject,
   type Format,
   type Project,
@@ -64,16 +65,6 @@ async function readBody(ctx: RequestContext, limit: number): Promise<Uint8Array>
   return Buffer.concat(chunks)
 }
 
-function slugify(name: string) {
-  return (
-    name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 56) || 'project'
-  )
-}
-
 @Controller()
 export class ProjectsController {
   constructor(private readonly studio: Studio) {}
@@ -110,7 +101,7 @@ export class ProjectsController {
       const name = String(ctx.body?.name ?? '').trim()
       if (!name) throw new HttpError(400, 'name is required')
       const taken = new Set((await this.studio.ws.list()).map((p) => p.slug))
-      const base = slugify(name)
+      const base = slugFrom(name)
       let slug = base
       for (let n = 2; taken.has(slug); n++) slug = `${base}-${n}`
       if (!SLUG.test(slug)) throw new HttpError(400, `can't make a project name from "${name}"`)
