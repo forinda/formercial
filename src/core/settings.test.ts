@@ -9,6 +9,7 @@ describe('FormercialSettings', () => {
       projects: 'projects',
       voice: 'en-US-AvaNeural',
       fps: 30,
+      driver: 'chromium-ffmpeg',
       render: false,
     })
   })
@@ -19,6 +20,7 @@ describe('FormercialSettings', () => {
       FORMERCIAL_TRUST_FILE: '/work/trust.json',
       FORMERCIAL_VOICE: 'en-GB-SoniaNeural',
       FORMERCIAL_FPS: '24',
+      FORMERCIAL_DRIVER: 'chromium-nvenc',
       FORMERCIAL_RENDER: 'true',
     })
     expect(s).toEqual({
@@ -26,6 +28,7 @@ describe('FormercialSettings', () => {
       trustFile: '/work/trust.json',
       voice: 'en-GB-SoniaNeural',
       fps: 24,
+      driver: 'chromium-nvenc',
       render: true,
     })
   })
@@ -37,6 +40,7 @@ describe('FormercialSettings', () => {
 
   test('lists its variables', () => {
     expect([...FormercialSettings.envNames].sort()).toEqual([
+      'FORMERCIAL_DRIVER',
       'FORMERCIAL_FPS',
       'FORMERCIAL_PROJECTS',
       'FORMERCIAL_RENDER',

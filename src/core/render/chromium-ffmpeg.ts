@@ -1,5 +1,6 @@
-// The built-in render driver: Chromium draws each frame of the render page,
+// The built-in render drivers: Chromium draws each frame of the render page,
 // ffmpeg encodes them and lays the voice and music under the picture.
+// chromium-nvenc does the drawing and encoding on an NVIDIA GPU.
 import { mkdir, writeFile } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
 import { audioGraph } from '@/core/audio'
@@ -13,8 +14,22 @@ import { startEncoder } from './encoder'
 const stamp = () =>
   new Date().toISOString().replace(/[-:]/g, '').replace(/\..*/, '').replace('T', '-')
 
-export const chromiumFfmpeg: RenderDriver = {
-  name: 'chromium-ffmpeg',
+export type ChromiumDriverSetup = {
+  name: string
+  /** ffmpeg's video encoding arguments. */
+  video: string[]
+  chrome?: Parameters<typeof launchChrome>[0]
+  /** What else the driver needs, beyond ffmpeg and Chromium. */
+  needs?: () => Promise<string[]>
+}
+
+export const chromiumDriver = ({
+  name: driverName,
+  video,
+  chrome,
+  needs,
+}: ChromiumDriverSetup): RenderDriver => ({
+  name: driverName,
 
   async check() {
     const missing: string[] = []
@@ -22,6 +37,7 @@ export const chromiumFfmpeg: RenderDriver = {
     if (!(await hasCommand('ffprobe'))) missing.push('ffprobe')
     if (!findChrome())
       missing.push('chromium (set CHROME, or npx playwright install chromium-headless-shell)')
+    if (needs && missing.length === 0) missing.push(...(await needs()))
     return { ok: missing.length === 0, missing }
   },
 
@@ -33,7 +49,7 @@ export const chromiumFfmpeg: RenderDriver = {
     await mkdir(join(dir, 'renders'), { recursive: true })
     const picture = join(dir, `${name}.picture.mp4`)
 
-    const page = await launchChrome()
+    const page = await launchChrome(chrome)
     const encoder = startEncoder('ffmpeg', [
       '-y',
       '-loglevel',
@@ -44,14 +60,7 @@ export const chromiumFfmpeg: RenderDriver = {
       String(job.fps),
       '-i',
       '-',
-      '-c:v',
-      'libx264',
-      '-pix_fmt',
-      'yuv420p',
-      '-preset',
-      'medium',
-      '-crf',
-      '18',
+      ...video,
       picture,
     ])
 
@@ -153,4 +162,59 @@ export const chromiumFfmpeg: RenderDriver = {
     progress({ phase: 'done', frame: frames, frames })
     return { mp4: `${name}.mp4`, srt }
   },
-}
+})
+
+export const chromiumFfmpeg = chromiumDriver({
+  name: 'chromium-ffmpeg',
+  video: ['-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-preset', 'medium', '-crf', '18'],
+})
+
+export const chromiumNvenc = chromiumDriver({
+  name: 'chromium-nvenc',
+  video: [
+    '-c:v',
+    'h264_nvenc',
+    '-preset',
+    'p5',
+    '-tune',
+    'hq',
+    '-rc',
+    'vbr',
+    '-cq',
+    '19',
+    '-b:v',
+    '0',
+    '-pix_fmt',
+    'yuv420p',
+  ],
+  chrome: {
+    args: [
+      '--ignore-gpu-blocklist',
+      '--enable-gpu-rasterization',
+      '--use-gl=angle',
+      '--use-angle=gl-egl',
+    ],
+    // On a laptop with two GPUs, Chromium would otherwise pick the other one.
+    env: { __NV_PRIME_RENDER_OFFLOAD: '1', __GLX_VENDOR_LIBRARY_NAME: 'nvidia' },
+  },
+  // ffmpeg lists h264_nvenc whether or not a GPU can run it, so encode a frame.
+  needs: () =>
+    run('ffmpeg', [
+      '-loglevel',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'color=black:s=256x256',
+      '-frames:v',
+      '1',
+      '-c:v',
+      'h264_nvenc',
+      '-f',
+      'null',
+      '-',
+    ]).then(
+      () => [],
+      () => ['NVENC (an NVIDIA GPU and driver, and ffmpeg built with h264_nvenc)'],
+    ),
+})

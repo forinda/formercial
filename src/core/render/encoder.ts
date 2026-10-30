@@ -2,6 +2,7 @@
 // once instead of waiting for a drain that will never come, and no rejection
 // is ever left unhandled.
 import { spawn } from 'node:child_process'
+import { runInBackground } from '@/core/media'
 
 export interface Encoder {
   write(frame: Buffer): Promise<void>
@@ -12,6 +13,7 @@ export interface Encoder {
 
 export function startEncoder(cmd: string, args: string[]): Encoder {
   const child = spawn(cmd, args, { stdio: ['pipe', 'ignore', 'pipe'] })
+  runInBackground(child)
   let log = ''
   child.stderr.on('data', (d) => (log += d))
   let failure: Error | undefined
@@ -46,6 +48,8 @@ export function startEncoder(cmd: string, args: string[]): Encoder {
       return exited
     },
     kill() {
+      // ffmpeg waiting for a frame doesn't act on the signal until stdin closes.
+      child.stdin.destroy()
       child.kill()
     },
   }

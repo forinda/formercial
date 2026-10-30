@@ -263,7 +263,10 @@ export function RenderPanel({
     })
 
   useEffect(() => {
-    void api<Driver[]>('/api/v1/drivers').then(setDrivers)
+    void api<Driver[]>('/api/v1/drivers').then((list) => {
+      setDrivers(list)
+      if (list[0]) setDriver(list[0].name)
+    })
     void refresh()
     const events = new EventSource(`/api/v1/projects/${slug}/events`)
     events.addEventListener('job', (e) => {

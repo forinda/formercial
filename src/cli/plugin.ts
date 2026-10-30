@@ -141,7 +141,7 @@ export function formercialCliPlugin(config: FormercialConfig): KickCliPlugin {
         .command('render <project>')
         .description('Voice, then render each format to renders/')
         .option('--format <format>', '16:9, 9:16, 1:1 or all', 'all')
-        .option('--driver <name>', 'render driver', 'chromium-ffmpeg')
+        .option('--driver <name>', 'render driver (default: FORMERCIAL_DRIVER, or chromium-ffmpeg)')
         .option('--fps <n>', 'frames per second (default: FORMERCIAL_FPS, or 30)')
         .option('--seconds <n>', 'render only the first N seconds')
         .option('--origin <url>', 'a running app to render from (default: start one)')
@@ -150,17 +150,18 @@ export function formercialCliPlugin(config: FormercialConfig): KickCliPlugin {
             arg: string,
             opts: {
               format: string
-              driver: string
+              driver?: string
               fps?: string
               seconds?: string
               origin?: string
             },
           ) => {
             const { root, slug, ws } = open(arg)
-            const driver = registry.drivers.get(opts.driver)
+            const driverName = opts.driver ?? FormercialSettings.get().driver
+            const driver = registry.drivers.get(driverName)
             if (!driver)
               throw new Error(
-                `no render driver "${opts.driver}" (kick formercial drivers lists them)`,
+                `no render driver "${driverName}" (kick formercial drivers lists them)`,
               )
             const check = await driver.check()
             if (!check.ok)

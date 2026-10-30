@@ -15,7 +15,7 @@ Install it with `pipx install edge-tts` (or `uv tool install edge-tts`), and che
 
 The render page stopped responding. This usually means:
 
-- **The machine is very busy.** Close other heavy work and try again.
+- **The machine is very busy.** Renders run at low priority, so heavy work or a full swap can starve them. Close other heavy work and try again.
 - **The page reloaded mid-render.** That happens when you edit files while rendering from your own `pnpm dev` server. Renders started with `kick formercial render` turn hot reload off.
 
 ## A render fails with "scene …: …"

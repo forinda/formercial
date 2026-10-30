@@ -18,6 +18,7 @@ Put them in `.env` at the repository root (copy `.env.example`), or set them in 
 | `FORMERCIAL_TRUST_FILE` | `~/.config/formercial/trust.json` | Where [trust](../guide/custom-scenes#trust) for custom scenes is kept. Keep it outside the projects folder. |
 | `FORMERCIAL_VOICE` | `en-US-AvaNeural` | Voice for new projects. Each project then keeps its own in `project.json`. |
 | `FORMERCIAL_FPS` | `30` | Render frame rate unless a render asks for another: a whole number from 1 to 60. |
+| `FORMERCIAL_DRIVER` | `chromium-ffmpeg` | Render driver unless a render asks for another. Set it to `chromium-nvenc` to use an NVIDIA GPU. |
 | `XDG_CONFIG_HOME` | `~/.config` | Moves the default trust file to `$XDG_CONFIG_HOME/formercial/trust.json`. |
 | `CHROME` | the newest Playwright headless shell | The Chromium (or Chrome) binary renders use. |
 | `FORMERCIAL_RENDER` | unset | Set by `kick formercial render` on the server it starts: turns hot reload off. You don't normally set it yourself. |

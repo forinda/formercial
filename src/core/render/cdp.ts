@@ -4,6 +4,7 @@ import { spawn } from 'node:child_process'
 import { existsSync, readdirSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
+import { runInBackground } from '@/core/media'
 
 /** CHROME, else the newest Playwright headless shell in its cache. */
 export function findChrome(): string | null {
@@ -25,7 +26,9 @@ export interface Page {
 }
 
 /** Launch Chromium and open one page. */
-export async function launchChrome(): Promise<Page> {
+export async function launchChrome(
+  extra: { args?: string[]; env?: Record<string, string> } = {},
+): Promise<Page> {
   const bin = findChrome()
   if (!bin)
     throw new Error(
@@ -42,12 +45,15 @@ export async function launchChrome(): Promise<Page> {
       '--remote-debugging-port=0',
       '--hide-scrollbars',
       '--mute-audio',
+      ...(extra.args ?? []),
       'about:blank',
     ],
     {
       stdio: ['ignore', 'ignore', 'pipe'],
+      env: { ...process.env, ...extra.env },
     },
   )
+  runInBackground(chrome)
   const wsUrl = await new Promise<string>((resolve, reject) => {
     let log = ''
     chrome.stderr.on('data', (d) => {

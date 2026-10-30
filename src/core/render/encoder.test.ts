@@ -23,6 +23,17 @@ describe('startEncoder', () => {
     }
   })
 
+  test('kill stops an encoder that only exits once its input closes', async () => {
+    // Like ffmpeg waiting for a frame: the signal alone does nothing.
+    const enc = startEncoder('node', [
+      '-e',
+      'process.on("SIGTERM", () => {}); process.stdin.resume(); process.stdin.on("end", () => process.exit(1))',
+    ])
+    await new Promise((r) => setTimeout(r, 500))
+    enc.kill()
+    await expect(enc.end()).rejects.toThrow('exited 1')
+  })
+
   test('end resolves when the encoder finishes cleanly', async () => {
     const enc = startEncoder('node', [
       '-e',

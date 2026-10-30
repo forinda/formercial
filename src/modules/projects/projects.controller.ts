@@ -360,7 +360,10 @@ export class ProjectsController {
       format: z
         .enum(['16:9', '9:16', '1:1', 'all'])
         .describe("A format, or 'all' for the project's formats"),
-      driver: z.string().optional().describe('A driver from list_drivers; default chromium-ffmpeg'),
+      driver: z
+        .string()
+        .optional()
+        .describe('A driver from list_drivers; default FORMERCIAL_DRIVER'),
       fps: z.number().int().min(1).max(60).optional().describe('Frames per second'),
     }),
   })
@@ -369,7 +372,7 @@ export class ProjectsController {
     return this.handle(ctx, async () => {
       const { slug } = ctx.params
       const { project } = await this.studio.ws.read(slug)
-      const name = String(ctx.body?.driver ?? 'chromium-ffmpeg')
+      const name = String(ctx.body?.driver ?? FormercialSettings.get().driver)
       const driver = this.studio.registry.drivers.get(name)
       if (!driver) throw new HttpError(400, `no render driver "${name}"`)
       const check = await driver.check()
