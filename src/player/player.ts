@@ -24,12 +24,12 @@ export interface Player {
   locked: string[]
 }
 
-/** How long a scene's blocks take to finish appearing, plus a second to read. */
-export function sceneNeeds(scene: Scene): number {
+/** How long a scene's blocks take to finish appearing, plus time to read them. */
+export function sceneNeeds(scene: Scene, read = 1): number {
   if (scene.kind !== 'blocks' || scene.blocks.length === 0) return 0
   const needs = (b: Scene & { kind: 'blocks' }) =>
     b.blocks.map((block) => (BLOCKS[block.type].needs as (x: typeof block) => number)(block))
-  return Math.max(...needs(scene)) + 1
+  return Math.max(...needs(scene)) + read
 }
 
 const round = (x: number) => Math.round(x * 1000) / 1000

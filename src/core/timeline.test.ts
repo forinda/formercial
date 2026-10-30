@@ -26,6 +26,21 @@ const two = () =>
   )
 
 describe('timeline', () => {
+  test('the pause after speech is the project setting, and also shortens reading time', () => {
+    const base = proj([{ id: 'a', minSeconds: 0 }])
+    const clip = { a: { path: 'voice/a.mp3', seconds: 4 } }
+    const needs = (_: unknown, read = 1) => 2 + read
+    expect(resolveTimeline(base, clip, needs).total).toBe(5.3)
+    const tight = { ...base, pauseSeconds: 0.3 }
+    expect(resolveTimeline(tight, clip, needs).total).toBe(4.3)
+    // Drawing longer than the voice sets the length, with only the short pause after it.
+    expect(resolveTimeline(tight, { a: { path: 'voice/a.mp3', seconds: 1 } }, needs).total).toBe(
+      2.3,
+    )
+    // With no voice there's nothing to explain it, so the full reading time stays.
+    expect(resolveTimeline(tight, {}, needs).total).toBe(3)
+  })
+
   test('scene length is the longest of min, needs and clip + 1.3', () => {
     const t = two()
     expect(t.scenes.map((s) => [s.start, s.length])).toEqual([

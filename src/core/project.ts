@@ -219,6 +219,8 @@ export const ProjectSchema = z
       })
       .optional(),
     captions: z.boolean().default(true),
+    /** Seconds of picture kept after a scene's voice ends, before the next scene. */
+    pauseSeconds: z.number().min(0).max(5).default(1.3),
     scenes: z.array(SceneSchema).min(1),
   })
   .superRefine((p, ctx) => {
