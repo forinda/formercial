@@ -624,7 +624,7 @@ export const doodleLesson = parseProject({
         { text: 'light: 10%', x: 450, y: 660, size: 90, tone: 'accent', seconds: 0.7 },
         { text: 'LEDs make light', x: 170, y: 930, size: 88, tone: 'muted', at: 5, seconds: 0.7 },
         { text: 'without a hot wire,', x: 130, y: 1030, size: 88, tone: 'muted', seconds: 0.7 },
-        { text: 'so they waste far less.', x: 70, y: 1130, size: 88, tone: 'muted', seconds: 0.8 },
+        { text: 'so they waste far less.', x: 40, y: 1130, size: 88, tone: 'muted', seconds: 0.8 },
       ],
       { transition: 'slide' },
     ),
