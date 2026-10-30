@@ -81,7 +81,7 @@ The tables are declared in `src/db/schema.ts`. After changing them, run `pnpm ki
 
 ## Releasing
 
-Maintainers cut releases with one command. See [RELEASING.md](./RELEASING.md).
+Maintainers cut releases with one command. See [RELEASING.md](https://github.com/forinda/formercial/blob/main/RELEASING.md).
 
 ## Reviews
 
