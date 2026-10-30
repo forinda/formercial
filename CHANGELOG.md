@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.2.0 (2026-10-30)
+
+[Full changelog](https://github.com/forinda/formercial/compare/v0.1.2...v0.2.0)
+
+### 🚀 Features
+
+- a release can be re-run: it finishes what's left and repeats nothing [`26deace`](https://github.com/forinda/formercial/commit/26deace98edfad11b745015c64606c1732baf99e)
+
 ## v0.1.2 (2026-10-30)
 
 [Full changelog](https://github.com/forinda/formercial/compare/v0.1.1...v0.1.2)
