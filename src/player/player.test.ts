@@ -30,7 +30,7 @@ function mount(p: Project, clips: Record<string, Clip> = {}) {
   const host = document.createElement('div')
   document.body.append(host)
   const timeline = resolveTimeline(p, clips, sceneNeeds)
-  return { host, timeline, player: createPlayer(host, p, timeline, '16:9') }
+  return { host, timeline, player: createPlayer(host, p, timeline, '16:9', { trusted: true }) }
 }
 
 // Shadow roots aren't in innerHTML: serialize each scene's root too.
@@ -133,5 +133,43 @@ describe('player', () => {
     expect(caption.textContent).toBe('First')
     player.frame(2.1)
     expect(caption.hidden).toBe(true)
+  })
+
+  test('an untrusted project does not run custom scenes', () => {
+    const p = project([
+      {
+        id: 'c',
+        kind: 'custom',
+        caption: '',
+        html: '<img src=x onerror="window.ran = true"><p id="n"></p>',
+        css: '</style><img src=x onerror="window.ran = true">',
+        script: 'window.ran = true; export function draw() {}',
+      },
+    ])
+    const host = document.createElement('div')
+    document.body.append(host)
+    const timeline = resolveTimeline(p, {}, sceneNeeds)
+    const player = createPlayer(host, p, timeline, '16:9')
+    player.frame(0.5)
+    expect((window as { ran?: boolean }).ran).toBeUndefined()
+    const c = host.querySelector<HTMLElement>('[data-scene="c"]')!.shadowRoot!
+    expect(c.getElementById('n')).toBeNull()
+    expect(c.querySelector('.scene-locked')!.textContent).toMatch(/trust/i)
+  })
+
+  test('custom css cannot break out of its style element', () => {
+    const p = project([
+      {
+        id: 'c',
+        kind: 'custom',
+        caption: '',
+        css: '</style><b id="out">x</b>',
+        script: 'export function draw() {}',
+      },
+    ])
+    const { host, player } = mount(p)
+    player.frame(0.5)
+    const c = host.querySelector<HTMLElement>('[data-scene="c"]')!.shadowRoot!
+    expect(c.getElementById('out')).toBeNull()
   })
 })

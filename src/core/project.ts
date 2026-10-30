@@ -64,7 +64,10 @@ const BlockSchema = z.discriminatedUnion('type', [
 ])
 
 const sceneBase = {
-  id: z.string().min(1),
+  // Used in file names (voice/<id>.tts.mp3), so no slashes or dots.
+  id: z
+    .string()
+    .regex(/^[A-Za-z0-9][A-Za-z0-9_-]{0,62}$/, { error: 'letters, digits, - and _ only' }),
   minSeconds: z.number().min(0).default(4),
   transition: z.enum(['cut', 'fade', 'slide']).default('fade'),
   caption: z.string(),

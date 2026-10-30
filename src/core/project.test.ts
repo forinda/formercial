@@ -40,4 +40,11 @@ describe('parseProject', () => {
     }
     expect(parseProject({ ...starterProject('D'), scenes: [scene] }).scenes[0].kind).toBe('custom')
   })
+
+  test('rejects scene ids that could leave the project folder', () => {
+    for (const id of ['../x', 'a/b', '', 'a b', '.hidden']) {
+      const scene = { id, kind: 'blocks', caption: 'x', blocks: [] }
+      expect(() => parseProject({ ...starterProject('D'), scenes: [scene] })).toThrow(ProjectError)
+    }
+  })
 })

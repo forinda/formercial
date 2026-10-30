@@ -42,6 +42,7 @@ export const SCENE_CSS = `
 .wordmark i { font-style: normal; color: var(--accent) }
 .cmd { font-family: var(--mono); font-size: calc(2.2 * var(--u)); background: var(--accent); color: var(--bg); padding: calc(.6 * var(--u)) calc(1.6 * var(--u)); border-radius: 4px; font-weight: 600 }
 .url { font-size: calc(1.7 * var(--u)); color: var(--muted) }
+.scene-locked { justify-content: center; align-items: center; text-align: center; font-size: calc(1.8 * var(--u)); color: var(--muted) }
 .scene-error { position: absolute; left: calc(2 * var(--u)); right: calc(2 * var(--u)); bottom: calc(2 * var(--u)); font-family: var(--mono); font-size: calc(1.2 * var(--u)); color: #fff; background: #b3261e; padding: calc(.8 * var(--u)) calc(1.2 * var(--u)); border-radius: 4px; white-space: pre-wrap; z-index: 9 }
 :host([data-format="9:16"]) .scene { padding-top: calc(8 * var(--u)); justify-content: center }
 :host([data-format="9:16"]) .cards { grid-template-columns: 1fr }

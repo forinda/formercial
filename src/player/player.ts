@@ -32,7 +32,11 @@ export function createPlayer(
   project: Project,
   timeline: Timeline,
   format: Format,
-  opts: { captions?: boolean } = {},
+  /**
+   * `trusted`: run custom scenes' HTML, CSS and scripts. They're code, and a
+   * project may come from someone else, so the app asks before running them.
+   */
+  opts: { captions?: boolean; trusted?: boolean } = {},
 ): Player {
   const [width, height] = FORMATS[format]
   const { colors, fonts } = project.theme
@@ -98,8 +102,21 @@ export function createPlayer(
         }
       })
       draw = (local) => draws.forEach((d) => d(local))
+    } else if (!opts.trusted) {
+      const css = document.createElement('style')
+      css.textContent = SCENE_CSS
+      const locked = document.createElement('div')
+      locked.className = 'scene scene-locked'
+      locked.textContent = `Custom scene "${scene.id}" isn't run until you trust this project.`
+      root.append(css, locked)
     } else {
-      root.innerHTML = `<style>${SCENE_CSS}${scene.css}</style><div class="scene custom">${scene.html}</div>`
+      // textContent, so the scene's CSS can't close the <style> and add markup.
+      const css = document.createElement('style')
+      css.textContent = SCENE_CSS + scene.css
+      const body = document.createElement('div')
+      body.className = 'scene custom'
+      body.innerHTML = scene.html
+      root.append(css, body)
       try {
         const userDraw = compileDraw(scene.script)
         const drawCtx = {

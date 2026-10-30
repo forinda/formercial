@@ -33,4 +33,14 @@ describe('withWorkdir', () => {
     expect(seen).not.toBe('')
     expect(existsSync(seen)).toBe(false)
   })
+
+  test('refuses paths that escape the work folder', async () => {
+    const ws = createWorkspace(memoryStorage())
+    await expect(
+      withWorkdir(ws, 'demo', ['../x'], async () => ({ result: 1, outputs: [] })),
+    ).rejects.toThrow(/outside/)
+    await expect(
+      withWorkdir(ws, 'demo', [], async () => ({ result: 1, outputs: ['../../etc/x'] })),
+    ).rejects.toThrow(/outside/)
+  })
 })
