@@ -52,6 +52,16 @@ describe('ProjectSession', () => {
     expect(s.state).toMatchObject({ status: 'saved', version: 'v2' })
   })
 
+  test('travel saves pending edits first, so they can be got back', async () => {
+    const { state, fetch } = server()
+    const s = session(fetch)
+    s.set({ ...s.state.project, name: 'A' })
+    await s.travel('/undo')
+    expect(state.puts).toHaveLength(1)
+    const urls = (fetch as unknown as { mock: { calls: [string, RequestInit?][] } }).mock.calls
+    expect(urls.findIndex(([u]) => u.endsWith('/undo'))).toBeGreaterThan(0)
+  })
+
   test('409 sets conflict', async () => {
     const { state, fetch } = server('v9')
     const s = session(fetch)

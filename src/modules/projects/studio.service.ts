@@ -7,8 +7,10 @@ import { STORAGE } from '@forinda/kickjs-storage/adapter'
 import type { Format } from '@/core/project'
 import type { Registry } from '@/core/render/registry'
 import { renderProject } from '@/core/render/render-project'
+import { historyFileFor, openHistory } from '@/core/history'
+import { FormercialSettings } from '@/core/settings'
 import { createTrust } from '@/core/trust'
-import { workspaceId } from '@/adapters/storage'
+import { projectsRoot, workspaceId } from '@/adapters/storage'
 import { createWorkspace, type Workspace } from '@/core/workspace'
 import { RenderQueue, type JobInfo } from './render-queue'
 import { REGISTRY } from './tokens'
@@ -26,7 +28,10 @@ export class Studio {
     @Inject(STORAGE) readonly storage: Storage,
     @Inject(REGISTRY) readonly registry: Registry,
   ) {
-    this.ws = createWorkspace(storage)
+    const history = openHistory(
+      historyFileFor(process.cwd(), projectsRoot(), FormercialSettings.get().historyFile),
+    )
+    this.ws = createWorkspace(storage, { history })
     this.trust = createTrust({ workspace: workspaceId() })
     this.queue = new RenderQueue((job) => this.emit(job.slug, 'job', job))
   }
@@ -58,13 +63,33 @@ export class Studio {
         slug,
         setTimeout(() => {
           this.ws.read(slug).then(
-            ({ version }) => this.emit(slug, 'project-changed', { version }),
+            async ({ version }) => {
+              // An edit from outside the app becomes a step, so it can be undone too.
+              // The file may be gone already: editors still hear about the change.
+              const bytes = await this.ws.getFile(slug, 'project.json').catch(() => null)
+              await this.ws.remember(slug, bytes, 'outside')
+              this.emit(slug, 'project-changed', { version })
+            },
             () => {},
           )
         }, 200),
       )
     })
     return () => watcher.close()
+  }
+
+  /** Whether undo and redo have anywhere to go, for the editor's buttons. */
+  async historyState(slug: string): Promise<{ undo: boolean; redo: boolean }> {
+    const { history } = this.ws
+    if (!history) return { undo: false, redo: false }
+    try {
+      return {
+        undo: (await history.step(slug, 'undo')) !== null,
+        redo: (await history.step(slug, 'redo')) !== null,
+      }
+    } catch {
+      return { undo: false, redo: false }
+    }
   }
 
   /** The edge-tts (or configured) voice when it can run here, else none. */

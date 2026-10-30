@@ -9,6 +9,8 @@ export interface SessionState {
   version: string
   clips: Record<string, Clip>
   trusted: boolean
+  /** Whether undo and redo have anywhere to go. */
+  history?: { undo: boolean; redo: boolean }
   status: Status
   error?: string
 }
@@ -60,7 +62,12 @@ export class ProjectSession {
   private async put(baseVersion: string) {
     const sent = this.state.project
     let res: Response
-    let body: { version?: string; trusted?: boolean; error?: string }
+    let body: {
+      version?: string
+      trusted?: boolean
+      history?: SessionState['history']
+      error?: string
+    }
     try {
       res = await this.fetchFn(this.url(), {
         method: 'PUT',
@@ -79,6 +86,7 @@ export class ProjectSession {
     this.update({
       version: body.version,
       trusted: body.trusted ?? this.state.trusted,
+      history: body.history ?? this.state.history,
       status: this.dirty ? 'saving' : 'saved',
       error: undefined,
     })
@@ -94,8 +102,29 @@ export class ProjectSession {
       version: body.version,
       clips: body.clips,
       trusted: body.trusted,
+      history: body.history,
       status: 'saved',
     })
+  }
+
+  /**
+   * Undo, redo or restore on the server: unsaved edits go in first, so they're
+   * a step too and can be got back.
+   */
+  async travel(path: string) {
+    if (this.state.status === 'conflict') return
+    clearTimeout(this.timer)
+    if (this.dirty) await this.save()
+    await this.saving
+    // The save may have just failed: don't move on top of it.
+    const { status } = this.state as SessionState
+    if (status === 'conflict' || status === 'error') return
+    const res = await this.fetchFn(this.url(path), { method: 'POST' })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      return this.update({ status: 'error', error: body.error ?? `failed (${res.status})` })
+    }
+    await this.reload()
   }
 
   /** Keep local edits, replacing whatever is on disk now. */
@@ -116,6 +145,6 @@ export class ProjectSession {
   /** Re-read clips and trust after voicing, recording or trusting. */
   async refresh() {
     const body = await (await this.fetchFn(this.url())).json()
-    this.update({ clips: body.clips, trusted: body.trusted })
+    this.update({ clips: body.clips, trusted: body.trusted, history: body.history })
   }
 }

@@ -15,6 +15,7 @@ import { voiceProject } from '@/core/voice/voice-project'
 import { FormercialSettings, checkFps } from '@/core/settings'
 import { createTrust } from '@/core/trust'
 import { PRESETS, fromPreset } from '@/presets'
+import { historyFileFor, openHistory } from '@/core/history'
 import { createWorkspace } from '@/core/workspace'
 
 /** A slug under the projects folder, or a path to a project folder. */
@@ -101,11 +102,14 @@ export function formercialCliPlugin(config: FormercialConfig): KickCliPlugin {
       const registry = createRegistry(config)
       const open = (arg: string) => {
         const { root, slug } = resolveProject(arg, ctx.projectRoot)
-        return { root, slug, ws: createWorkspace(diskStorage({ root })) }
+        const history = openHistory(
+          historyFileFor(ctx.projectRoot, root, FormercialSettings.get().historyFile),
+        )
+        return { root, slug, ws: createWorkspace(diskStorage({ root }), { history }) }
       }
       const group = program
         .command('formercial')
-        .description('Make commercials: new, voice, render, drivers, preview')
+        .description('Make commercials: new, voice, render, history, rollback, drivers, preview')
 
       group
         .command('new <name>')
@@ -118,6 +122,7 @@ export function formercialCliPlugin(config: FormercialConfig): KickCliPlugin {
             slug,
             opts.preset ? fromPreset(opts.preset, name, voice) : starterProject(name, voice),
             null,
+            'cli',
           )
           ctx.log(`Created ${join(root, slug).replace(`${ctx.projectRoot}/`, '')}/project.json`)
         })
@@ -205,6 +210,41 @@ export function formercialCliPlugin(config: FormercialConfig): KickCliPlugin {
             }
           },
         )
+
+      group
+        .command('history <project>')
+        .description('List the steps a project has been through')
+        .action(async (arg: string) => {
+          const { slug, ws } = open(arg)
+          if (!ws.history) throw new Error("history is off: SQLite couldn't start")
+          await ws.remember(slug, await ws.getFile(slug, 'project.json'), 'outside')
+          const current = (await ws.history.head(slug))?.id
+          for (const r of await ws.history.list(slug)) {
+            const when = new Date(r.createdAt).toISOString().slice(0, 19).replace('T', ' ')
+            const name = r.label ? ` [${r.label}]` : ''
+            ctx.log(
+              `${r.id === current ? '*' : ' '} ${String(r.id).padStart(5)}  ${when}  ${r.source.padEnd(8)} ${r.summary}${name}`,
+            )
+          }
+        })
+
+      group
+        .command('rollback <project> <step>')
+        .description('Put a project back to a step from history; the steps after it are kept')
+        .action(async (arg: string, step: string) => {
+          const { slug, ws } = open(arg)
+          await ws.restore(slug, Number(step))
+          ctx.log(`${slug} is back at step ${step}`)
+        })
+
+      group
+        .command('name <project> <step> [name]')
+        .description('Name a step, like "v1"; leave the name out to clear it')
+        .action(async (arg: string, step: string, name?: string) => {
+          const { slug, ws } = open(arg)
+          if (!ws.history) throw new Error("history is off: SQLite couldn't start")
+          await ws.history.setLabel(slug, Number(step), name?.trim() || null)
+        })
 
       group
         .command('drivers')

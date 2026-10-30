@@ -16,6 +16,10 @@ export const FormercialSettings = defineSettings(
         .describe(
           'Where trust for custom scenes is kept, outside the projects folder; default ~/.config/formercial/trust.json',
         ),
+      historyFile: z
+        .string()
+        .optional()
+        .describe('Where project history is kept; default under .formercial/, which git ignores'),
       voice: z.string().min(1).default('en-US-AvaNeural').describe('Voice for new projects'),
       fps: fps.default(30).describe('Render frame rate unless a render asks for another, 1 to 60'),
       driver: z

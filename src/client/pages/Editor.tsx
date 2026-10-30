@@ -1,12 +1,14 @@
 import { Link } from '@inertiajs/react'
-import { IconChevronLeft } from '@tabler/icons-react'
-import { useState } from 'react'
+import { IconArrowBackUp, IconArrowForwardUp, IconChevronLeft } from '@tabler/icons-react'
+import { useEffect, useState } from 'react'
 import { usePanelRef } from 'react-resizable-panels'
 import type { Project, Scene } from '@/core/project'
 import type { Clip } from '@/core/timeline'
 import { Button } from '@/client/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/client/components/ui/tabs'
 import { TooltipProvider } from '@/client/components/ui/tooltip'
+import { HistoryPanel } from '@/client/editor/history'
+import { IconButton } from '@/client/editor/icon-button'
 import { RenderPanel, ThemePanel } from '@/client/editor/panels'
 import { Preview, usePreviewTimeline } from '@/client/editor/preview'
 import { SceneActions, SceneForm } from '@/client/editor/scenes'
@@ -22,12 +24,13 @@ const STATUS = {
   error: 'Not saved',
 }
 
-type Tab = 'scene' | 'voice' | 'project' | 'render'
+type Tab = 'scene' | 'voice' | 'project' | 'render' | 'history'
 const TABS: [Tab, string][] = [
   ['scene', 'Scene'],
   ['voice', 'Voice'],
   ['project', 'Project'],
   ['render', 'Render'],
+  ['history', 'History'],
 ]
 
 export default function Editor(props: {
@@ -36,8 +39,12 @@ export default function Editor(props: {
   version: string
   clips: Record<string, Clip>
   trusted: boolean
+  history?: { undo: boolean; redo: boolean }
 }) {
-  const { project, clips, trusted, status, error, session } = useProject(props.slug, props)
+  const { project, version, clips, trusted, history, status, error, session } = useProject(
+    props.slug,
+    props,
+  )
   const [selected, setSelected] = useState(project.scenes[0].id)
   const [tab, setTab] = useState<Tab>('scene')
   const panel = usePanelRef()
@@ -46,6 +53,19 @@ export default function Editor(props: {
   const setScenes = (scenes: Scene[]) => session.set({ ...project, scenes })
   const setScene = (s: Scene) => setScenes(project.scenes.map((x) => (x.id === s.id ? s : x)))
   const hasCustom = project.scenes.some((s) => s.kind === 'custom')
+
+  // Ctrl+Z in a text field is that field's own undo; everywhere else it's the project's.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 'z') return
+      const el = e.target as HTMLElement
+      if (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return
+      e.preventDefault()
+      void session.travel(e.shiftKey ? '/redo' : '/undo')
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [session])
 
   return (
     <TooltipProvider>
@@ -78,6 +98,22 @@ export default function Editor(props: {
               </Button>
             </>
           )}
+          <div className="flex">
+            <IconButton
+              label="Undo"
+              disabled={!history?.undo}
+              onClick={() => void session.travel('/undo')}
+            >
+              <IconArrowBackUp />
+            </IconButton>
+            <IconButton
+              label="Redo"
+              disabled={!history?.redo}
+              onClick={() => void session.travel('/redo')}
+            >
+              <IconArrowForwardUp />
+            </IconButton>
+          </div>
           <ThemeToggle />
           <Button
             size="sm"
@@ -169,6 +205,13 @@ export default function Editor(props: {
               </TabsContent>
               <TabsContent value="render">
                 <RenderPanel slug={props.slug} project={project} trusted={trusted} />
+              </TabsContent>
+              <TabsContent value="history">
+                <HistoryPanel
+                  slug={props.slug}
+                  version={version}
+                  onRestore={(id) => void session.travel(`/history/${id}/restore`)}
+                />
               </TabsContent>
             </div>
           </Tabs>

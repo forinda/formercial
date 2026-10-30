@@ -1,0 +1,121 @@
+{
+  "version": 1,
+  "dialect": "sqlite",
+  "tables": {
+    "heads": {
+      "name": "heads",
+      "columns": {
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "primaryKey": true
+        },
+        "revision": {
+          "name": "revision",
+          "type": "integer",
+          "nullable": false,
+          "default": null,
+          "primaryKey": false
+        }
+      },
+      "indexes": [],
+      "foreignKeys": [],
+      "checks": []
+    },
+    "revisions": {
+      "name": "revisions",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "nullable": false,
+          "default": null,
+          "primaryKey": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "primaryKey": false
+        },
+        "parent": {
+          "name": "parent",
+          "type": "integer",
+          "nullable": true,
+          "default": null,
+          "primaryKey": false
+        },
+        "hash": {
+          "name": "hash",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "primaryKey": false
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "primaryKey": false
+        },
+        "summary": {
+          "name": "summary",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "primaryKey": false
+        },
+        "changeKey": {
+          "name": "changeKey",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "primaryKey": false
+        },
+        "label": {
+          "name": "label",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "primaryKey": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "integer",
+          "nullable": false,
+          "default": null,
+          "primaryKey": false
+        }
+      },
+      "indexes": [],
+      "foreignKeys": [],
+      "checks": []
+    },
+    "snapshots": {
+      "name": "snapshots",
+      "columns": {
+        "hash": {
+          "name": "hash",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "primaryKey": true
+        },
+        "gzip": {
+          "name": "gzip",
+          "type": "bytea",
+          "nullable": false,
+          "default": null,
+          "primaryKey": false
+        }
+      },
+      "indexes": [],
+      "foreignKeys": [],
+      "checks": []
+    }
+  }
+}

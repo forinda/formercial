@@ -1,0 +1,10 @@
+{
+  "id": "20261030_165742_history",
+  "name": "history",
+  "createdAt": "2026-10-30T16:57:42.876Z",
+  "reviewed": false,
+  "dialect": "sqlite",
+  "previousId": null,
+  "downIsDraft": false,
+  "empty": false
+}

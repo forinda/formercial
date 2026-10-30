@@ -25,6 +25,7 @@ export class PagesController {
         version,
         clips,
         trusted: await this.studio.trust.isTrusted(slug, project),
+        history: await this.studio.historyState(slug),
       }
     } catch {
       return null
