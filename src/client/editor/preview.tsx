@@ -25,9 +25,10 @@ export function Preview(props: {
   const host = useRef<HTMLDivElement>(null)
   const player = useRef<Player | null>(null)
   const [format, setFormat] = useState<Format>(project.formats[0] ?? '16:9')
-  const [t, setT] = useState(0)
+  const [t, setT] = useState(() => Math.min(1, timeline.total))
   const [playing, setPlaying] = useState(false)
-  const tRef = useRef(0)
+  // Open a second in, where the first scene has appeared, not on its blank start.
+  const tRef = useRef(Math.min(1, timeline.total))
   const audio = useRef<HTMLAudioElement | null>(null)
   const voiced = useRef('')
 
