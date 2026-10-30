@@ -24,6 +24,7 @@ export default defineConfig({
           { text: 'Custom scenes', link: '/guide/custom-scenes' },
           { text: 'Rendering', link: '/guide/rendering' },
           { text: 'Command line', link: '/guide/command-line' },
+          { text: 'Agents (MCP)', link: '/guide/agents' },
           { text: 'Troubleshooting', link: '/guide/troubleshooting' },
         ],
       },

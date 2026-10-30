@@ -1,5 +1,3 @@
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 import { defineConfig, mergeConfig } from 'vitest/config'
 import viteConfig from './vite.config.ts'
 
@@ -15,8 +13,7 @@ export default mergeConfig(
       globals: true,
       environment: 'node',
       include: ['src/**/*.test.ts'],
-      // Tests trust projects too: never in the real ~/.config file.
-      env: { FORMERCIAL_TRUST_FILE: join(tmpdir(), `formercial-trust-test-${process.pid}.json`) },
+      setupFiles: ['src/test-setup.ts'],
     },
   }),
 )

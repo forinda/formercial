@@ -15,6 +15,8 @@ formercial runs on your own machine, for one person, with no accounts. Its prote
 - **Project files.** Reads and writes stay inside the project's folder. Uploaded files are served sandboxed. A path that escapes a project, or an upload that runs as the app, is a vulnerability.
 - **Render tools.** Project values reach ffmpeg, edge-tts and Chromium only as arguments, never through a shell. ffmpeg reads local files only.
 
+- **Agents.** MCP tools can create, edit, voice and render projects, but can't trust a project. Custom scene code written through a tool stays untrusted until you approve it in the editor. A way for a tool call to make its own code run is a vulnerability.
+
 ## Not in scope
 
 - Running the app on a network. It has no accounts and isn't meant to be exposed.

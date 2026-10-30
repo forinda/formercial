@@ -296,6 +296,7 @@ describe('projects api', () => {
     ;({ version } = (
       await http
         .put('/api/v1/projects/demo')
+        .set('x-formercial-editor', '1')
         .send({ project: first, baseVersion: version })
         .expect(200)
     ).body)
@@ -303,6 +304,7 @@ describe('projects api', () => {
     const edited = { ...first, scenes: [scene('export function draw(t) { t }')] }
     const res = await http
       .put('/api/v1/projects/demo')
+      .set('x-formercial-editor', '1')
       .send({ project: edited, baseVersion: version })
       .expect(200)
     expect(res.body.trusted).toBe(true)
@@ -315,6 +317,7 @@ describe('projects api', () => {
     const { version, project } = (await http.get('/api/v1/projects/demo')).body
     const res = await http
       .put('/api/v1/projects/demo')
+      .set('x-formercial-editor', '1')
       .send({ project: { ...project, name: 'Renamed' }, baseVersion: version })
       .expect(200)
     expect(res.body.trusted).toBe(false)
@@ -325,6 +328,7 @@ describe('projects api', () => {
     const { version } = (await http.get('/api/v1/projects/demo')).body
     const res = await http
       .put('/api/v1/projects/demo')
+      .set('x-formercial-editor', '1')
       .send({ project: customProject(), baseVersion: version })
       .expect(200)
     expect(res.body.trusted).toBe(true)

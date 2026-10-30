@@ -32,6 +32,7 @@ pnpm kick formercial new "Learn TypeScript" --preset typescript-intro   # or jav
 - **Three shapes from one project,** with captions, music that dips under the voice, and fonts kept in the project.
 - **Scriptable:** plain `project.json`, `kick formercial` commands, and your own commands through a kick CLI plugin.
 - **Pluggable rendering:** bring your own render driver.
+- **Agents:** an MCP server, so agents can create projects and run renders. Custom code an agent writes waits for your approval.
 
 ## Documentation
 
@@ -39,6 +40,7 @@ pnpm kick formercial new "Learn TypeScript" --preset typescript-intro   # or jav
 - [Making a commercial](https://forinda.github.io/formercial/guide/making-a-commercial)
 - [Custom scenes](https://forinda.github.io/formercial/guide/custom-scenes)
 - [Command line](https://forinda.github.io/formercial/guide/command-line)
+- [Agents (MCP)](https://forinda.github.io/formercial/guide/agents)
 - [Configuration](https://forinda.github.io/formercial/reference/configuration)
 - [project.json reference](https://forinda.github.io/formercial/reference/project-json)
 

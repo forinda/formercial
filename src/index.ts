@@ -6,9 +6,10 @@ import 'reflect-metadata'
 import './config'
 import { bootstrap, getEnv, requestId, session, expressRuntime } from '@forinda/kickjs'
 import { InertiaAdapter, h, inertiaErrorHandler, inertiaNotFound } from '@forinda/kickjs-inertia'
+import { McpAdapter } from '@forinda/kickjs-mcp'
 import express from 'express'
 import { FormercialSettings } from './core/settings'
-import { localOnly } from './middleware/local-only'
+import { LOCAL_HOST, localOnly } from './middleware/local-only'
 import { modules } from './modules'
 import { storageAdapter } from './adapters/storage'
 import { projectsWatchAdapter } from './adapters/watch'
@@ -61,6 +62,15 @@ export const app = await bootstrap({
     // Files on disk under uploads/ until S3_BUCKET is set. Inject with @Autowired(STORAGE).
     storageAdapter(),
     projectsWatchAdapter(),
+    // Tools for agents: the routes marked @McpTool, called through the same
+    // middleware as the editor. At /_mcp/messages, or over stdio via kick formercial mcp.
+    McpAdapter({
+      name: 'formercial',
+      version: '0.1.0',
+      description: 'Make and render short product commercials from programmable scenes.',
+      mode: 'explicit',
+      allowedHosts: (host: string) => LOCAL_HOST.test(host),
+    }),
   ],
   // A failed validation on an Inertia visit goes back to the form with
   // `props.errors` instead of answering 422.

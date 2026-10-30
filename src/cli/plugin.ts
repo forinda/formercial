@@ -1,7 +1,8 @@
 // `kick formercial …`: make, voice and render commercials without opening the app.
 // Registered in kick.config.ts; add your own commands next to it with another
 // defineCliPlugin.
-import { spawn, type ChildProcess } from 'node:child_process'
+import { spawn, spawnSync, type ChildProcess } from 'node:child_process'
+import { randomBytes } from 'node:crypto'
 import { existsSync, statSync } from 'node:fs'
 import { createServer } from 'node:net'
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
@@ -69,6 +70,28 @@ async function startApp(
   }
   child.kill('SIGINT')
   throw new Error("the app didn't start within 60s")
+}
+
+/**
+ * What the built app needs to serve MCP over stdio. stdout is the protocol
+ * stream, so nothing but warnings may be logged (those go to stderr). The port
+ * serves the render page; the session secret only has to exist for this run.
+ */
+export function mcpEnv(opts: {
+  port: number
+  projects: string
+  env: NodeJS.ProcessEnv | Record<string, string | undefined>
+}): Record<string, string | undefined> {
+  return {
+    ...opts.env,
+    KICK_MCP_STDIO: '1',
+    NODE_ENV: 'production',
+    PORT: String(opts.port),
+    APP_URL: `http://localhost:${opts.port}`,
+    SESSION_SECRET: opts.env.SESSION_SECRET ?? randomBytes(32).toString('hex'),
+    FORMERCIAL_PROJECTS: opts.projects,
+    LOG_LEVEL: 'warn',
+  }
 }
 
 export function formercialCliPlugin(config: FormercialConfig): KickCliPlugin {
@@ -201,6 +224,35 @@ export function formercialCliPlugin(config: FormercialConfig): KickCliPlugin {
           const app = await startApp(ctx.projectRoot, root)
           ctx.log(`Editing ${slug}: ${app.origin}/p/${slug}  (Ctrl+C to stop)`)
           await new Promise<void>((done) => process.once('SIGINT', () => (app.stop(), done())))
+        })
+
+      group
+        .command('mcp')
+        .description('Serve the agent tools over stdio, for MCP clients that start the server')
+        .action(async () => {
+          const entry = join(ctx.projectRoot, 'dist/index.js')
+          if (!existsSync(entry)) {
+            // Build output goes to stderr: stdout belongs to the protocol.
+            const build = spawnSync('pnpm', ['build'], {
+              cwd: ctx.projectRoot,
+              stdio: ['ignore', process.stderr, process.stderr],
+            })
+            if (build.status !== 0) throw new Error('pnpm build failed')
+          }
+          const child = spawn(process.execPath, [entry], {
+            cwd: ctx.projectRoot,
+            stdio: 'inherit',
+            env: mcpEnv({
+              port: await freePort(),
+              projects: resolve(ctx.projectRoot, FormercialSettings.get().projects),
+              env: process.env,
+            }) as NodeJS.ProcessEnv,
+          })
+          for (const signal of ['SIGINT', 'SIGTERM'] as const) {
+            process.on(signal, () => child.kill(signal))
+          }
+          child.on('exit', (code) => process.exit(code ?? 0))
+          await new Promise(() => {})
         })
     },
   })

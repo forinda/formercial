@@ -46,6 +46,9 @@ describe('ProjectSession', () => {
     await vi.advanceTimersByTimeAsync(600)
     expect(state.puts).toHaveLength(1)
     expect(state.puts[0].baseVersion).toBe('v1')
+    const [, init] = (fetch as unknown as { mock: { calls: [string, RequestInit][] } }).mock
+      .calls[0]
+    expect((init.headers as Record<string, string>)['x-formercial-editor']).toBe('1')
     expect(s.state).toMatchObject({ status: 'saved', version: 'v2' })
   })
 

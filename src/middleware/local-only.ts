@@ -4,7 +4,7 @@
 // trusting a project from a page you happened to visit).
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
-const LOCAL_HOST = /^(localhost|127\.\d+\.\d+\.\d+|\[::1\])(:\d+)?$/i
+export const LOCAL_HOST = /^(localhost|127\.\d+\.\d+\.\d+|\[::1\])(:\d+)?$/i
 const LOOPBACK = /^(127\.\d+\.\d+\.\d+|::1|::ffff:127\.\d+\.\d+\.\d+)$/
 const SAFE = new Set(['GET', 'HEAD', 'OPTIONS'])
 

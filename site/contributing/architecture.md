@@ -59,6 +59,10 @@ A custom driver gets the same job (timeline, render URL, music, work folder), so
 
 The editor keeps a `ProjectSession`. It saves 600ms after the last edit, sending the version it started from. The server refuses a save made against an older version (409). When `project.json` changes on disk, the file watcher tells open editors over SSE: a clean editor reloads, and one with unsaved edits shows "Changed on disk". The editor waits for its own save to land before judging a change, so its own echo is never a conflict.
 
+## Agents
+
+`McpAdapter` turns the routes marked `@McpTool` into MCP tools. A tool call is a request to that route, through the same middleware as the editor, so there's no second implementation. Tool calls arrive through an in-process server on `127.0.0.1` that doesn't serve page assets, so `renderOrigin` takes the render page's port from `Host`, or the configured port over stdio.
+
 ## Trust
 
-Custom scenes are code from the project. The player runs them only with `trusted: true`, and the server decides that per project from a hash of the custom code. A save from the editor keeps trust. A change from anywhere else needs trusting again. The render page reports any scene still locked, and the render fails instead of showing a placeholder.
+Custom scenes are code from the project. The player runs them only with `trusted: true`, and the server decides that per project from a hash of the custom code. A save from the editor (marked `x-formercial-editor`) keeps trust. A change from anywhere else, including an MCP tool, needs trusting again. The render page reports any scene still locked, and the render fails instead of showing a placeholder.

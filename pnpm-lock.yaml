@@ -14,6 +14,9 @@ importers:
       '@forinda/kickjs-inertia':
         specifier: ^0.4.0
         version: 0.4.0(@forinda/kickjs@10.14.0(dotenv@17.4.2)(express@5.3.0)(serve-static@2.2.1)(zod@4.6.7))
+      '@forinda/kickjs-mcp':
+        specifier: ^9.1.2
+        version: 9.1.2(@forinda/kickjs@10.14.0(dotenv@17.4.2)(express@5.3.0)(serve-static@2.2.1)(zod@4.6.7))(@modelcontextprotocol/server@2.4.0)(zod@4.6.7)
       '@forinda/kickjs-schema':
         specifier: ^0.2.4
         version: 0.2.4(zod@4.6.7)
@@ -26,6 +29,9 @@ importers:
       '@inertiajs/react':
         specifier: ^3.9.1
         version: 3.9.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@modelcontextprotocol/server':
+        specifier: ^2.4.0
+        version: 2.4.0
       dotenv:
         specifier: ^17.4.2
         version: 17.4.2
@@ -479,6 +485,17 @@ packages:
     peerDependencies:
       '@forinda/kickjs': '>=10.0.0'
 
+  '@forinda/kickjs-mcp@9.1.2':
+    resolution: {integrity: sha512-Kh7UkZG64kx9ltFJZCWpNBo72pSa3nRnOgl/l67dbRZdgDVb7aRlAuLTvrtZmYmR3xN12E7svmFoeCyigie/eA==}
+    engines: {node: '>=20.0'}
+    peerDependencies:
+      '@forinda/kickjs': '>=8.5.0 <11.0.0'
+      '@modelcontextprotocol/server': ^2.3.1
+      zod: ^4.6.5
+    peerDependenciesMeta:
+      zod:
+        optional: true
+
   '@forinda/kickjs-schema@0.2.4':
     resolution: {integrity: sha512-5/4xj217ymT2/PEcBPVdgXb3p4N0NW3rG39HNBVJWhkczP9mhmwQu8GyXndf0PoJt3V2nI0EqcIBxf8PTTyA4g==}
     engines: {node: '>=20.0'}
@@ -618,6 +635,14 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@modelcontextprotocol/core@2.4.0':
+    resolution: {integrity: sha512-z8QBKqdfXLPzkLQuG4xp8hrVEMm1PZ1IgxMN2sMbJiFiAKOWXnAzogXn2W4aqIBlP1ea6U5yiqVquvUNM1Cj6Q==}
+    engines: {node: '>=20'}
+
+  '@modelcontextprotocol/server@2.4.0':
+    resolution: {integrity: sha512-rgR9yxSaAJ+bcsi/XroT/S2AfPiIWloXAnrdfYSCms9ivVju0ishu/wW0J21Ho6+ZOR1r7RyeRbjiRuF87ix5Q==}
+    engines: {node: '>=20'}
 
   '@napi-rs/lzma-linux-x64-gnu@1.5.1':
     resolution: {integrity: sha512-oTXEIha4SsuXdTA4Iyskj0kpdx2yVXdhd75c2v3xGrHFfVMsbhTPZU/nMPL4sWKo4pBHm3aucLaqGlF696dTyQ==}
@@ -3286,6 +3311,18 @@ snapshots:
     dependencies:
       '@forinda/kickjs': 10.14.0(dotenv@17.4.2)(express@5.3.0)(serve-static@2.2.1)(zod@4.6.7)
 
+  '@forinda/kickjs-mcp@9.1.2(@forinda/kickjs@10.14.0(dotenv@17.4.2)(express@5.3.0)(serve-static@2.2.1)(zod@4.6.7))(@modelcontextprotocol/server@2.4.0)(zod@4.6.7)':
+    dependencies:
+      '@forinda/kickjs': 10.14.0(dotenv@17.4.2)(express@5.3.0)(serve-static@2.2.1)(zod@4.6.7)
+      '@forinda/kickjs-schema': 0.2.4(zod@4.6.7)
+      '@modelcontextprotocol/server': 2.4.0
+    optionalDependencies:
+      zod: 4.6.7
+    transitivePeerDependencies:
+      - '@valibot/to-json-schema'
+      - valibot
+      - yup
+
   '@forinda/kickjs-schema@0.2.4(zod@4.6.7)':
     optionalDependencies:
       zod: 4.6.7
@@ -3378,6 +3415,15 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.6.0
+
+  '@modelcontextprotocol/core@2.4.0':
+    dependencies:
+      zod: 4.6.7
+
+  '@modelcontextprotocol/server@2.4.0':
+    dependencies:
+      '@modelcontextprotocol/core': 2.4.0
+      zod: 4.6.7
 
   '@napi-rs/lzma-linux-x64-gnu@1.5.1':
     optional: true

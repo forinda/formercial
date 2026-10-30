@@ -7,7 +7,7 @@ import { describe, expect, test } from 'vitest'
 import type { RenderDriver } from '@/core/render/driver'
 import { parseProject, starterProject } from '@/core/project'
 import { createWorkspace } from '@/core/workspace'
-import { formercialCliPlugin, resolveProject } from './plugin'
+import { formercialCliPlugin, mcpEnv, resolveProject } from './plugin'
 
 const fakeDriver: RenderDriver = {
   name: 'farm',
@@ -71,6 +71,7 @@ describe('kick formercial', () => {
       'render',
       'drivers',
       'preview',
+      'mcp',
     ])
   })
 
@@ -106,5 +107,21 @@ describe('kick formercial', () => {
     const { project } = await ws.read('ts-ad')
     expect(project.name).toBe('TS Ad')
     expect(project.scenes.map((s) => s.id)[0]).toBe('ts-intro')
+  })
+
+  test('the stdio server gets a clean protocol stream and what production needs', () => {
+    const env = mcpEnv({ port: 4100, projects: '/work/ads', env: {} })
+    expect(env).toMatchObject({
+      KICK_MCP_STDIO: '1',
+      NODE_ENV: 'production',
+      PORT: '4100',
+      APP_URL: 'http://localhost:4100',
+      FORMERCIAL_PROJECTS: '/work/ads',
+      LOG_LEVEL: 'warn',
+    })
+    expect(env.SESSION_SECRET!.length).toBeGreaterThanOrEqual(32)
+    expect(mcpEnv({ port: 1, projects: 'p', env: { SESSION_SECRET: 'mine' } }).SESSION_SECRET).toBe(
+      'mine',
+    )
   })
 })

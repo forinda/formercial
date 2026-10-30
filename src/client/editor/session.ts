@@ -64,7 +64,7 @@ export class ProjectSession {
     try {
       res = await this.fetchFn(this.url(), {
         method: 'PUT',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', 'x-formercial-editor': '1' },
         body: JSON.stringify({ project: sent, baseVersion }),
       })
       body = await res.json()

@@ -34,10 +34,12 @@
   "dependencies": {
     "@forinda/kickjs": "^10.14.0",
     "@forinda/kickjs-inertia": "^0.4.0",
+    "@forinda/kickjs-mcp": "^9.1.2",
     "@forinda/kickjs-schema": "^0.2.4",
     "@forinda/kickjs-storage": "^0.4.0",
     "@inertiajs/core": "^3.9.1",
     "@inertiajs/react": "^3.9.1",
+    "@modelcontextprotocol/server": "^2.4.0",
     "dotenv": "^17.4.2",
     "express": "^5.3.0",
     "react": "^19.3.1",

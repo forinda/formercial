@@ -4,6 +4,7 @@ import formercialConfig from '@/formercial.config'
 import { DriversController } from './drivers.controller'
 import { PresetsController } from './presets.controller'
 import { ProjectsController } from './projects.controller'
+import { SchemaController } from './schema.controller'
 import { REGISTRY } from './tokens'
 
 export const ProjectsModule = defineModule({
@@ -17,6 +18,7 @@ export const ProjectsModule = defineModule({
         { path: '/projects', controller: ProjectsController },
         { path: '/drivers', controller: DriversController },
         { path: '/presets', controller: PresetsController },
+        { path: '/project-schema', controller: SchemaController },
       ]
     },
   }),

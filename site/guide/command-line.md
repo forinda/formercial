@@ -60,6 +60,14 @@ pnpm kick formercial preview my-product
 
 Starts the app and prints the editor's address for that project. Stop it with Ctrl+C.
 
+### mcp
+
+```bash
+pnpm kick formercial mcp
+```
+
+Serves the agent tools over stdio, for MCP clients that start the server themselves. See [Agents](./agents).
+
 ## Naming a project
 
 `<project>` is either:

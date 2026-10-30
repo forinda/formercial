@@ -1,7 +1,9 @@
 // JSON routes the editor calls. Projects are addressed by slug; files inside a
 // project by `?path=`, checked against the project folder on every call.
-import { join } from 'node:path'
-import { Controller, Delete, Get, Post, Put, type RequestContext } from '@forinda/kickjs'
+import { join, resolve } from 'node:path'
+import { Controller, Delete, Get, Post, Put, getEnv, type RequestContext } from '@forinda/kickjs'
+import { McpTool } from '@forinda/kickjs-mcp'
+import { z } from 'zod'
 import { checkRange } from '@forinda/kickjs-storage'
 import { storeGoogleFont } from '@/core/fonts'
 import { probeSeconds } from '@/core/media'
@@ -18,7 +20,9 @@ import {
 import { clipLengths, recordingPath, voiceProject } from '@/core/voice/voice-project'
 import { withWorkdir } from '@/core/workdir'
 import { PathError, StaleWriteError } from '@/core/workspace'
+import { projectsRoot } from '@/adapters/storage'
 import { fromPreset } from '@/presets'
+import { renderOrigin } from './render-origin'
 import { Studio } from './studio.service'
 
 const MAX_UPLOAD = 50 * 1024 * 1024
@@ -92,11 +96,25 @@ export class ProjectsController {
     return path
   }
 
+  @McpTool({
+    name: 'list_projects',
+    description: 'Every commercial in the workspace, as { slug, name }.',
+    annotations: { readOnlyHint: true },
+  })
   @Get('/')
   list(ctx: RequestContext) {
     return this.handle(ctx, async () => ctx.json(await this.studio.ws.list()))
   }
 
+  @McpTool({
+    name: 'create_project',
+    description:
+      'Create a commercial, blank or from a preset (see list_presets). Returns its slug.',
+    inputSchema: z.object({
+      name: z.string().describe('Display name; the slug comes from it'),
+      preset: z.string().optional().describe('A preset id from list_presets'),
+    }),
+  })
   @Post('/')
   create(ctx: RequestContext) {
     return this.handle(ctx, async () => {
@@ -120,6 +138,12 @@ export class ProjectsController {
     })
   }
 
+  @McpTool({
+    name: 'get_project',
+    description:
+      'Read a commercial: its project.json as `project`, the `version` to send back with update_project, its voice `clips`, and whether its custom scenes are `trusted`.',
+    annotations: { readOnlyHint: true },
+  })
   @Get('/:slug')
   read(ctx: RequestContext) {
     return this.handle(ctx, async () => {
@@ -136,23 +160,33 @@ export class ProjectsController {
     })
   }
 
+  @McpTool({
+    name: 'update_project',
+    description:
+      'Replace a project.json. Send the version from get_project; a stale one is refused with the current version. Custom scene code needs the user to trust it in the editor before it runs or renders: `trusted: false` in the answer means ask them to.',
+    inputSchema: z.object({
+      project: z.record(z.string(), z.unknown()).describe('The whole project; see project_schema'),
+      baseVersion: z.string().describe('The version this edit started from'),
+    }),
+  })
   @Put('/:slug')
   write(ctx: RequestContext) {
     return this.handle(ctx, async () => {
       const { slug } = ctx.params
       const { project, baseVersion } = ctx.body ?? {}
-      // Your own edits in the editor keep a trusted project trusted (this route
-      // only answers same-origin requests from this machine); edits from
-      // anywhere else, like a pulled change, still need trusting again.
+      // Your own edits in the editor keep a trusted project trusted. Anything
+      // else, like an agent's tool call or a pulled change, needs trusting again.
       const before = await this.studio.ws.read(slug).catch(() => null)
-      const wasTrusted = before ? await this.studio.trust.isTrusted(slug, before.project) : false
+      const fromEditor = ctx.headers['x-formercial-editor'] === '1' && !ctx.headers['x-mcp-tool']
+      const keepTrust =
+        fromEditor && before ? await this.studio.trust.isTrusted(slug, before.project) : false
       const { version } = await this.studio.ws.write(
         slug,
         project as Project,
         String(baseVersion ?? ''),
       )
       const saved = (await this.studio.ws.read(slug)).project
-      if (wasTrusted) await this.studio.trust.set(slug, saved, true)
+      if (keepTrust) await this.studio.trust.set(slug, saved, true)
       const trusted = await this.studio.trust.isTrusted(slug, saved)
       this.studio.emit(slug, 'project-changed', { version })
       return ctx.json({ version, trusted })
@@ -184,6 +218,12 @@ export class ProjectsController {
     })
   }
 
+  @McpTool({
+    name: 'voice_project',
+    description:
+      "Generate any missing or changed voice lines with edge-tts. Lines are sent to Microsoft's speech service.",
+    inputSchema: z.object({}),
+  })
   @Post('/:slug/voice')
   voiceAll(ctx: RequestContext) {
     return this.handle(ctx, () => this.voice(ctx))
@@ -291,6 +331,12 @@ export class ProjectsController {
     })
   }
 
+  @McpTool({
+    name: 'get_renders',
+    description:
+      'Render jobs with their state and progress, the finished files, and `folder`: where the files are on disk.',
+    annotations: { readOnlyHint: true },
+  })
   @Get('/:slug/renders')
   renders(ctx: RequestContext) {
     return this.handle(ctx, async () => {
@@ -301,10 +347,23 @@ export class ProjectsController {
       return ctx.json({
         jobs: this.studio.queue.jobs.filter((j) => j.slug === slug),
         files: page.files.map((f) => f.key.slice(slug.length + 1)),
+        folder: resolve(projectsRoot(), slug, 'renders'),
       })
     })
   }
 
+  @McpTool({
+    name: 'render_project',
+    description:
+      'Queue a render, returning at once with job ids. Poll get_renders for progress. Takes about 2-3 times the length of the spot.',
+    inputSchema: z.object({
+      format: z
+        .enum(['16:9', '9:16', '1:1', 'all'])
+        .describe("A format, or 'all' for the project's formats"),
+      driver: z.string().optional().describe('A driver from list_drivers; default chromium-ffmpeg'),
+      fps: z.number().int().min(1).max(60).optional().describe('Frames per second'),
+    }),
+  })
   @Post('/:slug/renders')
   render(ctx: RequestContext) {
     return this.handle(ctx, async () => {
@@ -322,10 +381,7 @@ export class ProjectsController {
       if (!asked.every((f: unknown): f is Format => typeof f === 'string' && f in FORMATS)) {
         throw new HttpError(400, 'format is 16:9, 9:16, 1:1 or all')
       }
-      // Chromium opens the render page on this server's own loopback port;
-      // never from the Host header, which the request controls.
-      const port = (ctx.req as unknown as { socket: { localPort?: number } }).socket.localPort
-      const origin = `http://127.0.0.1:${port}`
+      const origin = renderOrigin(ctx.req as never, getEnv('PORT'))
       let fps: number | undefined
       try {
         fps = ctx.body?.fps === undefined ? undefined : checkFps(ctx.body.fps)
