@@ -20,12 +20,14 @@ You need Node 22+, pnpm, ffmpeg and ffprobe. For render tests you also need a Ch
 git clone https://github.com/forinda/formercial.git
 cd formercial
 pnpm install
-pnpm dev                 # the editor
+pnpm exec kick typegen   # generated types; pnpm dev also does this
 pnpm test                # all tests (render tests skip without Chromium/ffmpeg)
 pnpm exec tsc --noEmit
 pnpm exec oxlint src
 pnpm exec oxfmt src      # format; CI checks with --check
 ```
+
+To run the editor, use `pnpm dev`. It keeps running, so give it its own terminal.
 
 Read [the architecture page](https://forinda.github.io/formercial/contributing/architecture) for how the pieces fit together.
 
