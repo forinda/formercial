@@ -1,6 +1,5 @@
 // The built-in render driver: Chromium draws each frame of the render page,
 // ffmpeg encodes them and lays the voice and music under the picture.
-import { spawn } from 'node:child_process'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { audioGraph } from '@/core/audio'
@@ -9,6 +8,7 @@ import { FORMATS } from '@/core/project'
 import { toSrt } from '@/core/srt'
 import { findChrome, launchChrome } from './cdp'
 import type { RenderDriver } from './driver'
+import { startEncoder } from './encoder'
 
 const stamp = () =>
   new Date().toISOString().replace(/[-:]/g, '').replace(/\..*/, '').replace('T', '-')
@@ -34,38 +34,26 @@ export const chromiumFfmpeg: RenderDriver = {
     const picture = join(dir, `${name}.picture.mp4`)
 
     const page = await launchChrome()
-    const encoder = spawn(
-      'ffmpeg',
-      [
-        '-y',
-        '-loglevel',
-        'error',
-        '-f',
-        'image2pipe',
-        '-framerate',
-        String(job.fps),
-        '-i',
-        '-',
-        '-c:v',
-        'libx264',
-        '-pix_fmt',
-        'yuv420p',
-        '-preset',
-        'medium',
-        '-crf',
-        '18',
-        picture,
-      ],
-      { stdio: ['pipe', 'ignore', 'pipe'] },
-    )
-    let encoderLog = ''
-    encoder.stderr.on('data', (d) => (encoderLog += d))
-    const encoded = new Promise<void>((resolve, reject) => {
-      encoder.on('error', reject)
-      encoder.on('close', (code) =>
-        code === 0 ? resolve() : reject(new Error(`ffmpeg: ${encoderLog.slice(-300)}`)),
-      )
-    })
+    const encoder = startEncoder('ffmpeg', [
+      '-y',
+      '-loglevel',
+      'error',
+      '-f',
+      'image2pipe',
+      '-framerate',
+      String(job.fps),
+      '-i',
+      '-',
+      '-c:v',
+      'libx264',
+      '-pix_fmt',
+      'yuv420p',
+      '-preset',
+      'medium',
+      '-crf',
+      '18',
+      picture,
+    ])
 
     try {
       await page.send('Page.enable')
@@ -92,10 +80,9 @@ export const chromiumFfmpeg: RenderDriver = {
         if (Date.now() - s > 30000) return fail(new Error('render page never set window.cxc'))
         setTimeout(poll, 50) })() })`)
 
-      const firstFrames = new Set(job.timeline.scenes.map((s) => Math.round(s.start * job.fps)))
       for (let f = 0; f < frames; f++) {
         await evaluate(`window.cxc.frame(${f / job.fps})`)
-        if (firstFrames.has(f) || f === frames - 1) {
+        {
           const errors = await evaluate<Record<string, string>>('window.cxc.errors()')
           const [id, message] = Object.entries(errors)[0] ?? []
           if (id) throw new Error(`scene ${id}: ${message}`)
@@ -104,13 +91,10 @@ export const chromiumFfmpeg: RenderDriver = {
           format: 'jpeg',
           quality: 92,
         })
-        if (!encoder.stdin.write(Buffer.from(data, 'base64'))) {
-          await new Promise((r) => encoder.stdin.once('drain', r))
-        }
+        await encoder.write(Buffer.from(data, 'base64'))
         if (f % job.fps === 0) progress({ phase: 'frames', frame: f, frames })
       }
-      encoder.stdin.end()
-      await encoded
+      await encoder.end()
     } catch (err) {
       encoder.kill()
       throw err

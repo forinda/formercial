@@ -37,6 +37,8 @@ export async function launchChrome(): Promise<Page> {
     bin,
     [
       '--no-sandbox',
+      // /dev/shm is small on many machines; a renderer that runs out of it hangs.
+      '--disable-dev-shm-usage',
       '--remote-debugging-port=0',
       '--hide-scrollbars',
       '--mute-audio',
