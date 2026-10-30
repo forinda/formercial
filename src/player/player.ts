@@ -47,6 +47,7 @@ export function createPlayer(
 ): Player {
   const [width, height] = FORMATS[format]
   const { colors, fonts } = project.theme
+  const box = boxColors(colors.bg, colors.fg)
   const stage = document.createElement('div')
   stage.className = 'fm-stage'
   stage.dataset.format = format
@@ -58,7 +59,9 @@ export function createPlayer(
       : []),
     `--u: calc(${UNIT[format]} * 1cqw)`,
     ...Object.entries(colors).map(([k, v]) => `--${k}: ${v}`),
-    ...Object.entries(boxColors(colors.bg)).map(([k, v]) => `--${k}: ${v}`),
+    `--box: ${box.box}`,
+    `--keyword: ${box.keyword}`,
+    `--call: ${box.call}`,
     `--display: '${fonts.display}', system-ui, sans-serif`,
     `--body: '${fonts.body}', system-ui, sans-serif`,
     `--mono: '${fonts.mono}', ui-monospace, monospace`,

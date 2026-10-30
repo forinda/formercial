@@ -31,15 +31,60 @@ export function luminance(hex: string): number {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b
 }
 
-/** The colors for code and boxes, which have to suit the theme's background. */
-export function boxColors(bg: string): { box: string; keyword: string; call: string } {
-  return luminance(bg) > 0.4
-    ? {
-        box: 'color-mix(in srgb, var(--bg) 92%, var(--fg))',
-        keyword: '#6d28d9',
-        call: '#1557b0',
-      }
-    : { box: 'color-mix(in srgb, var(--bg) 80%, black)', keyword: '#c9a8ff', call: '#8ec5ff' }
+const rgb = (hex: string) => [0, 1, 2].map((i) => channel(hex, i))
+/** `amount` of the way from one color to another, as color-mix in srgb does it. */
+const mix = (from: number[], to: number[], amount: number) =>
+  from.map((c, i) => c + (to[i] - c) * amount)
+const toHex = (c: number[]) =>
+  `#${c
+    .map((x) =>
+      Math.round(x * 255)
+        .toString(16)
+        .padStart(2, '0'),
+    )
+    .join('')}`
+
+/** How far apart two colors read, from 1 (the same) to 21 (black on white). */
+export function contrast(a: string, b: string): number {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x)
+  return (hi + 0.05) / (lo + 0.05)
+}
+
+const FOR_DARK = { keyword: '#c9a8ff', call: '#8ec5ff' }
+const FOR_LIGHT = { keyword: '#6d28d9', call: '#1557b0' }
+const BLACK = [0, 0, 0]
+const READABLE = 4.5
+
+/**
+ * The colors for code and boxes: the first that actually read on the box they'd
+ * be drawn on. Middle greys read with neither palette as they are, so those get a
+ * much darker box.
+ */
+export function boxColors(bg: string, fg: string) {
+  const from = rgb(bg)
+  const options = [
+    {
+      ...FOR_DARK,
+      box: 'color-mix(in srgb, var(--bg) 80%, black)',
+      rendered: mix(from, BLACK, 0.2),
+    },
+    {
+      ...FOR_LIGHT,
+      box: 'color-mix(in srgb, var(--bg) 92%, var(--fg))',
+      rendered: mix(from, rgb(fg), 0.08),
+    },
+    {
+      ...FOR_DARK,
+      box: 'color-mix(in srgb, var(--bg) 30%, black)',
+      rendered: mix(from, BLACK, 0.7),
+    },
+  ].map((o) => ({ ...o, rendered: toHex(o.rendered) }))
+  return (
+    options.find(
+      (o) =>
+        contrast(o.keyword, o.rendered) >= READABLE && contrast(o.call, o.rendered) >= READABLE,
+    ) ?? options[2]
+  )
 }
 
 export const SCENE_CSS = `
