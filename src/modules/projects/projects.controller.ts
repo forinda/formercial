@@ -222,6 +222,11 @@ export class ProjectsController {
       const headers: Record<string, string> = {
         'content-type': typeOf(path),
         'accept-ranges': 'bytes',
+        // Uploaded files (an SVG logo, say) can hold script: served sandboxed,
+        // so opening one directly can't act as the app. <img>, <audio> and
+        // fonts are unaffected.
+        'content-security-policy': "sandbox; default-src 'none'; style-src 'unsafe-inline'",
+        'x-content-type-options': 'nosniff',
       }
       const m = /^bytes=(\d*)-(\d*)$/.exec(String(ctx.headers.range ?? ''))
       if (m && (m[1] || m[2])) {
@@ -292,8 +297,14 @@ export class ProjectsController {
       if (!asked.every((f: unknown): f is Format => typeof f === 'string' && f in FORMATS)) {
         throw new HttpError(400, 'format is 16:9, 9:16, 1:1 or all')
       }
-      const origin = `${ctx.req.protocol ?? 'http'}://${ctx.headers.host}`
-      const fps = ctx.body?.fps ? Number(ctx.body.fps) : undefined
+      // Chromium opens the render page on this server's own loopback port;
+      // never from the Host header, which the request controls.
+      const port = (ctx.req as unknown as { socket: { localPort?: number } }).socket.localPort
+      const origin = `http://127.0.0.1:${port}`
+      const fps = ctx.body?.fps === undefined ? undefined : Number(ctx.body.fps)
+      if (fps !== undefined && !(Number.isInteger(fps) && fps >= 1 && fps <= 60)) {
+        throw new HttpError(400, 'fps is a whole number from 1 to 60')
+      }
       const jobs = asked.map((format: Format) =>
         this.studio.render(slug, format, name, origin, fps),
       )

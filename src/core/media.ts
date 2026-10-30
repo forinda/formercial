@@ -27,6 +27,9 @@ export function hasCommand(cmd: string, args = ['-version']): Promise<boolean> {
 
 export async function probeSeconds(file: string): Promise<number> {
   const out = await run('ffprobe', [
+    // Local files only: a crafted upload can't make ffprobe fetch anything.
+    '-protocol_whitelist',
+    'file,pipe',
     '-v',
     'error',
     '-show_entries',

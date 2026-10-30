@@ -14,12 +14,15 @@ import type { RenderDriver } from '../../core/render/driver'
 import { createRegistry } from '../../core/render/registry'
 import { ProjectsModule } from './projects.module'
 import { REGISTRY } from './tokens'
+import { localOnly } from '../../middleware/local-only'
 
+const urls: string[] = []
 function driver(name: string, opts: { ok?: boolean; hold?: Promise<void> } = {}): RenderDriver {
   return {
     name,
     check: async () => ({ ok: opts.ok ?? true, missing: opts.ok === false ? ['ffmpeg'] : [] }),
     async render(job, dir) {
+      urls.push(job.renderUrl)
       await opts.hold
       const { mkdirSync, writeFileSync } = await import('node:fs')
       mkdirSync(join(dir, 'renders'), { recursive: true })
@@ -38,7 +41,7 @@ async function boot(drivers: RenderDriver[] = [driver('fake')]) {
   const { app } = await createTestApp({
     runtime: expressRuntime(),
     modules: [ProjectsModule()],
-    middlewares: [express.json()],
+    middlewares: [localOnly(), express.json()],
     overrides: [
       [STORAGE, storage],
       [REGISTRY, createRegistry({ drivers })],
@@ -210,5 +213,50 @@ describe('projects api', () => {
       name: 'broken',
       check: { ok: false, missing: ['ffmpeg'] },
     })
+  })
+
+  test('refuses other hosts and cross-site origins', async () => {
+    const http = await boot()
+    await http.get('/api/v1/projects').set('host', 'evil.example').expect(403)
+    await http
+      .post('/api/v1/projects/demo/trust')
+      .set('origin', 'http://evil.example')
+      .send({ trusted: true })
+      .expect(403)
+    await http.get('/api/v1/projects').set('host', 'localhost:3000').expect(200)
+  })
+
+  test("renders from the server's own loopback address, whatever Host says", async () => {
+    const http = await boot()
+    await http
+      .post('/api/v1/projects/demo/renders')
+      .set('host', 'localhost:9')
+      .send({ format: '16:9', driver: 'fake' })
+      .expect(202)
+    await new Promise((r) => setTimeout(r, 100))
+    expect(urls.at(-1)).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/p\/demo\/render\/16x9$/)
+    expect(urls.at(-1)).not.toContain(':9/')
+  })
+
+  test('fps must be a whole number from 1 to 60', async () => {
+    const http = await boot()
+    for (const fps of [0, 61, 2.5, 'x']) {
+      await http
+        .post('/api/v1/projects/demo/renders')
+        .send({ format: '16:9', driver: 'fake', fps })
+        .expect(400)
+    }
+  })
+
+  test('project files are served sandboxed', async () => {
+    const http = await boot()
+    await http
+      .put('/api/v1/projects/demo/file?path=media/logo.svg')
+      .set('content-type', 'image/svg+xml')
+      .send('<svg onload="alert(1)"/>')
+      .expect(204)
+    const res = await http.get('/api/v1/projects/demo/file?path=media/logo.svg').expect(200)
+    expect(res.headers['content-security-policy']).toMatch(/sandbox/)
+    expect(res.headers['x-content-type-options']).toBe('nosniff')
   })
 })

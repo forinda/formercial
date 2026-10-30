@@ -128,6 +128,8 @@ export const chromiumFfmpeg: RenderDriver = {
       '-y',
       '-loglevel',
       'error',
+      '-protocol_whitelist',
+      'file,pipe',
       '-i',
       picture,
       ...clips.flatMap((c) => ['-i', join(dir, c)]),
