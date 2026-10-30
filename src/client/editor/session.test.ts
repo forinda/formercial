@@ -86,4 +86,50 @@ describe('ProjectSession', () => {
     expect(s.state).toMatchObject({ status: 'saved', version: 'v2' })
     expect(s.state.project.name).toBe('A')
   })
+
+  test('its own save echoing back before the response is not a conflict', async () => {
+    let release!: () => void
+    const held = new Promise<void>((r) => (release = r))
+    const names: string[] = []
+    const fetch = vi.fn(async (_url: string, init?: RequestInit) => {
+      if (init?.method === 'PUT') {
+        const body = JSON.parse(String(init.body))
+        names.push(body.project.name)
+        if (names.length === 1) await held
+        return new Response(JSON.stringify({ version: `v${names.length + 1}`, trusted: true }))
+      }
+      return new Response(
+        JSON.stringify({
+          project: starterProject('Server'),
+          version: 'v2',
+          clips: {},
+          trusted: true,
+        }),
+      )
+    }) as unknown as typeof globalThis.fetch
+    const s = session(fetch)
+    s.set({ ...s.state.project, name: 'A' })
+    await vi.advanceTimersByTimeAsync(600)
+    // The echo of save #1 arrives first, then an edit, then the response.
+    const echo = s.outsideChange('v2')
+    await vi.advanceTimersByTimeAsync(0)
+    expect(s.state.status).not.toBe('conflict')
+    s.set({ ...s.state.project, name: 'B' })
+    release()
+    await echo
+    await vi.advanceTimersByTimeAsync(600)
+    expect(names).toEqual(['A', 'B'])
+    expect(s.state).toMatchObject({ status: 'saved', version: 'v3' })
+  })
+
+  test('a network failure while saving shows an error instead of saving forever', async () => {
+    const fetch = vi.fn(async () => {
+      throw new TypeError('Failed to fetch')
+    }) as unknown as typeof globalThis.fetch
+    const s = session(fetch)
+    s.set({ ...s.state.project, name: 'A' })
+    await vi.advanceTimersByTimeAsync(600)
+    expect(s.state.status).toBe('error')
+    expect(s.state.error).toMatch(/Failed to fetch/)
+  })
 })

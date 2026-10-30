@@ -46,24 +46,40 @@ export class ProjectSession {
     this.update({ project, status: this.state.status === 'conflict' ? 'conflict' : 'saving' })
     if (this.state.status === 'conflict') return
     clearTimeout(this.timer)
-    this.timer = setTimeout(() => void this.save(this.state.version), SAVE_AFTER)
+    this.timer = setTimeout(() => void this.save(), SAVE_AFTER)
   }
 
-  private async save(baseVersion: string) {
-    const res = await this.fetchFn(this.url(), {
-      method: 'PUT',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ project: this.state.project, baseVersion }),
-    })
-    const body = await res.json()
+  // One save at a time; the next starts from the version the last one made.
+  private saving: Promise<void> = Promise.resolve()
+
+  private save(baseVersion?: string): Promise<void> {
+    this.saving = this.saving.then(() => this.put(baseVersion ?? this.state.version))
+    return this.saving
+  }
+
+  private async put(baseVersion: string) {
+    const sent = this.state.project
+    let res: Response
+    let body: { version?: string; trusted?: boolean; error?: string }
+    try {
+      res = await this.fetchFn(this.url(), {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ project: sent, baseVersion }),
+      })
+      body = await res.json()
+    } catch (err) {
+      return this.update({ status: 'error', error: `not saved: ${(err as Error).message}` })
+    }
     if (res.status === 409) return this.update({ status: 'conflict' })
     if (!res.ok)
       return this.update({ status: 'error', error: body.error ?? `save failed (${res.status})` })
-    this.dirty = false
+    // Edits made while this save was on its way are still to be saved.
+    this.dirty = this.state.project !== sent
     this.update({
       version: body.version,
       trusted: body.trusted ?? this.state.trusted,
-      status: 'saved',
+      status: this.dirty ? 'saving' : 'saved',
       error: undefined,
     })
   }
@@ -90,6 +106,8 @@ export class ProjectSession {
 
   /** The events stream says project.json is now at `version`. */
   async outsideChange(version: string) {
+    // Our own save echoes back too: let it land before judging.
+    await this.saving
     if (version === this.state.version) return
     if (this.dirty) return this.update({ status: 'conflict' })
     await this.reload()

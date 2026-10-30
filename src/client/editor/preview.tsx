@@ -1,6 +1,6 @@
 // Live preview: the same player the render uses, re-made on every edit, with
 // each scene's voice clip played in step.
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { FORMATS, type Format, type Project } from '@/core/project'
 import { resolveTimeline, type Clip, type Timeline } from '@/core/timeline'
 import { createPlayer, sceneNeeds, type Player } from '@/player/player'
@@ -8,8 +8,9 @@ import { fileUrl } from './useProject'
 
 const fmt = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toFixed(1).padStart(4, '0')}`
 
+/** Re-made only when the project or clips change: the player is rebuilt on a new timeline. */
 export function usePreviewTimeline(project: Project, clips: Record<string, Clip>): Timeline {
-  return resolveTimeline(project, clips, sceneNeeds)
+  return useMemo(() => resolveTimeline(project, clips, sceneNeeds), [project, clips])
 }
 
 export function Preview(props: {
