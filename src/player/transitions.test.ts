@@ -81,7 +81,7 @@ describe('transitionEffect', () => {
   test('a flip shows one side at a time, and ends square on', () => {
     expect(transitionEffect('flip', 0.25, W, H).incoming.opacity).toBe(0)
     expect(transitionEffect('flip', 0.25, W, H).outgoing!.transform).toContain('rotateY(45.0deg)')
-    expect(transitionEffect('flip', 0.75, W, H).outgoing).toBeUndefined()
+    expect(transitionEffect('flip', 0.75, W, H).outgoing).toEqual({ opacity: 0 })
     expect(transitionEffect('flip', 1, W, H).incoming.transform).toContain('rotateY(0.0deg)')
   })
 })

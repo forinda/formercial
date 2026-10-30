@@ -175,6 +175,45 @@ const BLANK: { [T in Block['type']]: Extract<Block, { type: T }> } = {
   },
 }
 
+/**
+ * The typed text is kept as typed, because "0" has to stay on the way to "0.5".
+ * Only a number above 0 is a length; an empty field goes back to the default.
+ */
+function TransitionSeconds(props: {
+  id: string
+  value: number | undefined
+  placeholder: number
+  onChange(seconds: number | undefined): void
+}) {
+  const [text, setText] = useState(props.value === undefined ? '' : String(props.value))
+  // Another scene, an undo or a restore: show what's there now.
+  useEffect(() => {
+    const typed = Number(text) > 0 ? Math.min(5, Number(text)) : undefined
+    if (typed !== props.value) setText(props.value === undefined ? '' : String(props.value))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.value])
+  return (
+    <Field id={props.id} label="Lasting (s)">
+      <Input
+        id={props.id}
+        type="number"
+        min={0.1}
+        max={5}
+        step={0.1}
+        placeholder={String(props.placeholder)}
+        value={text}
+        onChange={(e) => {
+          const next = e.target.value
+          setText(next)
+          const seconds = Number(next)
+          if (!next.trim()) props.onChange(undefined)
+          else if (seconds > 0) props.onChange(Math.min(5, seconds))
+        }}
+      />
+    </Field>
+  )
+}
+
 /** A value as JSON, checked against its schema: nothing changes until what's typed is valid. */
 function JsonField<T>(props: {
   id: string
@@ -550,23 +589,12 @@ export function SceneForm({
           </Select>
         </Field>
         {scene.transition !== 'cut' && (
-          <Field id={`${id}-transition-seconds`} label="Lasting (s)">
-            <Input
-              id={`${id}-transition-seconds`}
-              type="number"
-              min={0.1}
-              max={5}
-              step={0.1}
-              placeholder={String(defaultSeconds(scene.transition))}
-              value={scene.transitionSeconds ?? ''}
-              onChange={(e) =>
-                set({
-                  transitionSeconds:
-                    Number(e.target.value) > 0 ? Math.min(5, Number(e.target.value)) : undefined,
-                })
-              }
-            />
-          </Field>
+          <TransitionSeconds
+            id={`${id}-transition-seconds`}
+            value={scene.transitionSeconds}
+            placeholder={defaultSeconds(scene.transition)}
+            onChange={(transitionSeconds) => set({ transitionSeconds })}
+          />
         )}
       </div>
 

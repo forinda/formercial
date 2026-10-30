@@ -186,7 +186,11 @@ export function transitionEffect(kind: Transition, p: number, w: number, h: numb
             incoming: { opacity: 0 },
             outgoing: { transform: `${depth} rotateY(${(p * 180).toFixed(1)}deg)` },
           }
-        : { incoming: { transform: `${depth} rotateY(${((p - 1) * 180).toFixed(1)}deg)` } }
+        : {
+            incoming: { transform: `${depth} rotateY(${((p - 1) * 180).toFixed(1)}deg)` },
+            // Past halfway it's turned away: only the new side shows.
+            outgoing: { opacity: 0 },
+          }
     }
     case 'blinds':
       return { incoming: { clipPath: clip(blinds(eased, w, h)) } }
