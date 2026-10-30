@@ -3,6 +3,7 @@
 // music into a work folder, run the driver, and keep its MP4 and SRT.
 import { sceneNeeds } from '@/player/player'
 import type { Format } from '@/core/project'
+import { FormercialSettings } from '@/core/settings'
 import { resolveTimeline } from '@/core/timeline'
 import type { VoiceProvider } from '@/core/voice/provider'
 import { clipLengths, voiceProject } from '@/core/voice/voice-project'
@@ -37,7 +38,7 @@ export async function renderProject(opts: {
       {
         slug,
         format,
-        fps: opts.fps ?? 30,
+        fps: opts.fps ?? FormercialSettings.get().fps,
         seconds: opts.seconds,
         timeline,
         renderUrl: `${opts.origin}/p/${slug}/render/${formatToken(format)}`,

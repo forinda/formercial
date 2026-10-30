@@ -195,13 +195,13 @@ export const DEFAULT_THEME: Theme = {
   fonts: { display: 'Unbounded', body: 'IBM Plex Sans', mono: 'JetBrains Mono' },
 }
 
-export function starterProject(name: string): Project {
+export function starterProject(name: string, voice = 'en-US-AvaNeural'): Project {
   return parseProject({
     version: 1,
     name,
     formats: ['16:9'],
     theme: DEFAULT_THEME,
-    voice: { tts: 'en-US-AvaNeural', rate: '-4%' },
+    voice: { tts: voice, rate: '-4%' },
     captions: true,
     scenes: [
       {

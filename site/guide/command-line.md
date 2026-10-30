@@ -36,7 +36,7 @@ pnpm kick formercial render my-product [options]
 |---|---|---|
 | `--format <f>` | `all` | `16:9`, `9:16`, `1:1`, or `all` (the project's formats) |
 | `--driver <name>` | `chromium-ffmpeg` | A [render driver](../reference/drivers) |
-| `--fps <n>` | `30` | Frames per second |
+| `--fps <n>` | `FORMERCIAL_FPS`, or `30` | Frames per second: a whole number from 1 to 60 |
 | `--seconds <n>` | the whole spot | Render only the first N seconds |
 | `--origin <url>` | start one | A running app to render from, like `http://127.0.0.1:3000` |
 

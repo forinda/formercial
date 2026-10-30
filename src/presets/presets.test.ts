@@ -59,4 +59,11 @@ describe('presets', () => {
       /typescript-intro, javascript-basics, python-basics/,
     )
   })
+
+  test('fromPreset can use another voice', () => {
+    expect(fromPreset('python-basics', 'x', 'en-GB-SoniaNeural').voice.tts).toBe(
+      'en-GB-SoniaNeural',
+    )
+    expect(fromPreset('python-basics', 'x').voice.tts).toBe('en-US-AvaNeural')
+  })
 })

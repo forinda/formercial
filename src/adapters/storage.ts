@@ -2,12 +2,13 @@ import { resolve } from 'node:path'
 import { StorageAdapter } from '@forinda/kickjs-storage/adapter'
 import { diskStorage } from '@forinda/kickjs-storage/disk'
 import { S3Settings, s3FromSettings } from '@forinda/kickjs-storage/settings'
+import { FormercialSettings } from '@/core/settings'
 
 export { STORAGE } from '@forinda/kickjs-storage/adapter'
 export type { Storage } from '@forinda/kickjs-storage'
 
 /** The projects folder: FORMERCIAL_PROJECTS, or projects/ in the app. */
-export const projectsRoot = () => process.env.FORMERCIAL_PROJECTS ?? 'projects'
+export const projectsRoot = () => FormercialSettings.get().projects
 
 /** Where projects are, for keying trust: the bucket, or the folder's absolute path. */
 export const workspaceId = () =>

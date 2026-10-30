@@ -9,11 +9,13 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import type { Project } from './project'
+import { FormercialSettings } from './settings'
 
 type TrustFile = Record<string, Record<string, string>>
 
 export function defaultTrustFile(): string {
-  if (process.env.FORMERCIAL_TRUST_FILE) return process.env.FORMERCIAL_TRUST_FILE
+  const { trustFile } = FormercialSettings.get()
+  if (trustFile) return trustFile
   const config = process.env.XDG_CONFIG_HOME ?? join(homedir(), '.config')
   return join(config, 'formercial', 'trust.json')
 }

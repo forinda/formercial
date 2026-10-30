@@ -11,6 +11,7 @@ import { FORMATS, slugFrom, starterProject, type Format } from '@/core/project'
 import { createRegistry, driverReport, type FormercialConfig } from '@/core/render/registry'
 import { renderProject } from '@/core/render/render-project'
 import { voiceProject } from '@/core/voice/voice-project'
+import { FormercialSettings, checkFps } from '@/core/settings'
 import { createTrust } from '@/core/trust'
 import { PRESETS, fromPreset } from '@/presets'
 import { createWorkspace } from '@/core/workspace'
@@ -26,9 +27,7 @@ export function resolveProject(arg: string, projectRoot: string): { root: string
   ) {
     return { root: dirname(asPath), slug: basename(asPath) }
   }
-  const root = process.env.FORMERCIAL_PROJECTS
-    ? resolve(projectRoot, process.env.FORMERCIAL_PROJECTS)
-    : join(projectRoot, 'projects')
+  const root = resolve(projectRoot, FormercialSettings.get().projects)
   return { root, slug: arg }
 }
 
@@ -91,9 +90,10 @@ export function formercialCliPlugin(config: FormercialConfig): KickCliPlugin {
         .option('--preset <id>', `start from a preset: ${PRESETS.map((p) => p.id).join(', ')}`)
         .action(async (name: string, opts: { preset?: string }) => {
           const { root, slug, ws } = open(slugFrom(name))
+          const { voice } = FormercialSettings.get()
           await ws.write(
             slug,
-            opts.preset ? fromPreset(opts.preset, name) : starterProject(name),
+            opts.preset ? fromPreset(opts.preset, name, voice) : starterProject(name, voice),
             null,
           )
           ctx.log(`Created ${join(root, slug).replace(`${ctx.projectRoot}/`, '')}/project.json`)
@@ -119,7 +119,7 @@ export function formercialCliPlugin(config: FormercialConfig): KickCliPlugin {
         .description('Voice, then render each format to renders/')
         .option('--format <format>', '16:9, 9:16, 1:1 or all', 'all')
         .option('--driver <name>', 'render driver', 'chromium-ffmpeg')
-        .option('--fps <n>', 'frames per second', '30')
+        .option('--fps <n>', 'frames per second (default: FORMERCIAL_FPS, or 30)')
         .option('--seconds <n>', 'render only the first N seconds')
         .option('--origin <url>', 'a running app to render from (default: start one)')
         .action(
@@ -128,7 +128,7 @@ export function formercialCliPlugin(config: FormercialConfig): KickCliPlugin {
             opts: {
               format: string
               driver: string
-              fps: string
+              fps?: string
               seconds?: string
               origin?: string
             },
@@ -142,6 +142,7 @@ export function formercialCliPlugin(config: FormercialConfig): KickCliPlugin {
             const check = await driver.check()
             if (!check.ok)
               throw new Error(`${driver.name} can't run here: ${check.missing.join(', ')}`)
+            const fps = opts.fps === undefined ? FormercialSettings.get().fps : checkFps(opts.fps)
             const { project } = await ws.read(slug)
             if (!(await createTrust({ workspace: root }).isTrusted(slug, project))) {
               throw new Error(
@@ -164,7 +165,7 @@ export function formercialCliPlugin(config: FormercialConfig): KickCliPlugin {
                   slug,
                   format,
                   driver,
-                  fps: Number(opts.fps),
+                  fps,
                   seconds: opts.seconds ? Number(opts.seconds) : undefined,
                   origin: app.origin,
                   voice: canVoice ? voice : undefined,

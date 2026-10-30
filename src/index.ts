@@ -7,6 +7,7 @@ import './config'
 import { bootstrap, getEnv, requestId, session, expressRuntime } from '@forinda/kickjs'
 import { InertiaAdapter, h, inertiaErrorHandler, inertiaNotFound } from '@forinda/kickjs-inertia'
 import express from 'express'
+import { FormercialSettings } from './core/settings'
 import { localOnly } from './middleware/local-only'
 import { modules } from './modules'
 import { storageAdapter } from './adapters/storage'
@@ -16,6 +17,8 @@ import { projectsWatchAdapter } from './adapters/watch'
 export const app = await bootstrap({
   modules,
   runtime: expressRuntime(),
+  // Checked at startup, and listed in .env.example by `kick env example`.
+  settings: [FormercialSettings],
   middlewares: [
     // No accounts: answer only this machine (see the middleware).
     localOnly(),

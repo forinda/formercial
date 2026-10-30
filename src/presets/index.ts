@@ -357,8 +357,13 @@ export const PRESETS: Preset[] = [
 ]
 
 /** A new project from a preset, under the given name. */
-export function fromPreset(id: string, name: string): Project {
+export function fromPreset(id: string, name: string, voice?: string): Project {
   const preset = PRESETS.find((p) => p.id === id)
   if (!preset) throw new Error(`no preset "${id}": choose ${PRESETS.map((p) => p.id).join(', ')}`)
-  return parseProject({ ...structuredClone(preset.project), name })
+  const project = structuredClone(preset.project)
+  return parseProject({
+    ...project,
+    name,
+    voice: voice ? { ...project.voice, tts: voice } : project.voice,
+  })
 }

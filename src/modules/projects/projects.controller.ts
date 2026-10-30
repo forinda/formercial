@@ -5,6 +5,7 @@ import { Controller, Delete, Get, Post, Put, type RequestContext } from '@forind
 import { checkRange } from '@forinda/kickjs-storage'
 import { storeGoogleFont } from '@/core/fonts'
 import { probeSeconds } from '@/core/media'
+import { FormercialSettings, checkFps } from '@/core/settings'
 import {
   FORMATS,
   ProjectError,
@@ -109,7 +110,8 @@ export class ProjectsController {
       const preset = ctx.body?.preset ? String(ctx.body.preset) : undefined
       let project
       try {
-        project = preset ? fromPreset(preset, name) : starterProject(name)
+        const { voice } = FormercialSettings.get()
+        project = preset ? fromPreset(preset, name, voice) : starterProject(name, voice)
       } catch (err) {
         throw new HttpError(400, (err as Error).message)
       }
@@ -324,9 +326,11 @@ export class ProjectsController {
       // never from the Host header, which the request controls.
       const port = (ctx.req as unknown as { socket: { localPort?: number } }).socket.localPort
       const origin = `http://127.0.0.1:${port}`
-      const fps = ctx.body?.fps === undefined ? undefined : Number(ctx.body.fps)
-      if (fps !== undefined && !(Number.isInteger(fps) && fps >= 1 && fps <= 60)) {
-        throw new HttpError(400, 'fps is a whole number from 1 to 60')
+      let fps: number | undefined
+      try {
+        fps = ctx.body?.fps === undefined ? undefined : checkFps(ctx.body.fps)
+      } catch (err) {
+        throw new HttpError(400, (err as Error).message)
       }
       const jobs = asked.map((format: Format) =>
         this.studio.render(slug, format, name, origin, fps),
