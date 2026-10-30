@@ -1,6 +1,13 @@
 // Project-wide settings (theme, captions, music, formats) and rendering.
 import { useEffect, useState } from 'react'
 import { FORMATS, type Format, type Project } from '@/core/project'
+import { Button } from '@/client/components/ui/button'
+import { Input } from '@/client/components/ui/input'
+import { Label } from '@/client/components/ui/label'
+import { Progress } from '@/client/components/ui/progress'
+import { Select } from '@/client/components/ui/select'
+import { Switch } from '@/client/components/ui/switch'
+import { Field, Group } from './field'
 import { api, fileUrl } from './useProject'
 
 async function upload(slug: string, file: File, name: string): Promise<string> {
@@ -13,6 +20,9 @@ async function upload(slug: string, file: File, name: string): Promise<string> {
   })
   return path
 }
+
+const FILE_INPUT =
+  'w-full text-xs text-muted-foreground file:mr-2 file:h-7 file:cursor-pointer file:rounded-md file:border-0 file:bg-secondary file:px-2.5 file:text-[13px] file:font-medium file:text-secondary-foreground'
 
 export function ThemePanel({
   slug,
@@ -31,23 +41,21 @@ export function ThemePanel({
   const setColor = (key: keyof Project['theme']['colors'], value: string) =>
     onChange({ ...project, theme: { ...theme, colors: { ...theme.colors, [key]: value } } })
   return (
-    <section className="panel" aria-label="Project">
-      <h2>Project</h2>
-      <div className="field">
-        <label htmlFor="p-name">Name</label>
-        <input
+    <section aria-label="Project" className="grid gap-4">
+      <Field id="p-name" label="Name">
+        <Input
           id="p-name"
           value={project.name}
           onChange={(e) => onChange({ ...project, name: e.target.value })}
         />
-      </div>
-      <fieldset>
-        <legend>Formats to render</legend>
-        <div className="row wrap">
+      </Field>
+      <Group title="Formats to render">
+        <div className="flex flex-wrap gap-4">
           {(Object.keys(FORMATS) as Format[]).map((f) => (
-            <label key={f} className="check">
+            <label key={f} className="flex items-center gap-1.5">
               <input
                 type="checkbox"
+                className="accent-primary"
                 checked={project.formats.includes(f)}
                 onChange={(e) => {
                   const formats = e.target.checked
@@ -60,14 +68,14 @@ export function ThemePanel({
             </label>
           ))}
         </div>
-      </fieldset>
-      <fieldset>
-        <legend>Colors</legend>
-        <div className="swatches">
+      </Group>
+      <Group title="Colors">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(90px,1fr))] gap-2">
           {(Object.keys(theme.colors) as (keyof typeof theme.colors)[]).map((k) => (
-            <label key={k} className="swatch">
+            <label key={k} className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <input
                 type="color"
+                className="size-6 shrink-0 cursor-pointer rounded-sm bg-transparent"
                 value={theme.colors[k]}
                 onChange={(e) => setColor(k, e.target.value)}
               />
@@ -75,17 +83,15 @@ export function ThemePanel({
             </label>
           ))}
         </div>
-      </fieldset>
-      <fieldset>
-        <legend>Fonts</legend>
+      </Group>
+      <Group title="Fonts">
         {(['display', 'body', 'mono'] as const).map((k) => {
           const family = theme.fonts[k]
           const stored = theme.fonts.files?.some((f) => f.family === family)
           return (
-            <div className="row" key={k}>
-              <div className="field">
-                <label htmlFor={`font-${k}`}>{k}</label>
-                <input
+            <div className="flex items-end gap-2" key={k}>
+              <Field id={`font-${k}`} label={k}>
+                <Input
                   id={`font-${k}`}
                   value={family}
                   onChange={(e) =>
@@ -95,9 +101,9 @@ export function ThemePanel({
                     })
                   }
                 />
-              </div>
-              <button
-                type="button"
+              </Field>
+              <Button
+                variant="secondary"
                 disabled={!!fetching || stored}
                 title="Download this Google Fonts family into the project"
                 onClick={async () => {
@@ -117,38 +123,39 @@ export function ThemePanel({
                 }}
               >
                 {stored ? 'In project' : fetching === k ? 'Downloading…' : 'Download'}
-              </button>
+              </Button>
             </div>
           )
         })}
-        <p className="note">
+        <p className="text-xs text-muted-foreground">
           Downloaded fonts are kept in media/fonts/, so renders look the same on any machine.
         </p>
-      </fieldset>
-      <label className="check">
-        <input
-          type="checkbox"
+      </Group>
+      <div className="flex items-center gap-2 border-t pt-3">
+        <Switch
+          id="p-captions"
           checked={project.captions}
-          onChange={(e) => onChange({ ...project, captions: e.target.checked })}
+          onCheckedChange={(captions) => onChange({ ...project, captions })}
         />
-        Burn captions into the video
-      </label>
-      <div className="field">
-        <label htmlFor="p-voice">Voice (edge-tts name)</label>
-        <input
+        <Label htmlFor="p-captions" className="text-[13px] font-normal">
+          Burn captions into the video
+        </Label>
+      </div>
+      <Field id="p-voice" label="Voice (edge-tts name)">
+        <Input
           id="p-voice"
           value={project.voice.tts}
           onChange={(e) =>
             onChange({ ...project, voice: { ...project.voice, tts: e.target.value } })
           }
         />
-      </div>
-      <div className="field">
-        <label htmlFor="p-logo">Logo</label>
+      </Field>
+      <Field id="p-logo" label="Logo">
         <input
           id="p-logo"
           type="file"
           accept="image/*"
+          className={FILE_INPUT}
           onChange={async (e) => {
             const file = e.target.files?.[0]
             if (!file) return
@@ -159,14 +166,14 @@ export function ThemePanel({
             }
           }}
         />
-      </div>
-      <fieldset>
-        <legend>Background music</legend>
+      </Field>
+      <Group title="Background music">
         <input
           id="p-music"
           type="file"
           accept="audio/*"
           aria-label="Music file"
+          className={FILE_INPUT}
           onChange={async (e) => {
             const file = e.target.files?.[0]
             if (!file) return
@@ -189,14 +196,15 @@ export function ThemePanel({
           <>
             <audio controls src={fileUrl(slug, project.music.file)} />
             {(['volume', 'duck'] as const).map((k) => (
-              <div className="field" key={k}>
-                <label htmlFor={`music-${k}`}>
-                  {k === 'volume' ? 'Volume' : 'Level while someone speaks'} ·{' '}
-                  {Math.round(project.music![k] * 100)}%
-                </label>
+              <Field
+                key={k}
+                id={`music-${k}`}
+                label={`${k === 'volume' ? 'Volume' : 'Level while someone speaks'}: ${Math.round(project.music![k] * 100)}%`}
+              >
                 <input
                   id={`music-${k}`}
                   type="range"
+                  className="w-full accent-primary"
                   min={0}
                   max={1}
                   step={0.05}
@@ -208,19 +216,19 @@ export function ThemePanel({
                     })
                   }
                 />
-              </div>
+              </Field>
             ))}
-            <button
-              type="button"
-              className="danger"
+            <Button
+              variant="destructive"
+              className="justify-self-start"
               onClick={() => onChange({ ...project, music: undefined })}
             >
               Remove music
-            </button>
+            </Button>
           </>
         )}
-      </fieldset>
-      {error && <p className="error">{error}</p>}
+      </Group>
+      {error && <p className="text-destructive">{error}</p>}
     </section>
   )
 }
@@ -247,6 +255,7 @@ export function RenderPanel({
 }) {
   const [drivers, setDrivers] = useState<Driver[]>([])
   const [driver, setDriver] = useState('chromium-ffmpeg')
+  const [fps, setFps] = useState('')
   const [jobs, setJobs] = useState<Job[]>([])
   const [files, setFiles] = useState<string[]>([])
   const [error, setError] = useState('')
@@ -282,33 +291,43 @@ export function RenderPanel({
 
   const chosen = drivers.find((d) => d.name === driver)
   return (
-    <section className="panel" aria-label="Render">
-      <h2>Render</h2>
-      <div className="field">
-        <label htmlFor="driver">Driver</label>
-        <select id="driver" value={driver} onChange={(e) => setDriver(e.target.value)}>
-          {drivers.map((d) => (
-            <option key={d.name} value={d.name}>
-              {d.name} {d.check.ok ? '· ready' : '· needs setup'}
-            </option>
-          ))}
-        </select>
+    <section aria-label="Render" className="grid gap-3">
+      <div className="flex gap-2">
+        <Field id="driver" label="Driver">
+          <Select id="driver" value={driver} onChange={(e) => setDriver(e.target.value)}>
+            {drivers.map((d) => (
+              <option key={d.name} value={d.name}>
+                {d.name} ({d.check.ok ? 'ready' : 'needs setup'})
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <div className="w-32">
+          <Field id="fps" label="Frame rate">
+            <Select id="fps" value={fps} onChange={(e) => setFps(e.target.value)}>
+              <option value="">Default</option>
+              <option value="15">15, a quick draft</option>
+              <option value="24">24</option>
+              <option value="30">30</option>
+              <option value="60">60</option>
+            </Select>
+          </Field>
+        </div>
       </div>
       {chosen && !chosen.check.ok && (
-        <p className="error">Missing: {chosen.check.missing.join(', ')}</p>
+        <p className="text-destructive">Missing: {chosen.check.missing.join(', ')}</p>
       )}
       {!trusted && (
-        <p className="error">This project has custom scenes. Trust it to render them.</p>
+        <p className="text-destructive">This project has custom scenes. Trust it to render them.</p>
       )}
-      <button
-        type="button"
+      <Button
         disabled={!chosen?.check.ok || !trusted}
         onClick={async () => {
           setError('')
           try {
             await api(`/api/v1/projects/${slug}/renders`, {
               method: 'POST',
-              json: { format: 'all', driver },
+              json: { format: 'all', driver, fps: fps ? Number(fps) : undefined },
             })
           } catch (err) {
             setError((err as Error).message)
@@ -316,27 +335,40 @@ export function RenderPanel({
         }}
       >
         Render {project.formats.join(', ')}
-      </button>
-      {error && <p className="error">{error}</p>}
-      <ul className="jobs">
-        {jobs.map((j) => (
-          <li key={j.id}>
-            <strong>{j.format}</strong> {j.state}
-            {j.state === 'running' && j.progress?.frames
-              ? ` · ${j.progress.phase} ${Math.round(((j.progress.frame ?? 0) / j.progress.frames) * 100)}%`
-              : ''}
-            {j.error && <span className="error"> · {j.error}</span>}
-          </li>
-        ))}
-      </ul>
-      {files.map((f) => (
-        <figure key={f} className="render">
-          <video controls preload="metadata" src={fileUrl(slug, f)} />
-          <figcaption>
-            <a href={fileUrl(slug, f)}>{f}</a>
-          </figcaption>
-        </figure>
-      ))}
+      </Button>
+      {error && <p className="text-destructive">{error}</p>}
+      {jobs.length > 0 && (
+        <ul className="grid gap-2">
+          {jobs.map((j) => {
+            const running = j.state === 'running' && j.progress?.frames
+            const percent = running
+              ? Math.round(((j.progress!.frame ?? 0) / j.progress!.frames!) * 100)
+              : 0
+            return (
+              <li key={j.id} className="grid gap-1">
+                <span>
+                  <strong className="font-medium">{j.format}</strong> {j.state}
+                  {running ? `, ${j.progress!.phase} ${percent}%` : ''}
+                </span>
+                {running ? <Progress value={percent} label={`Rendering ${j.format}`} /> : null}
+                {j.error && <span className="text-destructive">{j.error}</span>}
+              </li>
+            )
+          })}
+        </ul>
+      )}
+      {files.length > 0 && (
+        <Group title="Finished videos">
+          {files.map((f) => (
+            <figure key={f} className="grid gap-1">
+              <video controls preload="metadata" src={fileUrl(slug, f)} />
+              <figcaption className="text-xs">
+                <a href={fileUrl(slug, f)}>{f}</a>
+              </figcaption>
+            </figure>
+          ))}
+        </Group>
+      )}
     </section>
   )
 }

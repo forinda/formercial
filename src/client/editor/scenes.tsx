@@ -1,10 +1,44 @@
-// Scene list and the selected scene's form: its texts, timing, transition and
-// either its blocks or its custom HTML, CSS and script.
+// What to do with the selected scene, and its form: its texts, timing,
+// transition and either its blocks or its custom HTML, CSS and script.
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import {
+  IconArrowLeft,
+  IconArrowRight,
+  IconCode,
+  IconCopy,
+  IconGripVertical,
+  IconPlus,
+  IconTrash,
+} from '@tabler/icons-react'
+import type { ReactNode } from 'react'
 import type { Block, Scene } from '@/core/project'
+import { Button } from '@/client/components/ui/button'
+import { Input } from '@/client/components/ui/input'
+import { Select } from '@/client/components/ui/select'
+import { Textarea } from '@/client/components/ui/textarea'
+import { cn } from '@/client/lib/utils'
+import { Field } from './field'
+import { IconButton } from './icon-button'
 
 const newId = () => `s${Date.now().toString(36)}${Math.floor(Math.random() * 36 ** 2).toString(36)}`
 
-export function SceneList(props: {
+export function SceneActions(props: {
   scenes: Scene[]
   selected: string
   onSelect(id: string): void
@@ -50,70 +84,48 @@ export function SceneList(props: {
     props.onSelect(id)
   }
   return (
-    <nav className="scenes" aria-label="Scenes">
-      <ol>
-        {scenes.map((s, i) => (
-          <li key={s.id}>
-            <button
-              type="button"
-              className={s.id === props.selected ? 'scene-tab on' : 'scene-tab'}
-              onClick={() => props.onSelect(s.id)}
-            >
-              <span className="num">{i + 1}</span>
-              <span className="cap">{s.caption || <em>{s.kind}</em>}</span>
-            </button>
-          </li>
-        ))}
-      </ol>
-      <div className="row wrap">
-        <button type="button" onClick={() => add('blocks')}>
-          + Scene
-        </button>
-        <button type="button" onClick={() => add('custom')}>
-          + Custom
-        </button>
-      </div>
-      <div className="row wrap">
-        <button
-          type="button"
-          onClick={() => move(-1)}
-          disabled={at <= 0}
-          aria-label="Move scene up"
-        >
-          ↑
-        </button>
-        <button
-          type="button"
-          onClick={() => move(1)}
-          disabled={at < 0 || at >= scenes.length - 1}
-          aria-label="Move scene down"
-        >
-          ↓
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            const copy = { ...structuredClone(scenes[at]), id: newId() }
-            onChange([...scenes.slice(0, at + 1), copy, ...scenes.slice(at + 1)])
-            props.onSelect(copy.id)
-          }}
-        >
-          Duplicate
-        </button>
-        <button
-          type="button"
-          className="danger"
-          disabled={scenes.length <= 1}
-          onClick={() => {
-            const next = scenes.filter((s) => s.id !== props.selected)
-            onChange(next)
-            props.onSelect(next[Math.max(0, at - 1)].id)
-          }}
-        >
-          Delete
-        </button>
-      </div>
-    </nav>
+    <div role="group" aria-label="Scenes" className="flex items-center gap-0.5">
+      <Button variant="ghost" size="sm" onClick={() => add('blocks')}>
+        <IconPlus />
+        Scene
+      </Button>
+      <Button variant="ghost" size="sm" onClick={() => add('custom')}>
+        <IconCode />
+        Custom scene
+      </Button>
+      <IconButton label="Move scene earlier" onClick={() => move(-1)} disabled={at <= 0}>
+        <IconArrowLeft />
+      </IconButton>
+      <IconButton
+        label="Move scene later"
+        onClick={() => move(1)}
+        disabled={at < 0 || at >= scenes.length - 1}
+      >
+        <IconArrowRight />
+      </IconButton>
+      <IconButton
+        label="Duplicate scene"
+        onClick={() => {
+          const copy = { ...structuredClone(scenes[at]), id: newId() }
+          onChange([...scenes.slice(0, at + 1), copy, ...scenes.slice(at + 1)])
+          props.onSelect(copy.id)
+        }}
+      >
+        <IconCopy />
+      </IconButton>
+      <IconButton
+        label="Delete scene"
+        className="text-destructive"
+        disabled={scenes.length <= 1}
+        onClick={() => {
+          const next = scenes.filter((s) => s.id !== props.selected)
+          onChange(next)
+          props.onSelect(next[Math.max(0, at - 1)].id)
+        }}
+      >
+        <IconTrash />
+      </IconButton>
+    </div>
   )
 }
 
@@ -136,15 +148,6 @@ const BLANK: { [T in Block['type']]: Extract<Block, { type: T }> } = {
   },
 }
 
-function Field(props: { id: string; label: string; children: React.ReactNode }) {
-  return (
-    <div className="field">
-      <label htmlFor={props.id}>{props.label}</label>
-      {props.children}
-    </div>
-  )
-}
-
 function BlockForm({
   block,
   id,
@@ -158,15 +161,16 @@ function BlockForm({
   const text = (key: string, label: string, multiline = false) => (
     <Field id={`${id}-${key}`} label={label}>
       {multiline ? (
-        <textarea
+        <Textarea
           id={`${id}-${key}`}
           rows={6}
           spellCheck={false}
+          className="font-mono text-xs"
           value={String((block as Record<string, unknown>)[key] ?? '')}
           onChange={(e) => set({ [key]: e.target.value })}
         />
       ) : (
-        <input
+        <Input
           id={`${id}-${key}`}
           value={String((block as Record<string, unknown>)[key] ?? '')}
           onChange={(e) => set({ [key]: e.target.value })}
@@ -176,7 +180,7 @@ function BlockForm({
   )
   const number = (key: 'at' | 'cps' | 'until', label: string) => (
     <Field id={`${id}-${key}`} label={label}>
-      <input
+      <Input
         id={`${id}-${key}`}
         type="number"
         min={0}
@@ -192,10 +196,11 @@ function BlockForm({
     label: string,
   ) => (
     <Field id={`${id}-lines`} label={label}>
-      <textarea
+      <Textarea
         id={`${id}-lines`}
         rows={5}
         spellCheck={false}
+        className="font-mono text-xs"
         value={value.join('\n')}
         onChange={(e) => set(to(e.target.value.split('\n')))}
       />
@@ -223,7 +228,7 @@ function BlockForm({
         <>
           {text('label', 'Label')}
           <Field id={`${id}-lang`} label="Language">
-            <select
+            <Select
               id={`${id}-lang`}
               value={block.lang}
               onChange={(e) => set({ lang: e.target.value })}
@@ -231,10 +236,10 @@ function BlockForm({
               {['ts', 'js', 'py', 'sql', 'json', 'plain'].map((l) => (
                 <option key={l}>{l}</option>
               ))}
-            </select>
+            </Select>
           </Field>
           {text('source', 'Code', true)}
-          <div className="row">
+          <div className="flex gap-2">
             {number('at', 'Starts at (s)')}
             {number('cps', 'Characters / s')}
           </div>
@@ -245,7 +250,7 @@ function BlockForm({
         <>
           {text('label', 'Label')}
           {text('source', 'Lines ($ prompt, ✗ fail, ✓ ok)', true)}
-          <div className="row">
+          <div className="flex gap-2">
             {number('at', 'Starts at (s)')}
             {number('cps', 'Characters / s')}
           </div>
@@ -263,16 +268,16 @@ function BlockForm({
         <>
           {text('text', 'Text')}
           <Field id={`${id}-tone`} label="Tone">
-            <select
+            <Select
               id={`${id}-tone`}
               value={block.tone}
               onChange={(e) => set({ tone: e.target.value })}
             >
               <option value="good">good</option>
               <option value="bad">bad</option>
-            </select>
+            </Select>
           </Field>
-          <div className="row">
+          <div className="flex gap-2">
             {number('at', 'Appears at (s)')}
             {number('until', 'Gone at (s)')}
           </div>
@@ -321,32 +326,61 @@ function BlockForm({
   }
 }
 
+function BlockCard(props: { index: number; type: string; onRemove(): void; children: ReactNode }) {
+  const sort = useSortable({ id: String(props.index) })
+  return (
+    <section
+      ref={sort.setNodeRef}
+      aria-label={props.type}
+      className={cn(
+        'grid gap-2.5 border-t bg-background pt-3',
+        sort.isDragging && 'relative z-10 opacity-90',
+      )}
+      style={{ transform: CSS.Translate.toString(sort.transform), transition: sort.transition }}
+    >
+      <div className="flex items-center gap-0.5">
+        <IconButton
+          label="Drag to move block"
+          ref={sort.setActivatorNodeRef}
+          className="-ml-1.5 cursor-grab touch-none text-muted-foreground active:cursor-grabbing"
+          {...sort.attributes}
+          {...sort.listeners}
+        >
+          <IconGripVertical />
+        </IconButton>
+        <h2 className="mr-auto font-medium capitalize">{props.type}</h2>
+        <IconButton label="Remove block" className="text-destructive" onClick={props.onRemove}>
+          <IconTrash />
+        </IconButton>
+      </div>
+      {props.children}
+    </section>
+  )
+}
+
 export function SceneForm({ scene, onChange }: { scene: Scene; onChange(s: Scene): void }) {
   const set = (patch: Partial<Scene>) => onChange({ ...scene, ...patch } as Scene)
   const id = `scene-${scene.id}`
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+  const moveBlock = ({ active, over }: DragEndEvent) => {
+    if (scene.kind !== 'blocks' || !over || active.id === over.id) return
+    set({ blocks: arrayMove(scene.blocks, Number(active.id), Number(over.id)) })
+  }
   return (
-    <section className="scene-form" aria-label="Scene">
+    <section aria-label="Scene" className="grid gap-3">
       <Field id={`${id}-caption`} label="Caption (on screen)">
-        <input
+        <Input
           id={`${id}-caption`}
           value={scene.caption}
           onChange={(e) => set({ caption: e.target.value })}
         />
       </Field>
-      <Field
-        id={`${id}-spoken`}
-        label="Spoken line (for the voice: spell out what it would misread)"
-      >
-        <textarea
-          id={`${id}-spoken`}
-          rows={2}
-          value={scene.spoken}
-          onChange={(e) => set({ spoken: e.target.value })}
-        />
-      </Field>
-      <div className="row">
+      <div className="flex gap-2">
         <Field id={`${id}-min`} label="At least (s)">
-          <input
+          <Input
             id={`${id}-min`}
             type="number"
             min={0}
@@ -356,7 +390,7 @@ export function SceneForm({ scene, onChange }: { scene: Scene; onChange(s: Scene
           />
         </Field>
         <Field id={`${id}-transition`} label="Transition in">
-          <select
+          <Select
             id={`${id}-transition`}
             value={scene.transition}
             onChange={(e) => set({ transition: e.target.value as Scene['transition'] })}
@@ -364,81 +398,64 @@ export function SceneForm({ scene, onChange }: { scene: Scene; onChange(s: Scene
             <option value="fade">fade</option>
             <option value="slide">slide</option>
             <option value="cut">cut</option>
-          </select>
+          </Select>
         </Field>
       </div>
 
       {scene.kind === 'blocks' ? (
-        <div className="blocks">
-          {scene.blocks.map((block, i) => (
-            <fieldset key={i} className="block-form">
-              <legend>
-                {block.type}
-                <span className="row">
-                  <button
-                    type="button"
-                    aria-label="Move block up"
-                    disabled={i === 0}
-                    onClick={() => {
-                      const b = [...scene.blocks]
-                      ;[b[i - 1], b[i]] = [b[i], b[i - 1]]
-                      set({ blocks: b })
-                    }}
-                  >
-                    ↑
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="Move block down"
-                    disabled={i === scene.blocks.length - 1}
-                    onClick={() => {
-                      const b = [...scene.blocks]
-                      ;[b[i + 1], b[i]] = [b[i], b[i + 1]]
-                      set({ blocks: b })
-                    }}
-                  >
-                    ↓
-                  </button>
-                  <button
-                    type="button"
-                    className="danger"
-                    onClick={() => set({ blocks: scene.blocks.filter((_, j) => j !== i) })}
-                  >
-                    Remove
-                  </button>
-                </span>
-              </legend>
-              <BlockForm
-                id={`${id}-b${i}`}
-                block={block}
-                onChange={(b) => set({ blocks: scene.blocks.map((x, j) => (j === i ? b : x)) })}
-              />
-            </fieldset>
-          ))}
-          <Field id={`${id}-add`} label="Add a block">
-            <select
-              id={`${id}-add`}
-              value=""
-              onChange={(e) =>
-                e.target.value &&
-                set({
-                  blocks: [
-                    ...scene.blocks,
-                    structuredClone(BLANK[e.target.value as Block['type']]),
-                  ],
-                })
-              }
+        <div className="grid gap-3">
+          <DndContext
+            id={`${id}-blocks`}
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={moveBlock}
+          >
+            <SortableContext
+              items={scene.blocks.map((_, i) => String(i))}
+              strategy={verticalListSortingStrategy}
             >
-              <option value="">Choose…</option>
-              {Object.keys(BLANK).map((t) => (
-                <option key={t}>{t}</option>
+              {scene.blocks.map((block, i) => (
+                <BlockCard
+                  key={i}
+                  index={i}
+                  type={block.type}
+                  onRemove={() => set({ blocks: scene.blocks.filter((_, j) => j !== i) })}
+                >
+                  <BlockForm
+                    id={`${id}-b${i}`}
+                    block={block}
+                    onChange={(b) => set({ blocks: scene.blocks.map((x, j) => (j === i ? b : x)) })}
+                  />
+                </BlockCard>
               ))}
-            </select>
-          </Field>
+            </SortableContext>
+          </DndContext>
+          <div className="border-t pt-3">
+            <Field id={`${id}-add`} label="Add a block">
+              <Select
+                id={`${id}-add`}
+                value=""
+                onChange={(e) =>
+                  e.target.value &&
+                  set({
+                    blocks: [
+                      ...scene.blocks,
+                      structuredClone(BLANK[e.target.value as Block['type']]),
+                    ],
+                  })
+                }
+              >
+                <option value="">Choose…</option>
+                {Object.keys(BLANK).map((t) => (
+                  <option key={t}>{t}</option>
+                ))}
+              </Select>
+            </Field>
+          </div>
         </div>
       ) : (
-        <div className="custom-editor">
-          <p className="muted">
+        <div className="grid gap-3">
+          <p className="text-muted-foreground [&_code]:font-mono [&_code]:text-xs">
             <code>export function draw(t, ctx)</code> runs every frame. <code>t</code> is seconds
             into the scene; <code>ctx</code> has <code>root</code> (the scene's shadow root),{' '}
             <code>theme</code>, <code>format</code>, <code>width</code>, <code>height</code> and{' '}
@@ -447,11 +464,11 @@ export function SceneForm({ scene, onChange }: { scene: Scene; onChange(s: Scene
           </p>
           {(['html', 'css', 'script'] as const).map((key) => (
             <Field key={key} id={`${id}-${key}`} label={key.toUpperCase()}>
-              <textarea
+              <Textarea
                 id={`${id}-${key}`}
                 rows={key === 'script' ? 10 : 5}
                 spellCheck={false}
-                className="code-input"
+                className="font-mono text-xs"
                 value={scene[key]}
                 onChange={(e) => set({ [key]: e.target.value })}
               />

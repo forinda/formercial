@@ -1,12 +1,19 @@
 import { Link } from '@inertiajs/react'
+import { IconChevronLeft } from '@tabler/icons-react'
 import { useState } from 'react'
+import { usePanelRef } from 'react-resizable-panels'
 import type { Project, Scene } from '@/core/project'
 import type { Clip } from '@/core/timeline'
+import { Button } from '@/client/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/client/components/ui/tabs'
+import { TooltipProvider } from '@/client/components/ui/tooltip'
 import { RenderPanel, ThemePanel } from '@/client/editor/panels'
 import { Preview, usePreviewTimeline } from '@/client/editor/preview'
-import { SceneForm, SceneList } from '@/client/editor/scenes'
+import { SceneActions, SceneForm } from '@/client/editor/scenes'
+import { ThemeToggle } from '@/client/editor/theme'
 import { api, useProject } from '@/client/editor/useProject'
 import { VoicePanel } from '@/client/editor/voice'
+import { cn } from '@/client/lib/utils'
 
 const STATUS = {
   saved: 'Saved',
@@ -14,6 +21,14 @@ const STATUS = {
   conflict: 'Changed on disk',
   error: 'Not saved',
 }
+
+type Tab = 'scene' | 'voice' | 'project' | 'render'
+const TABS: [Tab, string][] = [
+  ['scene', 'Scene'],
+  ['voice', 'Voice'],
+  ['project', 'Project'],
+  ['render', 'Render'],
+]
 
 export default function Editor(props: {
   slug: string
@@ -24,108 +39,81 @@ export default function Editor(props: {
 }) {
   const { project, clips, trusted, status, error, session } = useProject(props.slug, props)
   const [selected, setSelected] = useState(project.scenes[0].id)
-  const [tab, setTab] = useState<'scene' | 'project' | 'render'>('scene')
+  const [tab, setTab] = useState<Tab>('scene')
+  const panel = usePanelRef()
   const timeline = usePreviewTimeline(project, clips)
   const scene = project.scenes.find((s) => s.id === selected) ?? project.scenes[0]
   const setScenes = (scenes: Scene[]) => session.set({ ...project, scenes })
+  const setScene = (s: Scene) => setScenes(project.scenes.map((x) => (x.id === s.id ? s : x)))
   const hasCustom = project.scenes.some((s) => s.kind === 'custom')
 
   return (
-    <div className="editor">
-      <header className="bar">
-        <Link href="/" className="home-link">
-          Commercials
-        </Link>
-        <strong className="title">{project.name}</strong>
-        <span className="muted">projects/{props.slug}</span>
-        <span className={`status ${status}`} role="status">
-          {STATUS[status]}
-          {status === 'error' && error ? `: ${error}` : ''}
-        </span>
-        {status === 'conflict' && (
-          <span className="row">
-            <button type="button" onClick={() => session.reload()}>
-              Reload from disk
-            </button>
-            <button type="button" className="danger" onClick={() => session.overwrite()}>
-              Keep mine
-            </button>
-          </span>
-        )}
-      </header>
-
-      {hasCustom && !trusted && (
-        <div className="trust" role="alert">
-          <p>
-            This project has custom scenes. Their HTML and scripts run in this app, so they're shown
-            as placeholders until you trust the project. Read them first if it came from someone
-            else.
-          </p>
-          <button
-            type="button"
-            onClick={async () => {
-              await api(`/api/v1/projects/${props.slug}/trust`, {
-                method: 'POST',
-                json: { trusted: true },
-              })
-              await session.refresh()
-            }}
+    <TooltipProvider>
+      <div className="flex min-h-dvh flex-col lg:h-dvh">
+        <header className="flex flex-wrap items-center gap-3 border-b px-3 py-2">
+          <Button asChild variant="ghost" size="sm" className="text-foreground">
+            <Link href="/">
+              <IconChevronLeft />
+              Commercials
+            </Link>
+          </Button>
+          <h1 className="text-sm font-semibold">{project.name}</h1>
+          <span
+            role="status"
+            className={cn(
+              'ml-auto text-xs text-muted-foreground',
+              (status === 'conflict' || status === 'error') && 'text-destructive',
+            )}
           >
-            Trust and run them
-          </button>
-        </div>
-      )}
-
-      <div className="workspace">
-        <SceneList
-          scenes={project.scenes}
-          selected={scene.id}
-          onSelect={setSelected}
-          onChange={setScenes}
-        />
-
-        <main className="middle">
-          <div className="tabs" role="tablist">
-            {(['scene', 'project', 'render'] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                role="tab"
-                aria-selected={tab === t}
-                className={tab === t ? 'tab on' : 'tab'}
-                onClick={() => setTab(t)}
-              >
-                {t === 'scene' ? 'Scene' : t === 'project' ? 'Project' : 'Render'}
-              </button>
-            ))}
-          </div>
-          {tab === 'scene' && (
+            {STATUS[status]}
+            {status === 'error' && error ? `: ${error}` : ''}
+          </span>
+          {status === 'conflict' && (
             <>
-              <SceneForm
-                scene={scene}
-                onChange={(s) => setScenes(project.scenes.map((x) => (x.id === scene.id ? s : x)))}
-              />
-              <VoicePanel
-                slug={props.slug}
-                scene={scene}
-                clip={clips[scene.id]}
-                onScene={(s) => setScenes(project.scenes.map((x) => (x.id === s.id ? s : x)))}
-                onClipsChanged={() => void session.refresh()}
-              />
+              <Button variant="outline" size="sm" onClick={() => session.reload()}>
+                Reload from disk
+              </Button>
+              <Button variant="destructive" size="sm" onClick={() => session.overwrite()}>
+                Keep mine
+              </Button>
             </>
           )}
-          {tab === 'project' && (
-            <ThemePanel
-              slug={props.slug}
-              project={project}
-              onChange={(p) => session.set(p)}
-              onFontsChanged={() => void session.reload()}
-            />
-          )}
-          {tab === 'render' && (
-            <RenderPanel slug={props.slug} project={project} trusted={trusted} />
-          )}
-        </main>
+          <ThemeToggle />
+          <Button
+            size="sm"
+            onClick={() => {
+              setTab('render')
+              panel.current?.expand()
+            }}
+          >
+            Render
+          </Button>
+        </header>
+
+        {hasCustom && !trusted && (
+          <div
+            role="alert"
+            className="flex flex-wrap items-center gap-4 border-b bg-card px-4 py-2.5"
+          >
+            <p className="max-w-[90ch]">
+              This project has custom scenes. Their HTML and scripts run in this app, so they're
+              shown as placeholders until you trust the project. Read them first if it came from
+              someone else.
+            </p>
+            <Button
+              size="sm"
+              onClick={async () => {
+                await api(`/api/v1/projects/${props.slug}/trust`, {
+                  method: 'POST',
+                  json: { trusted: true },
+                })
+                await session.refresh()
+              }}
+            >
+              Trust and run them
+            </Button>
+          </div>
+        )}
 
         <Preview
           slug={props.slug}
@@ -135,8 +123,57 @@ export default function Editor(props: {
           timeline={timeline}
           selected={scene.id}
           onSelect={setSelected}
-        />
+          onScenes={setScenes}
+          panel={panel}
+          actions={
+            <SceneActions
+              scenes={project.scenes}
+              selected={scene.id}
+              onSelect={setSelected}
+              onChange={setScenes}
+            />
+          }
+        >
+          <Tabs
+            value={tab}
+            onValueChange={(v) => setTab(v as Tab)}
+            className="h-full min-h-0 border-t bg-background lg:border-t-0"
+          >
+            <TabsList className="px-2 pt-1">
+              {TABS.map(([value, label]) => (
+                <TabsTrigger key={value} value={value}>
+                  {label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            <div className="min-h-0 flex-1 overflow-auto p-4">
+              <TabsContent value="scene">
+                <SceneForm scene={scene} onChange={setScene} />
+              </TabsContent>
+              <TabsContent value="voice">
+                <VoicePanel
+                  slug={props.slug}
+                  scene={scene}
+                  clip={clips[scene.id]}
+                  onScene={setScene}
+                  onClipsChanged={() => void session.refresh()}
+                />
+              </TabsContent>
+              <TabsContent value="project">
+                <ThemePanel
+                  slug={props.slug}
+                  project={project}
+                  onChange={(p) => session.set(p)}
+                  onFontsChanged={() => void session.reload()}
+                />
+              </TabsContent>
+              <TabsContent value="render">
+                <RenderPanel slug={props.slug} project={project} trusted={trusted} />
+              </TabsContent>
+            </div>
+          </Tabs>
+        </Preview>
       </div>
-    </div>
+    </TooltipProvider>
   )
 }

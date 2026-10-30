@@ -4,7 +4,7 @@ Each scene gets one clip: a generated line, or a recording you make in the brows
 
 ## Generated voice
 
-**Generate this line** or **Generate all lines** (Scene tab), or from the command line:
+**Generate this line** or **Generate all lines** (Voice tab), or from the command line:
 
 ```bash
 pnpm kick formercial voice my-product

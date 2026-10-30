@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 import { compressAssets } from '@forinda/kickjs-vite/compress'
 
 // Production builds of the pages (`pnpm build` runs both):
@@ -18,7 +19,7 @@ export default defineConfig(({ isSsrBuild }) => ({
   envDir: false,
   // compressAssets: .br / .gz beside the built pages' files, which the server
   // sends to browsers that accept them. Skips the SSR build.
-  plugins: [react(), compressAssets()],
+  plugins: [react(), tailwindcss(), compressAssets()],
   // Same aliases as the dev server: tsconfig.json `paths`.
   resolve: { tsconfigPaths: true },
   // The SSR bundle carries its dependencies: a Netlify or Vercel function
