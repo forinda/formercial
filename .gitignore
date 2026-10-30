@@ -31,3 +31,6 @@ site/.vitepress/dist/
 
 # Local data: project history
 .formercial/
+
+# Release notes, written while cutting a release
+.tmp/
