@@ -302,6 +302,19 @@ describe('doodle block', () => {
     expect(words('9:16')).toBe('tall')
   })
 
+  test('the wobble bends lines but not labels', () => {
+    const { host, player } = mount(
+      doodle([
+        { d: 'M0 0 H10', seconds: 0 },
+        { text: 'abc', x: 0, y: 0, seconds: 0 },
+      ]),
+    )
+    player.frame(1)
+    const root = parts(host)
+    expect(root.querySelector('path[pathLength]')!.closest('[filter]')).not.toBeNull()
+    expect(root.querySelector('text')!.closest('[filter]')).toBeNull()
+  })
+
   test('a label is text, never markup', () => {
     const { host, player } = mount(doodle([{ text: '<img src=x onerror=alert(1)>', x: 0, y: 0 }]))
     player.frame(5)

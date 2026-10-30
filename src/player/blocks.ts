@@ -265,12 +265,14 @@ export const BLOCKS: { [T in Block['type']]: BlockDef<Of<T>> } = {
         box.append(filter)
         ink.setAttribute('filter', 'url(#wobble)')
       }
+      // Over the wobble: it suits lines, but makes small words hard to read.
+      const words = svg('g')
       const dots = svg('g')
       const pen = svg('g', { visibility: 'hidden' })
       for (const part of PEN) {
         pen.append(svg('path', { ...part, stroke: 'var(--fg)', 'stroke-width': 3 }))
       }
-      box.append(ink, dots, pen)
+      box.append(ink, words, dots, pen)
       root.append(box)
 
       const items = art.strokes.map((item) => {
@@ -282,7 +284,7 @@ export const BLOCKS: { [T in Block['type']]: BlockDef<Of<T>> } = {
           'font-size': item.size,
           fill: `var(--${item.tone})`,
         })
-        ink.append(label)
+        words.append(label)
         return { item, label }
       })
 
