@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.1 (2026-10-30)
+
+[Full changelog](https://github.com/forinda/formercial/compare/v0.1.0...v0.1.1)
+
+_No conventional-commit changes since v0.1.0._
+
 ## v0.1.0 (2026-10-30)
 
 ### 🚀 Features
