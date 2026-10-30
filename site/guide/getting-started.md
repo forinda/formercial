@@ -63,6 +63,8 @@ pnpm kick formercial new "My Product"
 pnpm kick formercial new "Learn TypeScript" --preset typescript-intro
 ```
 
+Creating a project from a preset downloads its fonts from Google Fonts into the project, so it looks the same on any machine. If that fails, the project is still made, and you can press **Download** under **Project → Fonts** later.
+
 Or use **New commercial** on the projects page, with **Start from** set to a preset. The language and doodle presets are ready to render as-is. `showcase` has a custom scene, so [trust](./custom-scenes#trust) it first or delete that scene. Change the text, code and colors to make it yours, then press **Download** next to each font under **Project** so renders look the same everywhere.
 
 Then read [Making a commercial](./making-a-commercial).

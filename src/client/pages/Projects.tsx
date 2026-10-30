@@ -19,8 +19,10 @@ export default function Projects({
   const [name, setName] = useState('')
   const [preset, setPreset] = useState('')
   const [error, setError] = useState('')
+  const [creating, setCreating] = useState(false)
   async function create(e: React.FormEvent) {
     e.preventDefault()
+    setCreating(true)
     try {
       const { slug } = await api<{ slug: string }>('/api/v1/projects', {
         method: 'POST',
@@ -29,6 +31,7 @@ export default function Projects({
       router.visit(`/p/${slug}`)
     } catch (err) {
       setError((err as Error).message)
+      setCreating(false)
     }
   }
   const starts = [
@@ -54,8 +57,8 @@ export default function Projects({
             onChange={(e) => setName(e.target.value)}
             placeholder="Product name, e.g. @forinda/kickjs-db"
           />
-          <Button type="submit" disabled={!name.trim()}>
-            New commercial
+          <Button type="submit" disabled={!name.trim() || creating}>
+            {creating ? (preset ? 'Getting its fonts…' : 'Creating…') : 'New commercial'}
           </Button>
         </div>
         <fieldset className="grid gap-2">

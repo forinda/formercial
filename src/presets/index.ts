@@ -12,8 +12,6 @@ export interface Preset {
   description: string
   /** The language its code blocks use; `mixed` shows them all, `none` has no code. */
   lang: 'ts' | 'js' | 'py' | 'mixed' | 'none'
-  /** Font families to download into a new project, because the look depends on them. */
-  fonts?: string[]
   project: Project
 }
 
@@ -920,7 +918,6 @@ export const PRESETS: Preset[] = [
     title: 'Doodle lesson: how a light bulb works',
     description: 'A whiteboard explainer on current, resistance and why a filament glows',
     lang: 'none',
-    fonts: ['Caveat', 'Patrick Hand'],
     project: doodleLesson,
   },
   {
@@ -959,15 +956,26 @@ export function fromPreset(id: string, name: string, voice?: string): Project {
 }
 
 /**
- * Download the fonts a preset's look depends on. A failure only costs the look:
- * the project is already saved, and Project → Fonts can fetch them later.
+ * Download a preset's fonts into the new project, so it looks the same on any
+ * machine. A failure only costs the look: the project is already saved, and
+ * Project → Fonts can fetch them later. The first failure stops the rest, because
+ * it usually means no network, and each attempt would have to time out.
  */
-export async function storePresetFonts(ws: Workspace, slug: string, id: string): Promise<void> {
-  for (const family of PRESETS.find((p) => p.id === id)?.fonts ?? []) {
+export async function storePresetFonts(
+  ws: Workspace,
+  slug: string,
+  id: string,
+  fetchFn: typeof fetch = fetch,
+): Promise<void> {
+  const preset = PRESETS.find((p) => p.id === id)
+  if (!preset) return
+  const { display, body, mono } = preset.project.theme.fonts
+  for (const family of new Set([display, body, mono])) {
     try {
-      await storeGoogleFont(ws, slug, family)
+      await storeGoogleFont(ws, slug, family, fetchFn)
     } catch (err) {
       console.warn(`${slug}: couldn't download ${family}: ${(err as Error).message}`)
+      return
     }
   }
 }
