@@ -139,7 +139,7 @@ The closing card.
 | tree | `at` + 0.5s per line + 0.4s |
 | cards, chips | `at` + 0.3s per item + 0.4s |
 | end | `at` + 2.8s |
-| doodle | when its last item ends, in the slower of its two drawings |
+| doodle | the latest time any item ends, across both drawings |
 | others | `at` + 0.4s |
 
 The scene gets at least the slowest block's time plus one second.

@@ -27,7 +27,8 @@ import {
   IconTrash,
 } from '@tabler/icons-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import type { Block, Scene } from '@/core/project'
+import type { z } from 'zod'
+import { DoodleStrokesSchema, DoodleTallSchema, type Block, type Scene } from '@/core/project'
 import { Button } from '@/client/components/ui/button'
 import { Input } from '@/client/components/ui/input'
 import { Select } from '@/client/components/ui/select'
@@ -164,36 +165,34 @@ const BLANK: { [T in Block['type']]: Extract<Block, { type: T }> } = {
   },
 }
 
-/** A value as JSON: nothing changes until what's typed is valid. */
+/** A value as JSON, checked against its schema: nothing changes until what's typed is valid. */
 function JsonField<T>(props: {
   id: string
   label: string
   value: T
+  schema: z.ZodType<T>
   /** Empty text means this; a field without it must always hold something. */
   empty?: T
-  check(parsed: unknown): void
   onChange(value: T): void
 }) {
   const shown = (v: T) => (v === props.empty ? '' : JSON.stringify(v, null, 2))
   const [text, setText] = useState(() => shown(props.value))
   const [error, setError] = useState('')
-  // Another scene, an undo or a restore: show what's there now, unless it's what was typed.
+  // Another scene, an undo or a restore: show what's there now, but never rewrite
+  // what's being typed with the defaults its own edit just filled in.
+  const sent = useRef(props.value)
   useEffect(() => {
-    let same = false
-    try {
-      same = JSON.stringify(JSON.parse(text || 'null')) === JSON.stringify(props.value ?? null)
-    } catch {
-      // Mid-edit: same stays false only if the value really moved on, checked below.
-      same = error !== '' && lastGood.current === props.value
-    }
-    if (!same) {
-      setText(shown(props.value))
-      setError('')
-    }
-    lastGood.current = props.value
+    if (props.value === sent.current) return
+    sent.current = props.value
+    setText(shown(props.value))
+    setError('')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.value])
-  const lastGood = useRef(props.value)
+  const send = (value: T) => {
+    sent.current = value
+    setError('')
+    props.onChange(value)
+  }
   return (
     <Field id={props.id} label={props.label}>
       <Textarea
@@ -205,16 +204,12 @@ function JsonField<T>(props: {
         value={text}
         onChange={(e) => {
           setText(e.target.value)
+          if (!e.target.value.trim() && 'empty' in props) return send(props.empty as T)
           try {
-            if (!e.target.value.trim() && 'empty' in props) {
-              setError('')
-              props.onChange(props.empty as T)
-              return
-            }
-            const parsed = JSON.parse(e.target.value)
-            props.check(parsed)
-            setError('')
-            props.onChange(parsed)
+            const parsed = props.schema.safeParse(JSON.parse(e.target.value))
+            if (parsed.success) return send(parsed.data)
+            const [issue] = parsed.error.issues
+            setError(`${issue.path.join('.') || 'value'}: ${issue.message}`)
           } catch (err) {
             setError((err as Error).message)
           }
@@ -397,20 +392,15 @@ function BlockForm({
             id={`${id}-strokes`}
             label="Strokes: a path with d, or a label with text, x and y"
             value={block.strokes}
-            check={(v) => {
-              if (!Array.isArray(v)) throw new Error('a list of strokes, in [ ]')
-            }}
+            schema={DoodleStrokesSchema}
             onChange={(strokes) => set({ strokes })}
           />
           <JsonField
             id={`${id}-tall`}
             label="Tall drawing for 9:16 (optional): { viewBox, strokes }"
             value={block.tall}
+            schema={DoodleTallSchema.optional()}
             empty={undefined}
-            check={(v) => {
-              const strokes = (v as { strokes?: unknown } | null)?.strokes
-              if (!Array.isArray(strokes)) throw new Error('needs strokes, a list in [ ]')
-            }}
             onChange={(tall) => set({ tall })}
           />
           {number('at', 'Starts at (s)')}

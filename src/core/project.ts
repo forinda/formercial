@@ -62,6 +62,13 @@ const viewBox = z.string().regex(/^-?\d+(\.\d+)? -?\d+(\.\d+)? \d+(\.\d+)? \d+(\
   error: 'four numbers, like "0 0 1600 720"',
 })
 
+/** Also what the editor checks typed strokes against, so they get the same defaults. */
+export const DoodleStrokesSchema = z.array(DoodleItemSchema)
+export const DoodleTallSchema = z.strictObject({
+  viewBox: viewBox.default('0 0 900 1400'),
+  strokes: DoodleStrokesSchema,
+})
+
 const BlockSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('eyebrow'), at, text: z.string() }),
   z.object({ type: z.literal('headline'), at, text: z.string(), accent: z.string().optional() }),
@@ -117,14 +124,9 @@ const BlockSchema = z.discriminatedUnion('type', [
     pen: z.boolean().default(true),
     /** Hand-drawn wobble on the lines; off is sharper and cheaper to render. */
     wobble: z.boolean().default(true),
-    strokes: z.array(DoodleItemSchema),
+    strokes: DoodleStrokesSchema,
     /** A separate drawing for 9:16: wide art is tiny in a tall frame. */
-    tall: z
-      .strictObject({
-        viewBox: viewBox.default('0 0 900 1400'),
-        strokes: z.array(DoodleItemSchema),
-      })
-      .optional(),
+    tall: DoodleTallSchema.optional(),
   }),
 ])
 
