@@ -54,6 +54,12 @@ export async function launchChrome(): Promise<Page> {
       if (hit) resolve(hit[1])
     })
     chrome.on('exit', (code) => reject(new Error(`chromium exited ${code}: ${log.slice(-300)}`)))
+    // A launch that never prints its address fails the job instead of hanging it.
+    const timer = setTimeout(() => {
+      chrome.kill()
+      reject(new Error(`chromium didn't start within 20s: ${log.slice(-300)}`))
+    }, 20_000)
+    chrome.stderr.on('data', () => /DevTools listening/.test(log) && clearTimeout(timer))
     chrome.on('error', reject)
   })
   const ws = new WebSocket(wsUrl)
@@ -68,7 +74,8 @@ export async function launchChrome(): Promise<Page> {
     const p = msg.id && pending.get(msg.id)
     if (!p) return
     pending.delete(msg.id)
-    msg.error ? p.reject(new Error(msg.error.message)) : p.resolve(msg.result)
+    if (msg.error) p.reject(new Error(msg.error.message))
+    else p.resolve(msg.result)
   })
   let session: string | undefined
   const send = <T>(method: string, params: object = {}) =>

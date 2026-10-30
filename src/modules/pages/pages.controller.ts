@@ -1,31 +1,62 @@
-import { ConfigService, Controller, Get } from '@forinda/kickjs'
+import { Controller, Get, type RequestContext } from '@forinda/kickjs'
 import { inertia } from '@forinda/kickjs-inertia'
+import { FORMATS, type Format } from '../../core/project'
+import { clipLengths } from '../../core/voice/voice-project'
+import { Studio } from '../projects/studio.service'
+
+const notFound = (message: string) => inertia('Error', { status: 404, message }, { status: 404 })
 
 @Controller()
 export class PagesController {
-  constructor(private readonly config: ConfigService) {}
+  constructor(private readonly studio: Studio) {}
+
+  // Each page loads the project from the workspace; a missing or invalid one
+  // is a 404 page rather than an error.
+  private async load(slug: string) {
+    try {
+      const { project, version } = await this.studio.ws.read(slug)
+      const clips = Object.fromEntries(
+        Object.entries(await clipLengths(this.studio.ws, slug, project)).filter(([, c]) => c),
+      )
+      return {
+        slug,
+        project,
+        version,
+        clips,
+        trusted: await this.studio.trust.isTrusted(slug, project),
+      }
+    } catch {
+      return null
+    }
+  }
 
   @Get('/')
-  home() {
-    // Renders src/client/pages/Home.tsx with these props.
+  async home() {
     return inertia(
-      'Home',
-      { greeting: 'Welcome to commercial-x-creator' },
-      // In the first HTML response, for search engines and link previews.
-      {
-        meta: {
-          title: 'Home',
-          // 120–160 characters reads best in search results.
-          description:
-            'Welcome to commercial-x-creator: a KickJS and Inertia app with server-rendered pages, typed forms for putting short commercials together.',
-          jsonLd: {
-            '@context': 'https://schema.org',
-            '@type': 'WebSite',
-            name: 'commercial-x-creator',
-            url: this.config.get('APP_URL'),
-          },
-        },
-      },
+      'Projects',
+      { projects: await this.studio.ws.list() },
+      { meta: { title: 'Projects' } },
+    )
+  }
+
+  @Get('/p/:slug')
+  async editor(ctx: RequestContext) {
+    const props = await this.load(ctx.params.slug)
+    if (!props) return notFound(`No project "${ctx.params.slug}".`)
+    return inertia('Editor', props, { meta: { title: props.project.name } })
+  }
+
+  /** What render drivers open: the player alone, at the format's size. */
+  @Get('/p/:slug/render/:format')
+  async render(ctx: RequestContext) {
+    const format = String(ctx.params.format).replace('x', ':') as Format
+    if (!(format in FORMATS)) return notFound(`No format "${ctx.params.format}".`)
+    const props = await this.load(ctx.params.slug)
+    if (!props) return notFound(`No project "${ctx.params.slug}".`)
+    return inertia(
+      'Render',
+      { ...props, format },
+      { meta: { title: `${props.project.name} ${format}` } },
     )
   }
 }
