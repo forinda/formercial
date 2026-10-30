@@ -1,9 +1,0 @@
-Your schema lives in three places. The database... the migrations folder... and the types you hope still match.
-Kick D-B puts it in one place. You write your tables in TypeScript, once.
-Queries are typed from that schema. Load a user with their latest posts in one query, and your editor knows every field.
-Change the schema, and run kick D-B generate. You get the SQL to apply, a draft to undo it, and a snapshot of what the database should look like.
-Generated SQL waits for a person. Outside development, the runner refuses any migration nobody has reviewed. Read it, approve it, ship it.
-At boot, kick D-B compares the live database with the last snapshot. If someone changed it by hand, you hear about it first. Indexes you add on purpose? Leave them out by name.
-Transactions commit when your code finishes, and roll back when it throws. Isolation levels and savepoints are there when you need them.
-Postgres, MySQL, or S-Q-Lite, with one API. Moving from Prisma, Drizzle, Type O-R-M, or Sequelize? There's a guide for each.
-Kick D-B. One schema. Typed queries. And migrations you can read. Run: kick add D-B.
