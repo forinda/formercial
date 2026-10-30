@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import { fileURLToPath } from 'node:url'
 import swc from 'unplugin-swc'
 import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 import { kickjsVitePlugin, envWatchPlugin } from '@forinda/kickjs-vite'
 
 // Dev server for the API and the pages. swc compiles the server, which
@@ -17,6 +18,7 @@ export default defineConfig({
     // type takes swc's `exclude` (strings) for its own filter.
     { ...swc.vite({ exclude: ['**/node_modules/**', '**/src/client/**'] }), config: undefined },
     react(),
+    tailwindcss(),
     kickjsVitePlugin({ entry: 'src/index.ts' }),
     // Watches .env files and triggers a full reload on change so the
     // dev server picks up env tweaks without a manual restart.

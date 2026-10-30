@@ -6,15 +6,13 @@ export function Layout({ children }: { children: ReactNode }) {
   const page = usePage<{ appName: string }>()
   const flash = page.flash as { success?: string }
   return (
-    <main
-      style={{ fontFamily: 'system-ui', maxWidth: 640, margin: '2rem auto', padding: '0 1rem' }}
-    >
+    <main className="mx-auto grid max-w-2xl gap-3 px-4 py-8">
       <Seo />
-      <nav style={{ display: 'flex', gap: 12 }}>
+      <nav className="flex gap-3">
         <strong>{page.props.appName}</strong>
         <Link href="/">Home</Link>
       </nav>
-      {flash.success && <p style={{ color: 'green' }}>{flash.success}</p>}
+      {flash.success && <p className="text-spoken">{flash.success}</p>}
       {children}
     </main>
   )

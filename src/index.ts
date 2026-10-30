@@ -6,6 +6,7 @@ import 'reflect-metadata'
 import './config'
 import { bootstrap, getEnv, requestId, session, expressRuntime } from '@forinda/kickjs'
 import { InertiaAdapter, h, inertiaErrorHandler, inertiaNotFound } from '@forinda/kickjs-inertia'
+import { THEME_SCRIPT } from '@/core/theme-script'
 import { McpAdapter } from '@forinda/kickjs-mcp'
 import express from 'express'
 import { FormercialSettings } from './core/settings'
@@ -35,7 +36,7 @@ export const app = await bootstrap({
     InertiaAdapter({
       title: 'Formercial',
       entry: 'src/client/main.tsx',
-      head: '<link rel="icon" href="/favicon.svg" type="image/svg+xml" />',
+      head: `<link rel="icon" href="/favicon.svg" type="image/svg+xml" />${THEME_SCRIPT}`,
       // Canonical URLs and absolute image URLs start here — not at the Host header.
       baseUrl: getEnv('APP_URL'),
       // Every page's meta starts from these; a controller adds its own with

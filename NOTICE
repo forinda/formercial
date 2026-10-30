@@ -3,3 +3,6 @@ Copyright 2026 Felix Orinda and the formercial contributors
 
 This product is licensed under the Apache License, Version 2.0 (see LICENSE).
 Redistributions must keep this notice, as section 4(d) of the license requires.
+
+src/client/components/ui is adapted from shadcn/ui, MIT License,
+Copyright (c) 2023 shadcn.

@@ -16,6 +16,9 @@ uploads/
 .tus/
 
 # Commercial creator: generated per machine.
+# Your commercials stay out of this repository; only the example is tracked.
+projects/*
+!projects/kickjs-db/
 projects/*/renders/
 projects/*/voice/*.tts.mp3
 projects/*/voice/.made.json

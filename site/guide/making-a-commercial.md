@@ -4,12 +4,15 @@ A commercial is a list of scenes. Each scene has a picture, a caption and a spok
 
 ## The editor
 
-- **Left:** the scene list. Add a scene (**+ Scene** for blocks, **+ Custom** for code), and duplicate, delete or reorder the selected one.
-- **Middle:** three tabs.
-  - **Scene:** the selected scene's texts, timing, transition, blocks and voice.
+- **Preview:** the picture, with the format switch.
+- **Timeline, along the bottom:** each scene as a clip as long as it runs, with a bar under it showing how much the voice fills. Click a clip to jump to it, and drag it to reorder. Beside the play button, add a scene (**Scene** for blocks, **Custom scene** for code), or move, duplicate or delete the selected one.
+- **Panel on the right:** four tabs.
+  - **Scene:** the selected scene's caption, timing, transition and blocks. Drag a block by its handle to reorder it, or focus the handle and use the arrow keys.
+  - **Voice:** the spoken line, generating it, and recording it.
   - **Project:** name, formats, colors, fonts, captions, logo, music.
   - **Render:** render drivers, renders in progress, and finished videos.
-- **Right:** the live preview, with the format switch, play and seek, and the timeline. Click a scene in the timeline to jump to it.
+
+Drag the lines between the panes to resize them, or hide the panel and the timeline with the buttons above the picture. The sun and moon button in the top bar switches between system, light and dark themes. The theme is only for the app: it doesn't change your video.
 
 Changes save on their own a moment after you stop typing. The status in the top bar says **Saved**, **Saving…** or **Changed on disk**.
 

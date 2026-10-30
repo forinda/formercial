@@ -2,6 +2,9 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Scene } from '@/core/project'
 import type { Clip } from '@/core/timeline'
+import { Button } from '@/client/components/ui/button'
+import { Textarea } from '@/client/components/ui/textarea'
+import { Field, Group } from './field'
 import { api, fileUrl } from './useProject'
 
 export function VoicePanel(props: {
@@ -27,11 +30,18 @@ export function VoicePanel(props: {
     }
   }
   return (
-    <section className="panel" aria-label="Voice">
-      <h2>Voice</h2>
-      <p className="muted">
+    <section aria-label="Voice" className="grid gap-3">
+      <Field id={`spoken-${scene.id}`} label="Spoken line (spell out what the voice would misread)">
+        <Textarea
+          id={`spoken-${scene.id}`}
+          rows={4}
+          value={scene.spoken}
+          onChange={(e) => props.onScene({ ...scene, spoken: e.target.value })}
+        />
+      </Field>
+      <p className="text-muted-foreground">
         {props.clip
-          ? `${scene.voice === 'recording' ? 'Recording' : 'Generated'} · ${props.clip.seconds.toFixed(1)}s`
+          ? `${scene.voice === 'recording' ? 'Recording' : 'Generated'}, ${props.clip.seconds.toFixed(1)}s`
           : scene.spoken.trim()
             ? 'No clip yet for this line.'
             : 'No spoken line: this scene is silent.'}
@@ -43,9 +53,9 @@ export function VoicePanel(props: {
           key={props.clip.path + props.clip.seconds}
         />
       )}
-      <div className="row wrap">
-        <button
-          type="button"
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="secondary"
           disabled={!!busy || !scene.spoken.trim()}
           onClick={() =>
             run('scene', () =>
@@ -54,18 +64,20 @@ export function VoicePanel(props: {
           }
         >
           {busy === 'scene' ? 'Generating…' : 'Generate this line'}
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="secondary"
           disabled={!!busy}
           onClick={() =>
             run('all', () => api(`/api/v1/projects/${slug}/voice`, { method: 'POST' }))
           }
         >
           {busy === 'all' ? 'Generating…' : 'Generate all lines'}
-        </button>
+        </Button>
       </div>
-      <p className="note">Generated voice sends the spoken lines to Microsoft's speech service.</p>
+      <p className="text-xs text-muted-foreground">
+        Generated voice sends the spoken lines to Microsoft's speech service.
+      </p>
       <Recorder
         onUse={(blob) =>
           run('upload', async () => {
@@ -79,11 +91,11 @@ export function VoicePanel(props: {
         }
       />
       {scene.voice === 'recording' && (
-        <button type="button" onClick={() => props.onScene({ ...scene, voice: 'tts' })}>
+        <Button variant="outline" onClick={() => props.onScene({ ...scene, voice: 'tts' })}>
           Use generated voice
-        </button>
+        </Button>
       )}
-      {error && <p className="error">{error}</p>}
+      {error && <p className="text-destructive">{error}</p>}
     </section>
   )
 }
@@ -127,26 +139,25 @@ function Recorder({ onUse }: { onUse(blob: Blob): void }) {
   }
 
   return (
-    <div className="recorder">
-      <h3>Record it yourself</h3>
-      <div className="row wrap">
+    <Group title="Record it yourself">
+      <div className="flex flex-wrap gap-2">
         {state === 'recording' ? (
-          <button type="button" className="rec" onClick={() => recorder.current?.stop()}>
-            Stop · {seconds.toFixed(1)}s
-          </button>
+          <Button variant="destructive" onClick={() => recorder.current?.stop()}>
+            Stop <span className="font-mono tabular-nums">{seconds.toFixed(1)}s</span>
+          </Button>
         ) : (
-          <button type="button" onClick={start}>
+          <Button variant="secondary" onClick={start}>
             {state === 'done' ? 'Retake' : 'Record'}
-          </button>
+          </Button>
         )}
         {blob && state === 'done' && (
-          <button type="button" onClick={() => onUse(blob)}>
+          <Button variant="secondary" onClick={() => onUse(blob)}>
             Use this recording
-          </button>
+          </Button>
         )}
       </div>
       {url && state === 'done' && <audio controls src={url} />}
-      {error && <p className="error">{error}</p>}
-    </div>
+      {error && <p className="text-destructive">{error}</p>}
+    </Group>
   )
 }
