@@ -32,6 +32,7 @@ import type { z } from 'zod'
 import {
   DoodleStrokesSchema,
   DoodleTallSchema,
+  TRANSITIONS,
   type Block,
   type Project,
   type Scene,
@@ -41,6 +42,7 @@ import { Input } from '@/client/components/ui/input'
 import { Select } from '@/client/components/ui/select'
 import { Textarea } from '@/client/components/ui/textarea'
 import { cn } from '@/client/lib/utils'
+import { defaultSeconds } from '@/player/transitions'
 import { DoodleBoard } from './doodle/board'
 import { Field } from './field'
 import { IconButton } from './icon-button'
@@ -542,11 +544,30 @@ export function SceneForm({
             value={scene.transition}
             onChange={(e) => set({ transition: e.target.value as Scene['transition'] })}
           >
-            <option value="fade">fade</option>
-            <option value="slide">slide</option>
-            <option value="cut">cut</option>
+            {TRANSITIONS.map((t) => (
+              <option key={t}>{t}</option>
+            ))}
           </Select>
         </Field>
+        {scene.transition !== 'cut' && (
+          <Field id={`${id}-transition-seconds`} label="Lasting (s)">
+            <Input
+              id={`${id}-transition-seconds`}
+              type="number"
+              min={0.1}
+              max={5}
+              step={0.1}
+              placeholder={String(defaultSeconds(scene.transition))}
+              value={scene.transitionSeconds ?? ''}
+              onChange={(e) =>
+                set({
+                  transitionSeconds:
+                    Number(e.target.value) > 0 ? Math.min(5, Number(e.target.value)) : undefined,
+                })
+              }
+            />
+          </Field>
+        )}
       </div>
 
       {scene.kind === 'blocks' ? (

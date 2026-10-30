@@ -326,3 +326,80 @@ describe('doodle block', () => {
     expect(() => doodle([{ d: 'M0 0', onclick: 'x' }])).toThrow()
   })
 })
+
+describe('transitions', () => {
+  const two = (transition: string, extra = {}) =>
+    project([
+      {
+        id: 'a',
+        kind: 'blocks',
+        minSeconds: 2,
+        caption: '',
+        blocks: [{ type: 'text', text: 'A' }],
+      },
+      {
+        id: 'b',
+        kind: 'blocks',
+        minSeconds: 2,
+        caption: '',
+        transition,
+        blocks: [{ type: 'text', text: 'B' }],
+        ...extra,
+      },
+    ])
+  const scenesOf = (host: HTMLElement) => ({
+    a: host.querySelector<HTMLElement>('[data-scene="a"]')!,
+    b: host.querySelector<HTMLElement>('[data-scene="b"]')!,
+  })
+
+  test('a break keeps the old scene on top until it has gone', () => {
+    const { host, player, timeline } = mount(two('shatter'))
+    player.frame(timeline.scenes[1].start + 0.2)
+    const { a, b } = scenesOf(host)
+    expect(a.style.visibility).toBe('visible')
+    expect(Number(a.style.zIndex)).toBeGreaterThan(Number(b.style.zIndex))
+    expect(host.querySelector('.fm-edges path')!.getAttribute('d')).toContain('M')
+    player.frame(timeline.scenes[1].start + 1.5)
+    expect(a.style.visibility).toBe('hidden')
+    expect(b.style.clipPath).toBe('')
+    expect(host.querySelector('.fm-edges path')!.getAttribute('d')).toBe('')
+  })
+
+  test('a reveal keeps the new scene on top, and clears its clip when done', () => {
+    const { host, player, timeline } = mount(two('iris'))
+    player.frame(timeline.scenes[1].start + 0.1)
+    const { a, b } = scenesOf(host)
+    expect(Number(b.style.zIndex)).toBeGreaterThan(Number(a.style.zIndex))
+    expect(b.style.clipPath).toContain('circle')
+    player.frame(timeline.scenes[1].start + 1)
+    expect(b.style.clipPath).toBe('')
+  })
+
+  test('transitionSeconds sets how long it lasts', () => {
+    const { host, player, timeline } = mount(two('wipe', { transitionSeconds: 2 }))
+    player.frame(timeline.scenes[1].start + 1.5)
+    expect(scenesOf(host).a.style.visibility).toBe('visible')
+    player.frame(timeline.scenes[1].start + 2)
+    expect(scenesOf(host).a.style.visibility).toBe('hidden')
+  })
+
+  test('the first scene has nothing to break from, and just appears', () => {
+    const p = project([
+      { id: 'a', kind: 'blocks', minSeconds: 2, caption: '', transition: 'shatter', blocks: [] },
+    ])
+    const { host, player } = mount(p)
+    player.frame(0.1)
+    expect(scenesOf(host).a.style.visibility).toBe('visible')
+    expect(scenesOf(host).a.style.clipPath).toBe('')
+  })
+
+  test('the same moment draws the same frame, whatever came before', () => {
+    const a = mount(two('crumble'))
+    const b = mount(two('crumble'))
+    const at = a.timeline.scenes[1].start + 0.4
+    a.player.frame(at)
+    b.player.frame(9)
+    b.player.frame(at)
+    expect(snapshot(a.host)).toBe(snapshot(b.host))
+  })
+})
