@@ -26,10 +26,13 @@
     "dev": "kick dev",
     "build": "kick build && vite build --config vite.client.config.ts && vite build --config vite.client.config.ts --ssr src/client/ssr.tsx",
     "start": "kick start",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run --passWithNoTests && pnpm test:scripts",
     "docs:dev": "vitepress dev site",
     "docs:build": "vitepress build site",
-    "docs:preview": "vitepress preview site"
+    "docs:preview": "vitepress preview site",
+    "test:scripts": "node --test \"scripts/*.test.mjs\"",
+    "release": "node scripts/release.mjs",
+    "release:dry": "node scripts/release.mjs --dry-run"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
