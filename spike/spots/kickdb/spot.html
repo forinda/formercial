@@ -1,0 +1,548 @@
+<title>kick/db Spot</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one 16:9 screen that plays a 120s spot, with the voiceover script as a ledger below it. */
+:root {
+  --ink: #0d2226;        /* deep teal ground */
+  --ink-2: #13313a;      /* raised panel */
+  --line: #24505a;       /* rules, borders */
+  --paper: #efe9da;      /* text */
+  --muted: #9db4b3;      /* secondary text */
+  --saffron: #f2c14e;    /* the one accent */
+  --mint: #7fd1b9;       /* success state */
+  --rust: #e3735e;       /* refusal / drift state */
+  --display: 'Unbounded', 'Arial Black', system-ui, sans-serif;
+  --body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box }
+html, body { background: var(--ink); color: var(--paper) }
+body {
+  font-family: var(--body);
+  font-size: 15px;
+  line-height: 1.55;
+  padding-block: 24px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1040px; margin: 0 auto; display: grid; gap: 28px }
+
+header.top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 24px }
+header.top h1 { font-family: var(--display); font-weight: 700; font-size: 1.35rem; margin: 0; letter-spacing: -0.01em }
+header.top p { margin: 0; color: var(--muted); font-size: .9rem }
+
+/* ---------- the screen ---------- */
+.screen {
+  position: relative;
+  max-width: 100%;
+  container-type: inline-size;
+  background:
+    radial-gradient(120% 90% at 85% 10%, #18414a 0%, transparent 55%),
+    var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.stage { position: relative; aspect-ratio: 16 / 9; max-width: 100%; overflow: hidden }
+.scene { position: absolute; inset: 0; padding: 4.5cqw 6cqw 4cqw; display: flex; flex-direction: column; gap: 2.2cqw; opacity: 0; transition: opacity .45s ease; pointer-events: none }
+.scene.live { opacity: 1 }
+.eyebrow { font-family: var(--mono); font-size: 1.25cqw; letter-spacing: .14em; text-transform: uppercase; color: var(--saffron) }
+.headline { font-family: var(--display); font-weight: 800; font-size: 3.9cqw; line-height: 1.05; letter-spacing: -0.02em; margin: 0; text-wrap: balance; max-width: 80% }
+.headline em { font-style: normal; color: var(--saffron) }
+.sub { font-size: 1.7cqw; color: var(--muted); margin: 0; max-width: 60% }
+
+.reveal { opacity: 0; transform: translateY(1.2cqw); transition: opacity .5s ease, transform .5s ease }
+.reveal.on { opacity: 1; transform: none }
+
+.row { display: flex; gap: 2cqw; align-items: stretch; min-width: 0 }
+.row > * { min-width: 0 }
+
+.code, .term {
+  font-family: var(--mono);
+  font-size: 1.3cqw;
+  line-height: 1.55;
+  background: #0a1b1f;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 1.6cqw 2cqw;
+  margin: 0;
+  white-space: pre;
+  overflow: hidden;
+  flex: none;
+}
+.row > .code, .row > .term { flex: 1 }
+.code .label, .term .label { display: block; font-size: 1.05cqw; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; margin-bottom: .8cqw }
+.caret { display: inline-block; width: .6em; height: 1.1em; background: var(--saffron); vertical-align: -0.2em; animation: blink 1s steps(1) infinite }
+@keyframes blink { 50% { opacity: 0 } }
+.k { color: #c9a8ff } .s { color: var(--mint) } .c { color: #6f8f8e; font-style: italic } .n { color: var(--saffron) } .f { color: #8ec5ff }
+.prompt { color: var(--saffron) } .ok { color: var(--mint) } .bad { color: var(--rust) } .dim { color: var(--muted) }
+
+/* scene 1: three copies of one schema */
+.trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2cqw; margin-top: 1cqw }
+.slab { border: 1px solid var(--line); border-radius: 4px; padding: 1.4cqw 1.6cqw; background: #0a1b1f; transition: transform 1.2s ease, border-color .6s }
+.slab h3 { margin: 0 0 .8cqw; font-family: var(--mono); font-weight: 600; font-size: 1.15cqw; letter-spacing: .08em; text-transform: uppercase; color: var(--muted) }
+.slab code { font-family: var(--mono); font-size: 1.5cqw; color: var(--paper) }
+.trio.apart .slab { border-color: var(--rust) }
+.trio.apart .slab:nth-child(1) { transform: translate(-1.2cqw, 1.4cqw) rotate(-2deg) }
+.trio.apart .slab:nth-child(3) { transform: translate(1.2cqw, -1cqw) rotate(2.2deg) }
+
+/* scene 3: type popover */
+.pop { align-self: flex-end; margin-top: -1cqw; background: var(--paper); color: var(--ink); font-family: var(--mono); font-size: 1.35cqw; padding: 1cqw 1.4cqw; border-radius: 4px; box-shadow: 0 1cqw 3cqw rgba(0,0,0,.4) }
+.pop b { color: #6b3fb0 }
+
+/* scene 4: file tree */
+.tree { font-family: var(--mono); font-size: 1.3cqw; line-height: 1.75; background: #0a1b1f; border: 1px solid var(--line); border-radius: 4px; padding: 1.6cqw 2cqw; flex: 0 0 38% }
+.tree div { opacity: 0; transition: opacity .4s }
+.tree div.on { opacity: 1 }
+.tree .dir { color: var(--muted) }
+
+/* scene 5: stamps */
+.stamp { font-family: var(--display); font-weight: 800; font-size: 2.6cqw; letter-spacing: .04em; padding: .6cqw 1.6cqw; border: .35cqw solid currentColor; border-radius: 4px; transform: rotate(-4deg); align-self: center }
+.stamp.bad { color: var(--rust) } .stamp.ok { color: var(--mint) }
+.gate { display: grid; grid-template-columns: 1fr auto; gap: 2cqw; align-items: center }
+
+/* scene 8: chips */
+.chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.6cqw }
+.chip { border: 1px solid var(--line); border-radius: 4px; padding: 1.4cqw 1.6cqw; background: #0a1b1f }
+.chip strong { display: block; font-family: var(--display); font-size: 2cqw; font-weight: 700 }
+.chip span { font-family: var(--mono); font-size: 1.25cqw; color: var(--muted) }
+.from { display: flex; flex-wrap: wrap; gap: 1cqw; align-items: center; font-size: 1.6cqw }
+.from b { font-weight: 500; color: var(--muted); margin-right: .6cqw }
+.from span { border: 1px solid var(--saffron); color: var(--saffron); border-radius: 99px; padding: .3cqw 1.4cqw; font-family: var(--mono); font-size: 1.35cqw }
+
+/* scene 9: end card */
+.end { justify-content: center; align-items: flex-start }
+.wordmark { font-family: var(--display); font-weight: 800; font-size: 11cqw; line-height: .9; letter-spacing: -0.04em; margin: 0 }
+.wordmark i { font-style: normal; color: var(--saffron) }
+.cmd { font-family: var(--mono); font-size: 2.2cqw; background: var(--saffron); color: var(--ink); padding: .6cqw 1.6cqw; border-radius: 4px; font-weight: 600 }
+
+/* captions + controls */
+.vo { margin: 0; padding: 1.4cqw 6cqw; font-size: max(13px, 1.7cqw); line-height: 1.4; color: var(--paper); text-wrap: balance; min-height: calc(2 * 1.4em + 2.8cqw); border-top: 1px solid var(--line); background: rgba(8, 22, 25, .6) }
+.vo::before { content: 'VO'; font-family: var(--mono); font-size: max(10px, 1cqw); letter-spacing: .14em; color: var(--saffron); margin-right: 1.2cqw; vertical-align: .25em }
+.bar { position: relative; min-height: 36px; padding-block: 6px; display: flex; align-items: center; gap: 1.6cqw; padding: 0 2cqw; background: rgba(8, 22, 25, .85); border-top: 1px solid var(--line) }
+.bar button { font: inherit; font-family: var(--mono); font-size: max(12px, 1.2cqw); color: var(--ink); background: var(--saffron); border: 0; border-radius: 3px; padding: .35cqw 1.2cqw; cursor: pointer; min-width: 7cqw }
+.bar button:focus-visible, .track:focus-visible { outline: 2px solid var(--paper); outline-offset: 2px }
+.track { position: relative; flex: 1; height: 20px; cursor: pointer; display: flex; align-items: center }
+.track .rail { position: absolute; left: 0; right: 0; height: .3cqw; background: var(--line); border-radius: 2px }
+.track .fill { position: absolute; left: 0; height: .3cqw; background: var(--saffron); border-radius: 2px }
+.track .tick { position: absolute; width: 1px; height: 10px; background: var(--muted); opacity: .6 }
+.clock { font-family: var(--mono); font-size: max(12px, 1.2cqw); color: var(--muted); font-variant-numeric: tabular-nums }
+.bar button.ghost { background: transparent; color: var(--paper); border: 1px solid var(--line) }
+.bar button.ghost[aria-pressed="true"] { border-color: var(--saffron); color: var(--saffron) }
+.start { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(8, 22, 25, .55); border: 0; cursor: pointer; z-index: 2 }
+.start[hidden] { display: none }
+.start span { font-family: var(--display); font-weight: 700; font-size: 2.4cqw; color: var(--ink); background: var(--saffron); padding: 1.2cqw 2.6cqw; border-radius: 4px }
+.start:focus-visible span { outline: 2px solid var(--paper); outline-offset: 4px }
+
+/* ---------- script ledger ---------- */
+.script h2 { font-family: var(--display); font-weight: 700; font-size: 1.05rem; margin: 0 0 4px }
+.script > p { margin: 0 0 16px; color: var(--muted); max-width: 65ch }
+.script ol { list-style: none; margin: 0; padding: 0; display: grid; border-top: 1px solid var(--line) }
+.script li { display: grid; grid-template-columns: 6.5rem 1fr 1.4fr; gap: 6px 20px; padding: 12px 0; border-bottom: 1px solid var(--line); cursor: pointer }
+.script li:hover, .script li:focus-visible { background: var(--ink-2); outline: none }
+.script li.now { background: var(--ink-2) }
+.script li.now .t { color: var(--saffron) }
+.script .t { font-family: var(--mono); font-size: .85rem; color: var(--muted); font-variant-numeric: tabular-nums; padding-left: 8px }
+.script .shot { color: var(--muted); font-size: .9rem; min-width: 0 }
+.script .line { min-width: 0 }
+@media (max-width: 640px) {
+  .script li { grid-template-columns: 5rem 1fr }
+  .script .shot { grid-column: 2 }
+}
+body.video { padding: 0; overflow: hidden }
+body.video .wrap { max-width: none; gap: 0 }
+body.video .wrap > header, body.video .script, body.video .vo, body.video .bar, body.video .start { display: none }
+body.video .screen { border: 0; border-radius: 0 }
+@media (prefers-reduced-motion: reduce) {
+  .scene, .reveal, .slab, .tree div { transition: none }
+  .caret { animation: none }
+}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>kick/db — 2:00 spot</h1>
+    <p>Plays in the frame below. Script and shot list follow; click any line to jump.</p>
+  </header>
+
+  <div class="screen" id="screen" aria-label="kick/db commercial, 2 minutes">
+   <div class="stage">
+    <!-- 1 -->
+    <section class="scene">
+      <span class="eyebrow">Monday, 9:04am</span>
+      <h2 class="headline">Your schema lives in <em>three places.</em></h2>
+      <div class="trio" id="trio">
+        <div class="slab reveal" data-at="1.5"><h3>The database</h3><code>email text NULL</code></div>
+        <div class="slab reveal" data-at="2.6"><h3>migrations/</h3><code>email varchar(255)</code></div>
+        <div class="slab reveal" data-at="3.7"><h3>types.ts</h3><code>email: string</code></div>
+      </div>
+      <p class="sub reveal" data-at="6.5">Only one of them is right. Nobody knows which.</p>
+    </section>
+
+    <!-- 2 -->
+    <section class="scene">
+      <span class="eyebrow">kick/db</span>
+      <h2 class="headline">One schema. <em>In TypeScript.</em></h2>
+      <pre class="code" data-type="1" data-at="1.2" data-cps="34"><span class="label">src/db/schema.ts</span><template>const users = table('users', {
+  id: uuid().primaryKey().defaultRandom(),
+  email: varchar(255).notNull().unique(),
+  createdAt: timestamp().notNull().defaultNow(),
+})
+
+const posts = table('posts', {
+  id: serial().primaryKey(),
+  authorId: uuid().notNull().references(() => users.id),
+  title: text().notNull(),
+})</template></pre>
+    </section>
+
+    <!-- 3 -->
+    <section class="scene">
+      <span class="eyebrow">Typed queries</span>
+      <h2 class="headline">Ask for it. <em>Get its type.</em></h2>
+      <pre class="code" data-type="1" data-at="1" data-cps="30"><span class="label">users.service.ts</span><template>const user = await db.query.users.findFirst({
+  where: (_u, eb) => eb('email', '=', 'ada@acme.dev'),
+  with: { posts: { limit: 5 } },
+})</template></pre>
+      <div class="pop reveal" data-at="7.5"><b>user</b>: { id: string; email: string; createdAt: Date;<br>&nbsp;&nbsp;posts: Post[] } | undefined</div>
+    </section>
+
+    <!-- 4 -->
+    <section class="scene">
+      <span class="eyebrow">Migrations</span>
+      <h2 class="headline">Change the schema. <em>Generate the SQL.</em></h2>
+      <div class="row">
+        <pre class="term" data-type="0" data-at="1" data-cps="22"><span class="label">terminal</span><template>$ kick db generate --name add_bookings</template></pre>
+      </div>
+      <div class="row">
+        <div class="tree">
+          <div class="dir" data-at="3.4">db/migrations/</div>
+          <div class="dir" data-at="3.8">└ 20261030_101500_add_bookings/</div>
+          <div data-at="4.4">&nbsp;&nbsp;├ up.sql</div>
+          <div data-at="4.9">&nbsp;&nbsp;├ down.sql <span class="dim">(draft)</span></div>
+          <div data-at="5.4">&nbsp;&nbsp;├ meta.json</div>
+          <div data-at="5.9">&nbsp;&nbsp;└ snapshot.json</div>
+        </div>
+        <pre class="code" data-type="1" data-at="6.6" data-cps="40"><span class="label">up.sql</span><template>CREATE TABLE "bookings" (
+  "id" serial PRIMARY KEY,
+  "user_id" uuid NOT NULL,
+  "starts_at" timestamptz NOT NULL
+);
+ALTER TABLE "bookings" ADD CONSTRAINT
+  "bookings_user_id_fk" FOREIGN KEY ("user_id")
+  REFERENCES "users" ("id");</template></pre>
+      </div>
+    </section>
+
+    <!-- 5 -->
+    <section class="scene">
+      <span class="eyebrow">The review gate</span>
+      <h2 class="headline">Nothing reaches production <em>unread.</em></h2>
+      <div class="gate">
+        <pre class="code" data-type="1" data-at="1" data-cps="30"><span class="label">meta.json</span><template>{ "reviewed": false }</template></pre>
+        <span class="stamp bad reveal" data-at="3" data-until="8.5">Refused</span>
+      </div>
+      <div class="gate">
+        <pre class="term" data-type="0" data-at="6" data-cps="26"><span class="label">terminal</span><template>$ kick db migrate review 20261030_101500_add_bookings</template></pre>
+        <span class="stamp ok reveal" data-at="9">Applies</span>
+      </div>
+    </section>
+
+    <!-- 6 -->
+    <section class="scene">
+      <span class="eyebrow">Drift check at boot</span>
+      <h2 class="headline">Hand-run DDL <em>gets caught.</em></h2>
+      <pre class="term" data-type="0" data-at="1" data-cps="60"><span class="label">kick dev</span><template>$ kick dev
+  checking schema against 20261030_101500_add_bookings …
+✗ Schema drift detected: 1 added, 0 removed, 0 changed
+  (added: bookings#bookings_tmp_idx)</template></pre>
+      <p class="sub reveal" data-at="6.5">Before your users find it. Indexes you create on purpose? Leave them out by name.</p>
+      <pre class="code" data-type="1" data-at="8" data-cps="34"><span class="label">kick.config.ts</span><template>db: { driftIgnore: { indexes: /_search$/ } }</template></pre>
+    </section>
+
+    <!-- 7 -->
+    <section class="scene">
+      <span class="eyebrow">Transactions</span>
+      <h2 class="headline">All of it, <em>or none of it.</em></h2>
+      <pre class="code" data-type="1" data-at="1" data-cps="40"><span class="label">checkout.ts</span><template>await db.transaction({ isolation: 'serializable' }, async (tx) => {
+  const user = await tx.insertInto('users').values({ email })
+    .returningAll().executeTakeFirstOrThrow()
+  await tx.insertInto('profiles').values({ userId: user.id }).execute()
+}) // commits on success, rolls back on throw</template></pre>
+    </section>
+
+    <!-- 8 -->
+    <section class="scene">
+      <span class="eyebrow">Your database</span>
+      <h2 class="headline">Three dialects. <em>One API.</em></h2>
+      <div class="chips">
+        <div class="chip reveal" data-at="1"><strong>PostgreSQL</strong><span>@forinda/kickjs-db/pg</span></div>
+        <div class="chip reveal" data-at="1.6"><strong>MySQL</strong><span>@forinda/kickjs-db/mysql</span></div>
+        <div class="chip reveal" data-at="2.2"><strong>SQLite</strong><span>@forinda/kickjs-db/sqlite</span></div>
+      </div>
+      <div class="from reveal" data-at="5"><b>Coming from</b><span>Prisma</span><span>Drizzle</span><span>TypeORM</span><span>Sequelize</span></div>
+      <p class="sub reveal" data-at="6.5">There's a guide for each.</p>
+    </section>
+
+    <!-- 9 -->
+    <section class="scene end">
+      <p class="wordmark reveal" data-at=".4">kick<i>/</i>db</p>
+      <p class="sub reveal" data-at="2" style="max-width:80%;font-size:2.1cqw;color:var(--paper)">One schema. Typed queries. Migrations you can read.</p>
+      <span class="cmd reveal" data-at="4">$ kick add db</span>
+      <p class="sub reveal" data-at="6">kickjs.app/guide/database</p>
+    </section>
+
+    <button type="button" class="start" id="start"><span>&#9654; Play with voiceover</span></button>
+   </div>
+    <p class="vo" id="vo" aria-live="off"></p>
+    <div class="bar">
+      <button type="button" id="play" aria-label="Play or pause">Play</button>
+      <button type="button" class="ghost" id="voice" aria-pressed="true">Voice on</button>
+      <div class="track" id="track" role="slider" tabindex="0" aria-label="Position" aria-valuemin="0" aria-valuemax="125" aria-valuenow="0">
+        <div class="rail"></div><div class="fill" id="fill"></div>
+      </div>
+      <span class="clock" id="clock">0:00 / 2:00</span>
+    </div>
+  </div>
+
+  <section class="script">
+    <h2>Script</h2>
+    <p>Voiceover, roughly 150 words per minute, read over the shots above. The player speaks it with your browser's built-in voice, so it sounds different on each device; for a final cut, record these lines.</p>
+    <p>Every claim maps to a shipped feature; the terminal lines are illustrative, not copied output.</p>
+    <ol id="ledger"></ol>
+  </section>
+</div>
+
+<script>
+(() => {
+  // Seconds per scene. make-video.mjs rewrites this line from the voiceover's lengths.
+  const DURS = [11, 12, 14, 15, 14, 14, 12, 13, 15] // @durs
+  const STARTS = DURS.map((_, i) => DURS.slice(0, i).reduce((a, b) => a + b, 0))
+  const TOTAL = DURS.reduce((a, b) => a + b, 0)
+  const VO = [
+    [0, 'Your schema lives in three places. The database, the migrations folder, and the types you hope still match.', 'Three panels: database, migrations, types. They disagree, then drift apart.'],
+    [11, 'kick/db puts it in one. You write your tables in TypeScript, once.', 'Schema file types itself in: users, posts, a reference between them.', 'Kick D B puts it in one. You write your tables in TypeScript, once.'],
+    [23, 'Queries are typed from that schema. Load a user with their latest posts in one query, and your editor knows every field.', 'findFirst with a relation; the inferred type pops up.'],
+    [37, 'Change the schema and run kick db generate. You get the SQL to apply, a draft to undo it, and a snapshot of what the database should look like.', 'Terminal, then the migration folder fills in, then up.sql.', 'Change the schema, and run kick D B generate. You get the S Q L to apply, a draft to undo it, and a snapshot of what the database should look like.'],
+    [52, 'Generated SQL waits for a person. Outside development, the runner refuses any migration nobody has reviewed. Read it, approve it, ship it.', 'meta.json says reviewed: false. Refused. Review command. Applies.'],
+    [66, 'At boot, kick/db compares the live database with the last snapshot. If someone changed it by hand, you hear about it first. Indexes you add on purpose, you leave out by name.', 'kick dev stops on drift; driftIgnore line.', 'At boot, kick D B compares the live database with the last snapshot. If someone changed it by hand, you hear about it first. Indexes you add on purpose, you leave out by name.'],
+    [80, 'Transactions commit when your code finishes and roll back when it throws. Isolation levels and savepoints are there when you need them.', 'Serializable transaction across two inserts.'],
+    [92, 'PostgreSQL, MySQL or SQLite, with one API. Moving from Prisma, Drizzle, TypeORM or Sequelize? There is a guide for each.', 'Three dialect cards, four "coming from" pills.', 'Postgres, My S Q L, or S Q Lite, with one API. Moving from Prisma, Drizzle, Type O R M, or Sequelize? There is a guide for each.'],
+    [105, 'kick/db. One schema, typed queries, and migrations you can read. Run kick add db.', 'End card: wordmark, kick add db, docs address.', 'Kick D B. One schema. Typed queries. And migrations you can read. Run: kick add D B.'],
+  ]
+  VO.forEach((v, i) => { v[0] = STARTS[i] })
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
+  const screen = document.getElementById('screen')
+  const scenes = [...screen.querySelectorAll('.scene')].map((el, i) => ({
+    el, start: STARTS[i], dur: DURS[i],
+    reveals: [...el.querySelectorAll('[data-at]:not([data-type])')],
+    typers: [...el.querySelectorAll('[data-type]')].map((pre) => {
+      const tpl = pre.querySelector('template')
+      const text = tpl.content.textContent
+      tpl.remove()
+      const out = document.createElement('span')
+      pre.append(out)
+      return { pre, out, text, at: +pre.dataset.at, cps: +pre.dataset.cps, code: pre.dataset.type === '1', shown: -1 }
+    }),
+  }))
+
+  const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+  const TOK = /(\/\/[^\n]*)|('[^'\n]*'?|"[^"\n]*"?|`[^`\n]*`?)|\b(const|await|async|return|import|from|export|true|false|CREATE|TABLE|ALTER|ADD|CONSTRAINT|FOREIGN|KEY|REFERENCES|PRIMARY|NOT|NULL)\b|\b(\d+)\b|([A-Za-z_]\w*)(?=\()/g
+  const hl = (s) => {
+    let html = '', last = 0
+    s.replace(TOK, (m, c, str, kw, num, fn, i) => {
+      html += esc(s.slice(last, i))
+      const cls = c ? 'c' : str ? 's' : kw ? 'k' : num ? 'n' : 'f'
+      html += `<span class="${cls}">${esc(m)}</span>`
+      last = i + m.length
+    })
+    return html + esc(s.slice(last))
+  }
+  const term = (s) => esc(s)
+    .replace(/^\$ /gm, '<span class="prompt">$ </span>')
+    .replace(/^✗(.*)$/gm, '<span class="bad">✗$1</span>')
+
+  const vo = document.getElementById('vo')
+  const fill = document.getElementById('fill')
+  const clock = document.getElementById('clock')
+  const track = document.getElementById('track')
+  const play = document.getElementById('play')
+  const ledger = document.getElementById('ledger')
+  const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
+
+  VO.forEach(([t, line, shot]) => {
+    const li = document.createElement('li')
+    li.tabIndex = 0
+    li.innerHTML = `<span class="t">${fmt(t)}</span><span class="line">${esc(line)}</span><span class="shot">${esc(shot)}</span>`
+    const go = () => { seek(t); screen.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' }) }
+    li.addEventListener('click', go)
+    li.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go() } })
+    ledger.append(li)
+  })
+  VO.forEach(([t]) => {
+    const tick = document.createElement('span')
+    tick.className = 'tick'
+    tick.style.left = `${(t / TOTAL) * 100}%`
+    track.append(tick)
+  })
+
+  let t = 0, playing = false, lastFrame = null, lastVo = -1
+  const synth = window.speechSynthesis
+  let voiceOn = !!synth
+  const voiceBtn = document.getElementById('voice')
+  const startBtn = document.getElementById('start')
+  if (!synth) { voiceBtn.hidden = true; startBtn.querySelector('span').textContent = '\u25B6 Play' }
+  let voice = null
+  const pickVoice = () => {
+    const vs = synth ? synth.getVoices().filter((v) => v.lang.startsWith('en')) : []
+    // Neural voices first (Edge "Natural", Chrome "Google"), then good system voices.
+    const pref = ['Natural', 'Google UK English Male', 'Google US English', 'Daniel', 'Samantha', 'Alex']
+    voice = pref.map((n) => vs.find((v) => v.name.includes(n))).find(Boolean) || vs.find((v) => v.localService) || vs[0] || null
+  }
+  if (synth) { pickVoice(); synth.addEventListener?.('voiceschanged', pickVoice) }
+  // Recorded voiceover, one clip per scene (vo/1.mp3 …); the browser voice stands in when a clip is missing.
+  const clips = VO.map((_, i) => {
+    const a = new Audio()
+    a.preload = 'auto'
+    a.addEventListener('error', () => { a.failed = true })
+    a.src = `vo/${i + 1}.mp3`
+    return a
+  })
+  function stopVoice() {
+    synth?.cancel()
+    for (const c of clips) c.pause()
+  }
+  function say(idx) {
+    stopVoice()
+    if (!voiceOn || !playing) return
+    const clip = clips[idx]
+    if (!clip.failed) {
+      const into = t - STARTS[idx]
+      if (clip.duration && into >= clip.duration) return
+      clip.currentTime = Math.max(0, into)
+      clip.play().catch(() => {})
+      return
+    }
+    if (!synth) return
+    // The caption is written for reading; the 4th entry, where present, is spelled for speaking.
+    const u = new SpeechSynthesisUtterance(VO[idx][3] || VO[idx][1])
+    if (voice) u.voice = voice
+    u.lang = voice?.lang || 'en-GB'
+    u.rate = 0.98
+    synth.speak(u)
+  }
+
+  function render() {
+    for (const s of scenes) {
+      const local = t - s.start
+      const live = local >= 0 && local < s.dur
+      s.el.classList.toggle('live', live)
+      if (!live) continue
+      for (const r of s.reveals) {
+        const until = r.dataset.until ? +r.dataset.until : Infinity
+        r.classList.toggle('on', local >= +r.dataset.at && local < until)
+      }
+      for (const ty of s.typers) {
+        const n = reduced ? ty.text.length : Math.max(0, Math.min(ty.text.length, Math.floor((local - ty.at) * ty.cps)))
+        const done = n >= ty.text.length
+        const key = n * 2 + (done ? 1 : 0)
+        if (key === ty.shown) continue
+        ty.shown = key
+        const part = ty.text.slice(0, n)
+        ty.out.innerHTML = (ty.code ? hl(part) : term(part)) + (done || local < ty.at ? '' : '<span class="caret"></span>')
+      }
+    }
+    const trio = document.getElementById('trio')
+    trio.classList.toggle('apart', t > 5 && t < 11)
+    let idx = 0
+    VO.forEach(([start], i) => { if (t >= start) idx = i })
+    if (idx !== lastVo) {
+      lastVo = idx
+      vo.textContent = VO[idx][1]
+      say(idx)
+      ;[...ledger.children].forEach((li, i) => li.classList.toggle('now', i === idx))
+    }
+    fill.style.width = `${(t / TOTAL) * 100}%`
+    clock.textContent = `${fmt(t)} / ${fmt(TOTAL)}`
+    track.setAttribute('aria-valuenow', String(Math.floor(t)))
+    track.setAttribute('aria-valuemax', String(Math.floor(TOTAL)))
+  }
+
+  function frame(now) {
+    if (playing) {
+      if (lastFrame !== null) t += (now - lastFrame) / 1000
+      if (t >= TOTAL) { t = TOTAL - 0.01; setPlaying(false) }
+    }
+    lastFrame = now
+    render()
+    requestAnimationFrame(frame)
+  }
+  function setPlaying(p) {
+    const was = playing
+    playing = p
+    if (p) startBtn.hidden = true
+    if (!p) stopVoice()
+    else if (!was) say(lastVo < 0 ? 0 : lastVo)
+    play.textContent = p ? 'Pause' : (t >= TOTAL - 0.05 ? 'Replay' : 'Play')
+  }
+  function seek(to) {
+    t = Math.max(0, Math.min(TOTAL - 0.01, to))
+    for (const s of scenes) for (const ty of s.typers) ty.shown = -1
+    startBtn.hidden = true
+    lastVo = -1
+    playing = true
+    play.textContent = 'Pause'
+  }
+  play.addEventListener('click', () => {
+    startBtn.hidden = true
+    if (!playing && t >= TOTAL - 0.05) seek(0)
+    else setPlaying(!playing)
+  })
+  startBtn.addEventListener('click', () => seek(0))
+  voiceBtn.addEventListener('click', () => {
+    voiceOn = !voiceOn
+    voiceBtn.setAttribute('aria-pressed', String(voiceOn))
+    voiceBtn.textContent = voiceOn ? 'Voice on' : 'Voice off'
+    if (voiceOn) say(lastVo < 0 ? 0 : lastVo)
+    else stopVoice()
+  })
+  addEventListener('pagehide', stopVoice)
+  // make-video.mjs: play from the start, silent, without the page chrome.
+  window.spotRecord = () => {
+    document.body.classList.add('video')
+    voiceOn = false
+    seek(0)
+    setPlaying(false)
+  }
+  // Show the frame at `time` seconds: render, then move every CSS fade on by the
+  // same step, so a recording is frame-exact whatever the capture speed.
+  window.spotFrame = (time) => {
+    const step = (time - t) * 1000
+    t = time
+    render()
+    for (const a of document.getAnimations()) {
+      a.pause()
+      a.currentTime = (a.currentTime ?? 0) + step
+    }
+  }
+  track.addEventListener('click', (e) => {
+    const r = track.getBoundingClientRect()
+    seek(((e.clientX - r.left) / r.width) * TOTAL)
+  })
+  track.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight') seek(t + 5)
+    else if (e.key === 'ArrowLeft') seek(t - 5)
+    else return
+    e.preventDefault()
+  })
+  document.addEventListener('visibilitychange', () => { lastFrame = null })
+  const at = /^#at-(\d+)$/.exec(location.hash)
+  if (at) { t = Math.min(TOTAL - 0.01, +at[1]); startBtn.hidden = true }
+  render()
+  requestAnimationFrame(frame)
+})()
+</script>
