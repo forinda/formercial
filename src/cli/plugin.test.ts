@@ -123,8 +123,10 @@ describe('kick formercial', () => {
       LOG_LEVEL: 'warn',
     })
     expect(env.SESSION_SECRET!.length).toBeGreaterThanOrEqual(32)
-    expect(mcpEnv({ port: 1, projects: 'p', env: { SESSION_SECRET: 'mine' } }).SESSION_SECRET).toBe(
-      'mine',
-    )
+    // A .env may hold the dev default, which production refuses, so it's never passed on.
+    const secret = 'dev-only-session-secret-not-for-production'
+    expect(
+      mcpEnv({ port: 1, projects: 'p', env: { SESSION_SECRET: secret } }).SESSION_SECRET,
+    ).not.toBe(secret)
   })
 })

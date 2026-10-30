@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "formercial": {
+      "command": "pnpm",
+      "args": ["exec", "kick", "formercial", "mcp"]
+    }
+  }
+}
