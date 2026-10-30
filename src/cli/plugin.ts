@@ -89,7 +89,8 @@ export function mcpEnv(opts: {
     NODE_ENV: 'production',
     PORT: String(opts.port),
     APP_URL: `http://localhost:${opts.port}`,
-    SESSION_SECRET: opts.env.SESSION_SECRET ?? randomBytes(32).toString('hex'),
+    // Always its own: a .env may hold the dev default, which production refuses.
+    SESSION_SECRET: randomBytes(32).toString('hex'),
     FORMERCIAL_PROJECTS: opts.projects,
     LOG_LEVEL: 'warn',
   }

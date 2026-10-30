@@ -4,6 +4,10 @@ Formercial is an [MCP](https://modelcontextprotocol.io/) server, so an agent can
 
 ## Connect
 
+### Agents working in this repository
+
+The repository has a `.mcp.json`, so clients that read it, like Claude Code, offer the `formercial` server when started here. Approve it when asked. The client starts the server itself, and the first start takes a minute to build the app.
+
 ### While the app is running
 
 Start the app with `pnpm dev`, then point your client at its MCP endpoint:
