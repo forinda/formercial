@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: pnpm install --frozen-lockfile
+      - name: Chromium for render tests
+        run: pnpm dlx playwright install --with-deps chromium-headless-shell
+      - run: pnpm exec tsc --noEmit
+      - run: pnpm exec oxlint src
+      - run: pnpm exec oxfmt --check src
+      - run: pnpm test
+      - run: pnpm build

@@ -1,0 +1,16 @@
+name: Idea or feature
+description: Something you'd like it to do
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: moment
+    attributes:
+      label: What you were trying to make
+      description: The commercial or scene you had in mind, and where you got stuck.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help
+      description: A new block, driver, option, command… Sketches and links to examples are welcome.

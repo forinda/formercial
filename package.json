@@ -1,8 +1,27 @@
 {
   "name": "commercial-x-creator",
-  "packageManager": "pnpm@11.24.0",
   "version": "0.0.0",
+  "description": "Make short product commercials from programmable scenes: live preview, recorded or generated voice, MP4 in 16:9, 9:16 and 1:1.",
+  "license": "Apache-2.0",
+  "author": "Felix Orinda",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/forinda/commercial-x-creator.git"
+  },
+  "keywords": [
+    "video",
+    "commercial",
+    "ad",
+    "kickjs",
+    "ffmpeg",
+    "text-to-speech",
+    "motion-graphics"
+  ],
   "type": "module",
+  "packageManager": "pnpm@11.24.0",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "kick dev",
     "build": "kick build && vite build --config vite.client.config.ts && vite build --config vite.client.config.ts --ssr src/client/ssr.tsx",
@@ -43,8 +62,5 @@
     "unplugin-swc": "^2.0.0",
     "vite": "^8.3.5",
     "vitest": "^5.0.5"
-  },
-  "engines": {
-    "node": ">=22"
   }
 }

@@ -1,0 +1,46 @@
+name: Bug report
+description: Something doesn't work as documented
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. A `project.json` that shows the problem is the fastest way to a fix.
+        For a security issue, don't open an issue: [report it privately](https://github.com/forinda/commercial-x-creator/security/advisories/new).
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead. Paste error messages as text.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the kickjs-db example
+        2. Switch the preview to 9:16
+        3. …
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      multiple: true
+      options:
+        - Editor / preview
+        - Voice (generated or recorded)
+        - Render (app)
+        - kick cxc (command line)
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: OS, Node version, browser, and the output of `pnpm kick cxc drivers`.
+    validations:
+      required: true

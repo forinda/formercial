@@ -4,6 +4,11 @@ Make short product commercials on your own machine. You put scenes together in a
 
 Built on [KickJS](https://kickjs.app/) (the Inertia + React template) with `@forinda/kickjs-storage` for project files.
 
+[![CI](https://github.com/forinda/commercial-x-creator/actions/workflows/ci.yml/badge.svg)](https://github.com/forinda/commercial-x-creator/actions/workflows/ci.yml)
+[![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+
+It's early (0.x): `project.json` may still change between releases, and changes will say how to update existing projects.
+
 ## Install
 
 You need:
@@ -136,3 +141,14 @@ pnpm build
 ```
 
 Code lives in `src/core` (project, workspace, voice, timeline, render), `src/player` (draws a scene at any `t`; shared by the preview and the render page), `src/modules` (the API and pages) and `src/client` (the editor).
+
+## Contributing
+
+Contributions are welcome: bug reports, fixes, new blocks, render drivers, voice providers, docs and example projects. Start with [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/architecture.md](docs/architecture.md). Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md). Report security problems privately, as [SECURITY.md](SECURITY.md) describes.
+
+## License
+
+[Apache License 2.0](LICENSE). Copyright 2026 Felix Orinda and the commercial-x-creator contributors. If you redistribute it, keep the [NOTICE](NOTICE) file with it.
+
+The example project's fonts (Unbounded, IBM Plex Sans, JetBrains Mono) are under the SIL Open Font License 1.1.
+
