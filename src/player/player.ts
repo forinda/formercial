@@ -49,7 +49,9 @@ export function createPlayer(
   stage.style.cssText = [
     `--ratio: ${width} / ${height}`,
     // Burned-in captions take the bottom band: scenes keep clear of it.
-    ...((opts.captions ?? project.captions) ? ['--below: calc(12 * var(--u))'] : []),
+    ...((opts.captions ?? project.captions)
+      ? [`--below: calc(${format === '9:16' ? 28 : 12} * var(--u))`]
+      : []),
     `--u: calc(${UNIT[format]} * 1cqw)`,
     ...Object.entries(colors).map(([k, v]) => `--${k}: ${v}`),
     `--display: '${fonts.display}', system-ui, sans-serif`,

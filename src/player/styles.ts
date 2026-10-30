@@ -11,6 +11,8 @@ export const STAGE_CSS = `
 .fm-stage [data-scene] { position: absolute; inset: 0 }
 .fm-caption { position: absolute; left: calc(6 * var(--u)); right: calc(6 * var(--u)); bottom: calc(3 * var(--u)); text-align: center; font-size: calc(1.9 * var(--u)); line-height: 1.35; text-wrap: balance; color: var(--fg); z-index: 5 }
 .fm-caption span { background: color-mix(in srgb, var(--bg) 82%, transparent); padding: calc(.3 * var(--u)) calc(.8 * var(--u)); border-radius: calc(.3 * var(--u)); box-decoration-break: clone; -webkit-box-decoration-break: clone }
+/* TikTok, Reels and Shorts cover the bottom of a tall video with their own buttons and text. */
+.fm-stage[data-format="9:16"] .fm-caption { bottom: calc(18.5 * var(--u)); font-size: calc(2.5 * var(--u)) }
 `
 
 export const SCENE_CSS = `
@@ -40,6 +42,8 @@ export const SCENE_CSS = `
 .chips { display: flex; flex-wrap: wrap; gap: calc(1 * var(--u)); align-items: center; font-size: calc(1.6 * var(--u)) }
 .chips b { font-weight: 500; color: var(--muted); margin-right: calc(.6 * var(--u)) }
 .chips span { border: 1px solid var(--accent); color: var(--accent); border-radius: 99px; padding: calc(.3 * var(--u)) calc(1.4 * var(--u)); font-family: var(--mono); font-size: calc(1.35 * var(--u)) }
+.doodle { display: block; width: 100%; height: auto; overflow: visible }
+.doodle-label { font-family: var(--display); font-weight: 700 }
 .end { display: flex; flex-direction: column; gap: calc(2 * var(--u)); align-items: flex-start; justify-content: center; flex: 1 }
 .wordmark { font-family: var(--display); font-weight: 800; font-size: calc(8 * var(--u)); line-height: 1; letter-spacing: -0.03em; margin: 0; white-space: nowrap; max-width: 100%; overflow: hidden }
 .wordmark i { font-style: normal; color: var(--accent) }

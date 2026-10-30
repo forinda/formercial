@@ -8,6 +8,9 @@ import type { Workspace } from './workspace'
 const UA =
   'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36'
 
+/** A stalled download fails, so it can't hold up creating a project from a preset. */
+const stalled = () => AbortSignal.timeout(15_000)
+
 export const fontSlug = (family: string) => family.toLowerCase().replace(/[^a-z0-9]+/g, '-')
 
 export async function fetchGoogleFont(
@@ -17,7 +20,7 @@ export async function fetchGoogleFont(
 ): Promise<{ file: string; weight: number; data: Uint8Array }[]> {
   if (!FAMILY.test(family)) throw new Error(`"${family}" isn't a font family name`)
   const url = `https://fonts.googleapis.com/css2?family=${family.replace(/ /g, '+')}:wght@${weights.join(';')}&display=block`
-  const res = await fetchFn(url, { headers: { 'user-agent': UA } })
+  const res = await fetchFn(url, { headers: { 'user-agent': UA }, signal: stalled() })
   if (!res.ok) throw new Error(`Google Fonts has no "${family}" in those weights (${res.status})`)
   const css = await res.text()
   const out: { file: string; weight: number; data: Uint8Array }[] = []
@@ -33,7 +36,7 @@ export async function fetchGoogleFont(
       out.push({ ...same, weight })
       continue
     }
-    const file = await fetchFn(src)
+    const file = await fetchFn(src, { signal: stalled() })
     if (!file.ok) throw new Error(`couldn't download ${family} ${weight}`)
     const entry = {
       file: `media/fonts/${fontSlug(family)}-${weight}.woff2`,

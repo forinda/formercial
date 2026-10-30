@@ -53,6 +53,7 @@ Start blank, or from a preset. Presets are full commercials that use every block
 | Preset | What it shows |
 |---|---|
 | `showcase` | Everything: every block, every code language, stamps that come and go, a silent scene, a scene with no caption, and a custom scene. Each caption says what the scene shows. |
+| `doodle-light-bulb` | A hand-drawn lesson on current and resistance, and why a bulb glows. See [Doodle videos](./doodles). |
 | `typescript-intro` | Types on variables, a mistake `tsc` catches and its fix, an interface, what to learn next |
 | `javascript-basics` | `const` and `let`, `console.log` and its output, changing a `const` and fixing it |
 | `python-basics` | Hello world, then a dictionary: create, read, add and loop over it, and handle a missing key |
@@ -62,6 +63,6 @@ pnpm kick formercial new "My Product"
 pnpm kick formercial new "Learn TypeScript" --preset typescript-intro
 ```
 
-Or use **New commercial** on the projects page, with **Start from** set to a preset. The language presets are ready to render as-is. `showcase` has a custom scene, so [trust](./custom-scenes#trust) it first or delete that scene. Change the text, code and colors to make it yours, then press **Download** next to each font under **Project** so renders look the same everywhere.
+Or use **New commercial** on the projects page, with **Start from** set to a preset. The language and doodle presets are ready to render as-is. `showcase` has a custom scene, so [trust](./custom-scenes#trust) it first or delete that scene. Change the text, code and colors to make it yours, then press **Download** next to each font under **Project** so renders look the same everywhere.
 
 Then read [Making a commercial](./making-a-commercial).

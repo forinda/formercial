@@ -90,10 +90,11 @@ export async function launchChrome(
     new Promise<T>((resolve, reject) => {
       const n = ++id
       // A call Chromium never answers (a crashed page) fails instead of hanging the queue.
+      // Generous: renders run at low priority, and a busy machine shouldn't cost a long render.
       const timer = setTimeout(() => {
         pending.delete(n)
-        reject(new Error(`chromium didn't answer ${method} within 30s`))
-      }, 30_000)
+        reject(new Error(`chromium didn't answer ${method} within 2 minutes`))
+      }, 120_000)
       pending.set(n, {
         resolve: (v) => (clearTimeout(timer), resolve(v)),
         reject: (e) => (clearTimeout(timer), reject(e)),

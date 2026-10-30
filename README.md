@@ -26,6 +26,7 @@ pnpm kick formercial new "Learn TypeScript" --preset typescript-intro   # or jav
 
 ## What's in it
 
+- **Doodles:** whiteboard drawings that draw themselves, for short lessons, with a full template to start from.
 - **Scenes from blocks or code:** headlines, code that types itself, terminals, file trees, cards and end cards, or your own HTML, CSS and `draw(t, ctx)`.
 - **Voice:** generated per line, or recorded in the browser. Scenes last as long as their lines.
 - **Preview is the render:** both run the same player, frame for frame.

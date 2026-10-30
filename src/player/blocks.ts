@@ -83,6 +83,63 @@ function typer(
 const typing = (b: { at?: number; source: string; cps?: number }) =>
   (b.at ?? 0) + b.source.length / (b.cps ?? DEFAULT_CPS)
 
+const SVG = 'http://www.w3.org/2000/svg'
+const svg = (tag: string, attrs: Record<string, string | number> = {}) => {
+  const e = document.createElementNS(SVG, tag)
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, String(v))
+  return e
+}
+type DoodleItem = Of<'doodle'>['strokes'][number]
+
+/** When each item of a doodle starts and ends: in order, unless one says otherwise. */
+export function doodleTimes(
+  strokes: Of<'doodle'>['strokes'],
+  at = 0,
+): { start: number; end: number }[] {
+  let clock = at
+  return strokes.map((item) => {
+    const start = item.at ?? clock
+    clock = start + item.seconds
+    return { start, end: clock }
+  })
+}
+
+/** A marker pen with its tip at 0,0, in the doodle's coordinates. */
+const PEN = [
+  { d: 'M0 0 L18 -34 L34 -26 L12 8 Z', fill: 'var(--fg)' },
+  { d: 'M18 -34 L70 -130 L92 -118 L34 -26 Z', fill: 'var(--accent)' },
+]
+
+function mountStroke(
+  parts: { ink: Element; dots: Element },
+  item: Extract<DoodleItem, { d: string }>,
+) {
+  const path = svg('path', {
+    d: item.d,
+    fill: 'none',
+    stroke: `var(--${item.tone})`,
+    'stroke-width': item.width,
+    'stroke-linecap': 'round',
+    'stroke-linejoin': 'round',
+    // Dashes measured as a share of the path, however long it is.
+    pathLength: 1,
+    'stroke-dasharray': '1 1',
+  }) as SVGPathElement
+  const fill = item.fill
+    ? svg('path', { d: item.d, fill: `var(--${item.fill})`, stroke: 'none' })
+    : null
+  if (fill) parts.ink.append(fill)
+  parts.ink.append(path)
+  const flow = item.flow
+  const dots = flow
+    ? Array.from({ length: flow.count }, () =>
+        svg('circle', { r: flow.size, fill: `var(--${flow.tone})` }),
+      )
+    : []
+  parts.dots.append(...dots)
+  return { path, fill, dots, flow }
+}
+
 export const BLOCKS: { [T in Block['type']]: BlockDef<Of<T>> } = {
   eyebrow: {
     needs: (b) => (b.at ?? 0) + REVEAL,
@@ -176,6 +233,100 @@ export const BLOCKS: { [T in Block['type']]: BlockDef<Of<T>> } = {
       })
       root.append(box)
       return (local) => chips.forEach((chip, i) => reveal(chip, local - (b.at ?? 0) - i * 0.3))
+    },
+  },
+  doodle: {
+    // Every format shares one timeline, so the slower of the two drawings sets it.
+    needs: (b) =>
+      Math.max(
+        (b.at ?? 0) + REVEAL,
+        ...[b.strokes, b.tall?.strokes ?? []].flatMap((strokes) =>
+          doodleTimes(strokes, b.at).map((t) => t.end),
+        ),
+      ),
+    mount(root, b, ctx) {
+      const art = ctx.format === '9:16' && b.tall ? b.tall : b
+      const times = doodleTimes(art.strokes, b.at)
+      const box = svg('svg', { class: 'doodle', viewBox: art.viewBox, role: 'img' })
+      const ink = svg('g')
+      if (b.wobble) {
+        // A fixed seed, so the same wobble in every frame of every render.
+        const filter = svg('filter', {
+          id: 'wobble',
+          x: '-5%',
+          y: '-5%',
+          width: '110%',
+          height: '110%',
+        })
+        filter.append(
+          svg('feTurbulence', { baseFrequency: 0.02, numOctaves: 2, seed: 4 }),
+          svg('feDisplacementMap', { in: 'SourceGraphic', scale: 5 }),
+        )
+        box.append(filter)
+        ink.setAttribute('filter', 'url(#wobble)')
+      }
+      const dots = svg('g')
+      const pen = svg('g', { visibility: 'hidden' })
+      for (const part of PEN) {
+        pen.append(svg('path', { ...part, stroke: 'var(--fg)', 'stroke-width': 3 }))
+      }
+      box.append(ink, dots, pen)
+      root.append(box)
+
+      const items = art.strokes.map((item) => {
+        if ('d' in item) return { item, stroke: mountStroke({ ink, dots }, item) }
+        const label = svg('text', {
+          class: 'doodle-label',
+          x: item.x,
+          y: item.y,
+          'font-size': item.size,
+          fill: `var(--${item.tone})`,
+        })
+        ink.append(label)
+        return { item, label }
+      })
+
+      return (local) => {
+        let tip: { x: number; y: number } | null = null
+        items.forEach(({ item, stroke, label }, i) => {
+          const { start, end } = times[i]
+          const p = end > start ? clamp((local - start) / (end - start)) : local >= start ? 1 : 0
+          const drawing = p > 0 && p < 1
+          if (stroke) {
+            const { path, fill, dots: moving, flow } = stroke
+            const stroked = item as Extract<DoodleItem, { d: string }>
+            path.setAttribute('visibility', p > 0 && stroked.width > 0 ? 'visible' : 'hidden')
+            path.setAttribute('stroke-dashoffset', String(Math.round((1 - p) * 10000) / 10000))
+            fill?.setAttribute('opacity', String(Math.round(p * stroked.fillOpacity * 1000) / 1000))
+            const length = path.getTotalLength?.() ?? 0
+            if (drawing && stroked.width > 0 && length) tip = path.getPointAtLength(length * p)
+            if (flow) {
+              const since = local - (flow.at ?? end)
+              moving.forEach((dot, n) => {
+                dot.setAttribute('visibility', since >= 0 && length ? 'visible' : 'hidden')
+                if (since < 0 || !length) return
+                const along = (((n / flow.count) * length + since * flow.speed) % length) + length
+                const at = path.getPointAtLength(along % length)
+                dot.setAttribute('cx', at.x.toFixed(1))
+                dot.setAttribute('cy', at.y.toFixed(1))
+              })
+            }
+          } else if (label) {
+            const words = (item as Extract<DoodleItem, { text: string }>).text
+            const shown = words.slice(0, Math.ceil(words.length * p))
+            if (label.textContent !== shown) label.textContent = shown
+            if (drawing && 'x' in item) {
+              const width = (label as SVGTextElement).getComputedTextLength?.() ?? 0
+              tip = { x: item.x + width, y: item.y }
+            }
+          }
+        })
+        pen.setAttribute('visibility', b.pen && tip ? 'visible' : 'hidden')
+        if (tip) {
+          const { x, y } = tip as { x: number; y: number }
+          pen.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)})`)
+        }
+      }
     },
   },
   end: {

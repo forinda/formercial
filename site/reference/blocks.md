@@ -87,6 +87,39 @@ A row of pills.
 | `items` | Array of strings |
 | `label` | Optional text before the pills |
 
+## doodle
+
+A whiteboard drawing that draws itself with a pen. It's plain data, so it needs no [trust](../guide/custom-scenes#trust). See [Doodle videos](../guide/doodles).
+
+| Field | |
+|---|---|
+| `strokes` | What to draw, in order: lines and labels, described below. |
+| `viewBox` | The drawing's coordinates. Default `"0 0 1600 720"`. |
+| `tall` | Optional: `{ "viewBox", "strokes" }`, a separate drawing for 9:16. `viewBox` defaults to `"0 0 900 1400"`. |
+| `pen` | Show the pen. Default `true`. |
+| `wobble` | Hand-drawn wobble on the lines. Default `true`. |
+
+A line:
+
+| Field | |
+|---|---|
+| `d` | An SVG path |
+| `tone` | `"fg"`, `"muted"`, `"accent"`, `"good"` or `"bad"`. Default `"fg"`. |
+| `width` | Line width. `0` hides the line, which is useful for a fill or moving dots alone. Default `6`. |
+| `seconds` | How long it takes to draw. Default `0.8`. |
+| `at` | Seconds into the scene to start. Default: when the one before it ends. |
+| `fill` | Optional: a tone that fades in inside the shape as it's drawn |
+| `fillOpacity` | How solid that fill ends up, `0` to `1`. Default `1`. |
+| `flow` | Optional: dots moving along the path, as `{ "count", "speed", "tone", "size", "at" }`. `speed` is in `viewBox` units a second, and negative runs backwards. They start when the line is drawn, unless `at` says otherwise. |
+
+A label:
+
+| Field | |
+|---|---|
+| `text`, `x`, `y` | The words, and where their left end sits. Labels don't wrap: split long ones. |
+| `size` | Default `56` |
+| `tone`, `seconds`, `at` | As for a line |
+
 ## end
 
 The closing card.
@@ -106,6 +139,7 @@ The closing card.
 | tree | `at` + 0.5s per line + 0.4s |
 | cards, chips | `at` + 0.3s per item + 0.4s |
 | end | `at` + 2.8s |
+| doodle | the latest time any item ends, across both drawings |
 | others | `at` + 0.4s |
 
 The scene gets at least the slowest block's time plus one second.

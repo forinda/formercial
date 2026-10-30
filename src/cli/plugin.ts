@@ -14,7 +14,7 @@ import { renderProject } from '@/core/render/render-project'
 import { voiceProject } from '@/core/voice/voice-project'
 import { FormercialSettings, checkFps } from '@/core/settings'
 import { createTrust } from '@/core/trust'
-import { PRESETS, fromPreset } from '@/presets'
+import { PRESETS, fromPreset, storePresetFonts } from '@/presets'
 import { historyFileFor, openHistory } from '@/core/history'
 import { createWorkspace } from '@/core/workspace'
 
@@ -125,6 +125,7 @@ export function formercialCliPlugin(config: FormercialConfig): KickCliPlugin {
             null,
             'cli',
           )
+          if (opts.preset) await storePresetFonts(ws, slug, opts.preset)
           ctx.log(`Created ${join(root, slug).replace(`${ctx.projectRoot}/`, '')}/project.json`)
         })
 

@@ -21,7 +21,7 @@ import { clipLengths, recordingPath, voiceProject } from '@/core/voice/voice-pro
 import { withWorkdir } from '@/core/workdir'
 import { PathError, StaleWriteError } from '@/core/workspace'
 import { projectsRoot } from '@/adapters/storage'
-import { fromPreset } from '@/presets'
+import { fromPreset, storePresetFonts } from '@/presets'
 import { renderOrigin } from './render-origin'
 import { Studio } from './studio.service'
 
@@ -135,6 +135,7 @@ export class ProjectsController {
         throw new HttpError(400, (err as Error).message)
       }
       await this.studio.ws.write(slug, project, null)
+      if (preset) await storePresetFonts(this.studio.ws, slug, preset)
       return ctx.json({ slug }, 201)
     })
   }

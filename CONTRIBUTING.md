@@ -60,6 +60,7 @@ If your change affects what a render looks like, attach a frame or a short clip 
 3. Add its styles to `src/player/styles.ts`, sized in `var(--u)` so they work in all three formats.
 4. Add its form to `BlockForm` in `src/client/editor/scenes.tsx`.
 5. Add tests in `src/player/player.test.ts`: at least what it shows at a given `t`.
+6. Add it to the `showcase` preset in `src/presets/index.ts`, and to `BLOCK_TYPES` in its test.
 
 ### A render driver or voice provider
 
