@@ -9,12 +9,12 @@ import { createTestApp } from '@forinda/kickjs-testing'
 import express from 'express'
 import request from 'supertest'
 import { describe, expect, test, vi } from 'vitest'
-import { starterProject } from '../../core/project'
-import type { RenderDriver } from '../../core/render/driver'
-import { createRegistry } from '../../core/render/registry'
+import { starterProject } from '@/core/project'
+import type { RenderDriver } from '@/core/render/driver'
+import { createRegistry } from '@/core/render/registry'
 import { ProjectsModule } from './projects.module'
 import { REGISTRY } from './tokens'
-import { localOnly } from '../../middleware/local-only'
+import { localOnly } from '@/middleware/local-only'
 
 const urls: string[] = []
 function driver(name: string, opts: { ok?: boolean; hold?: Promise<void> } = {}): RenderDriver {

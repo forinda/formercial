@@ -1,8 +1,8 @@
 import { Controller, Get, type RequestContext } from '@forinda/kickjs'
 import { inertia } from '@forinda/kickjs-inertia'
-import { FORMATS, type Format } from '../../core/project'
-import { clipLengths } from '../../core/voice/voice-project'
-import { Studio } from '../projects/studio.service'
+import { FORMATS, type Format } from '@/core/project'
+import { clipLengths } from '@/core/voice/voice-project'
+import { Studio } from '@/modules/projects/studio.service'
 
 const notFound = (message: string) => inertia('Error', { status: 404, message }, { status: 404 })
 

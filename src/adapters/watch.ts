@@ -1,6 +1,6 @@
 import { mkdirSync } from 'node:fs'
 import { defineAdapter } from '@forinda/kickjs'
-import { Studio } from '../modules/projects/studio.service'
+import { Studio } from '@/modules/projects/studio.service'
 import { projectsRoot } from './storage'
 
 /** Watches the projects folder for outside edits while files are on disk. */

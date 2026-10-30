@@ -1,6 +1,6 @@
 // Scene list and the selected scene's form: its texts, timing, transition and
 // either its blocks or its custom HTML, CSS and script.
-import type { Block, Scene } from '../../core/project'
+import type { Block, Scene } from '@/core/project'
 
 const newId = () => `s${Date.now().toString(36)}${Math.floor(Math.random() * 36 ** 2).toString(36)}`
 

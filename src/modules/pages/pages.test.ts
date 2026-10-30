@@ -6,9 +6,9 @@ import { expressRuntime } from '@forinda/kickjs'
 import { memoryStorage } from '@forinda/kickjs-storage'
 import { STORAGE } from '@forinda/kickjs-storage/adapter'
 import express from 'express'
-import { createRegistry } from '../../core/render/registry'
-import { ProjectsModule } from '../projects/projects.module'
-import { REGISTRY } from '../projects/tokens'
+import { createRegistry } from '@/core/render/registry'
+import { ProjectsModule } from '@/modules/projects/projects.module'
+import { REGISTRY } from '@/modules/projects/tokens'
 import { PagesModule } from './pages.module'
 
 // No client build or `kick dev` needed: without one, pages render without

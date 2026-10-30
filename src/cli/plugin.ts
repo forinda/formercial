@@ -7,12 +7,12 @@ import { createServer } from 'node:net'
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { defineCliPlugin, type KickCliPlugin } from '@forinda/kickjs-cli'
 import { diskStorage } from '@forinda/kickjs-storage/disk'
-import { FORMATS, slugFrom, starterProject, type Format } from '../core/project'
-import { createRegistry, driverReport, type CxcConfig } from '../core/render/registry'
-import { renderProject } from '../core/render/render-project'
-import { voiceProject } from '../core/voice/voice-project'
-import { createTrust } from '../core/trust'
-import { createWorkspace } from '../core/workspace'
+import { FORMATS, slugFrom, starterProject, type Format } from '@/core/project'
+import { createRegistry, driverReport, type CxcConfig } from '@/core/render/registry'
+import { renderProject } from '@/core/render/render-project'
+import { voiceProject } from '@/core/voice/voice-project'
+import { createTrust } from '@/core/trust'
+import { createWorkspace } from '@/core/workspace'
 
 /** A slug under the projects folder, or a path to a project folder. */
 export function resolveProject(arg: string, projectRoot: string): { root: string; slug: string } {

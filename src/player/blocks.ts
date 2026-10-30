@@ -1,7 +1,7 @@
 // The built-in blocks. Each one builds its DOM once and returns a draw(local)
 // that sets everything from the scene's local time, so the same time always
 // draws the same frame.
-import type { Block, Format, Theme } from '../core/project'
+import type { Block, Format, Theme } from '@/core/project'
 import { esc, highlight, terminal } from './highlight'
 
 export type BlockCtx = { theme: Theme; format: Format; width: number; height: number }

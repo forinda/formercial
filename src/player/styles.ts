@@ -1,7 +1,7 @@
 // Scene stylesheet. Sizes are in --u, a unit the stage sets per format (a bit
 // larger on tall and square frames, whose width is smaller), so one set of
 // rules fits all three shapes.
-import type { Format } from '../core/project'
+import type { Format } from '@/core/project'
 
 export const UNIT: Record<Format, number> = { '16:9': 1, '1:1': 1.35, '9:16': 1.85 }
 

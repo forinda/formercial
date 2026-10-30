@@ -1,9 +1,9 @@
 // Draws a project at any time t. The editor's preview and the render page both
 // use this, so what you watch is what renders. Every frame follows from t:
 // no CSS transitions, timers or clocks.
-import { fontFaceCss } from '../core/fonts'
-import { FORMATS, type Format, type Project, type Scene } from '../core/project'
-import type { Timeline, TimelineScene } from '../core/timeline'
+import { fontFaceCss } from '@/core/fonts'
+import { FORMATS, type Format, type Project, type Scene } from '@/core/project'
+import type { Timeline, TimelineScene } from '@/core/timeline'
 import { BLOCKS, reveal, type BlockCtx } from './blocks'
 import { compileDraw } from './custom'
 import { esc } from './highlight'

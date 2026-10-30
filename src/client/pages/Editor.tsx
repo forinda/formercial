@@ -1,12 +1,12 @@
 import { Link } from '@inertiajs/react'
 import { useState } from 'react'
-import type { Project, Scene } from '../../core/project'
-import type { Clip } from '../../core/timeline'
-import { RenderPanel, ThemePanel } from '../editor/panels'
-import { Preview, usePreviewTimeline } from '../editor/preview'
-import { SceneForm, SceneList } from '../editor/scenes'
-import { api, useProject } from '../editor/useProject'
-import { VoicePanel } from '../editor/voice'
+import type { Project, Scene } from '@/core/project'
+import type { Clip } from '@/core/timeline'
+import { RenderPanel, ThemePanel } from '@/client/editor/panels'
+import { Preview, usePreviewTimeline } from '@/client/editor/preview'
+import { SceneForm, SceneList } from '@/client/editor/scenes'
+import { api, useProject } from '@/client/editor/useProject'
+import { VoicePanel } from '@/client/editor/voice'
 
 const STATUS = {
   saved: 'Saved',

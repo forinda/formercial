@@ -1,7 +1,7 @@
 // Voice for the selected scene: generate it, or record it here.
 import { useEffect, useRef, useState } from 'react'
-import type { Scene } from '../../core/project'
-import type { Clip } from '../../core/timeline'
+import type { Scene } from '@/core/project'
+import type { Clip } from '@/core/timeline'
 import { api, fileUrl } from './useProject'
 
 export function VoicePanel(props: {

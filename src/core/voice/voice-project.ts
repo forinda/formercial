@@ -2,11 +2,11 @@
 // line, made again only when its text, voice or rate changed.
 import { mkdir } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-import { probeSeconds } from '../media'
-import type { Project, Scene } from '../project'
-import type { Clip } from '../timeline'
-import { withWorkdir } from '../workdir'
-import type { Workspace } from '../workspace'
+import { probeSeconds } from '@/core/media'
+import type { Project, Scene } from '@/core/project'
+import type { Clip } from '@/core/timeline'
+import { withWorkdir } from '@/core/workdir'
+import type { Workspace } from '@/core/workspace'
 import type { VoiceProvider } from './provider'
 
 type Made = Record<string, { stamp: string; seconds: number }>

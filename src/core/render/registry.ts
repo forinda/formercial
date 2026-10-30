@@ -1,7 +1,7 @@
 // Render drivers and voice providers by name: the built-ins plus whatever
 // src/cxc.config.ts adds.
-import { edgeTts } from '../voice/edge-tts'
-import type { Check, VoiceProvider } from '../voice/provider'
+import { edgeTts } from '@/core/voice/edge-tts'
+import type { Check, VoiceProvider } from '@/core/voice/provider'
 import { chromiumFfmpeg } from './chromium-ffmpeg'
 import type { RenderDriver } from './driver'
 

@@ -1,6 +1,6 @@
-import type { Format, Project } from '../project'
-import type { Timeline } from '../timeline'
-import type { Check } from '../voice/provider'
+import type { Format, Project } from '@/core/project'
+import type { Timeline } from '@/core/timeline'
+import type { Check } from '@/core/voice/provider'
 
 export interface RenderJob {
   slug: string

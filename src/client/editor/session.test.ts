@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
-import { starterProject } from '../../core/project'
+import { starterProject } from '@/core/project'
 import { ProjectSession } from './session'
 
 function server(version = 'v1') {

@@ -1,6 +1,6 @@
 import { Link, router } from '@inertiajs/react'
 import { useState } from 'react'
-import { api } from '../editor/useProject'
+import { api } from '@/client/editor/useProject'
 
 export default function Projects({ projects }: { projects: { slug: string; name: string }[] }) {
   const [name, setName] = useState('')

@@ -3,8 +3,8 @@
 import { join } from 'node:path'
 import { Controller, Delete, Get, Post, Put, type RequestContext } from '@forinda/kickjs'
 import { checkRange } from '@forinda/kickjs-storage'
-import { storeGoogleFont } from '../../core/fonts'
-import { probeSeconds } from '../../core/media'
+import { storeGoogleFont } from '@/core/fonts'
+import { probeSeconds } from '@/core/media'
 import {
   FORMATS,
   ProjectError,
@@ -13,10 +13,10 @@ import {
   starterProject,
   type Format,
   type Project,
-} from '../../core/project'
-import { clipLengths, recordingPath, voiceProject } from '../../core/voice/voice-project'
-import { withWorkdir } from '../../core/workdir'
-import { PathError, StaleWriteError } from '../../core/workspace'
+} from '@/core/project'
+import { clipLengths, recordingPath, voiceProject } from '@/core/voice/voice-project'
+import { withWorkdir } from '@/core/workdir'
+import { PathError, StaleWriteError } from '@/core/workspace'
 import { Studio } from './studio.service'
 
 const MAX_UPLOAD = 50 * 1024 * 1024

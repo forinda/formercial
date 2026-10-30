@@ -1,6 +1,6 @@
 // Project-wide settings (theme, captions, music, formats) and rendering.
 import { useEffect, useState } from 'react'
-import { FORMATS, type Format, type Project } from '../../core/project'
+import { FORMATS, type Format, type Project } from '@/core/project'
 import { api, fileUrl } from './useProject'
 
 async function upload(slug: string, file: File, name: string): Promise<string> {

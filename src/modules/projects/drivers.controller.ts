@@ -1,5 +1,5 @@
 import { Controller, Get, type RequestContext } from '@forinda/kickjs'
-import { driverReport } from '../../core/render/registry'
+import { driverReport } from '@/core/render/registry'
 import { Studio } from './studio.service'
 
 @Controller()

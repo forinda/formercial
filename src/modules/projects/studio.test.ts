@@ -3,8 +3,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { diskStorage } from '@forinda/kickjs-storage/disk'
 import { expect, test } from 'vitest'
-import { starterProject } from '../../core/project'
-import { createRegistry } from '../../core/render/registry'
+import { starterProject } from '@/core/project'
+import { createRegistry } from '@/core/render/registry'
 import { Studio } from './studio.service'
 
 test('an outside edit to project.json reaches listeners with its version', async () => {

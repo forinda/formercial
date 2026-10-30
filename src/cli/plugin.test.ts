@@ -4,9 +4,9 @@ import { join } from 'node:path'
 import { diskStorage } from '@forinda/kickjs-storage/disk'
 import { Command } from 'commander'
 import { describe, expect, test } from 'vitest'
-import type { RenderDriver } from '../core/render/driver'
-import { parseProject, starterProject } from '../core/project'
-import { createWorkspace } from '../core/workspace'
+import type { RenderDriver } from '@/core/render/driver'
+import { parseProject, starterProject } from '@/core/project'
+import { createWorkspace } from '@/core/workspace'
 import { cxcCliPlugin, resolveProject } from './plugin'
 
 const fakeDriver: RenderDriver = {

@@ -1,13 +1,13 @@
 // One render of one format, used by the app's queue and by `kick cxc render`:
 // voice (when a provider is given), resolve the timeline, copy the clips and
 // music into a work folder, run the driver, and keep its MP4 and SRT.
-import { sceneNeeds } from '../../player/player'
-import type { Format } from '../project'
-import { resolveTimeline } from '../timeline'
-import type { VoiceProvider } from '../voice/provider'
-import { clipLengths, voiceProject } from '../voice/voice-project'
-import { withWorkdir } from '../workdir'
-import type { Workspace } from '../workspace'
+import { sceneNeeds } from '@/player/player'
+import type { Format } from '@/core/project'
+import { resolveTimeline } from '@/core/timeline'
+import type { VoiceProvider } from '@/core/voice/provider'
+import { clipLengths, voiceProject } from '@/core/voice/voice-project'
+import { withWorkdir } from '@/core/workdir'
+import type { Workspace } from '@/core/workspace'
 import type { RenderDriver, RenderProgress } from './driver'
 
 /** Formats appear in URLs and file names as 16x9, 9x16, 1x1. */

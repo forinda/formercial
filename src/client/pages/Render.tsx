@@ -1,10 +1,10 @@
 // What a render driver opens: the player alone, filling the viewport, with
 // window.cxc for the driver to step it frame by frame.
 import { useEffect, useRef } from 'react'
-import type { Format, Project } from '../../core/project'
-import { resolveTimeline, type Clip } from '../../core/timeline'
-import { createPlayer, sceneNeeds } from '../../player/player'
-import { fileUrl } from '../editor/useProject'
+import type { Format, Project } from '@/core/project'
+import { resolveTimeline, type Clip } from '@/core/timeline'
+import { createPlayer, sceneNeeds } from '@/player/player'
+import { fileUrl } from '@/client/editor/useProject'
 
 declare global {
   interface Window {
