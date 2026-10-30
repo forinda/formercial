@@ -37,6 +37,11 @@ describe('PagesController', () => {
     const res = await (await boot()).get('/').set(visit).expect(200)
     expect(res.body.component).toBe('Projects')
     expect(res.body.props.projects).toEqual([{ slug: 'demo', name: 'Demo' }])
+    expect(res.body.props.presets.map((p: { id: string }) => p.id)).toEqual([
+      'typescript-intro',
+      'javascript-basics',
+      'python-basics',
+    ])
   })
 
   it('GET /p/demo renders Editor with the project', async () => {

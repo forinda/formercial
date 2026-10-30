@@ -44,7 +44,7 @@ export function createPlayer(
   const [width, height] = FORMATS[format]
   const { colors, fonts } = project.theme
   const stage = document.createElement('div')
-  stage.className = 'formercial-stage'
+  stage.className = 'fm-stage'
   stage.dataset.format = format
   stage.style.cssText = [
     `--ratio: ${width} / ${height}`,
@@ -175,7 +175,7 @@ export function createPlayer(
   })
 
   const caption = document.createElement('div')
-  caption.className = 'formercial-caption'
+  caption.className = 'fm-caption'
   caption.dataset.caption = ''
   caption.hidden = true
   stage.append(caption)

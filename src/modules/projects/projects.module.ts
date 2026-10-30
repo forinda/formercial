@@ -2,6 +2,7 @@ import { defineModule } from '@forinda/kickjs'
 import { createRegistry } from '@/core/render/registry'
 import formercialConfig from '@/formercial.config'
 import { DriversController } from './drivers.controller'
+import { PresetsController } from './presets.controller'
 import { ProjectsController } from './projects.controller'
 import { REGISTRY } from './tokens'
 
@@ -15,6 +16,7 @@ export const ProjectsModule = defineModule({
       return [
         { path: '/projects', controller: ProjectsController },
         { path: '/drivers', controller: DriversController },
+        { path: '/presets', controller: PresetsController },
       ]
     },
   }),

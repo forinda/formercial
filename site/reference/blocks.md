@@ -36,7 +36,7 @@ Code that types itself.
 | Field | Default | |
 |---|---|---|
 | `source` | required | Newlines and indentation are kept. |
-| `lang` | `"ts"` | `"ts"`, `"sql"`, `"json"` or `"plain"`, for highlighting. |
+| `lang` | `"ts"` | `"ts"`, `"js"`, `"py"`, `"sql"`, `"json"` or `"plain"`, for highlighting. |
 | `label` | none | A small title, like a file name. |
 | `cps` | `34` | Characters typed per second. |
 

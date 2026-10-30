@@ -39,7 +39,7 @@ Blocks stack from top to bottom. Each has an **Appears at** time in seconds into
 | eyebrow | A small label above the headline |
 | headline | The main line; **Accent words** are drawn in the accent color |
 | text | A sentence or two |
-| code | Code that types itself, highlighted for TypeScript, SQL or JSON |
+| code | Code that types itself, highlighted for TypeScript, JavaScript, Python, SQL or JSON |
 | terminal | Commands: lines starting `$ ` get a prompt, `✗` fails, `✓` succeeds |
 | tree | A file tree; end a folder with `/` |
 | stamp | A big rotated word (**good** or **bad**), with an optional **Gone at** |

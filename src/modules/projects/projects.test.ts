@@ -329,4 +329,22 @@ describe('projects api', () => {
       .expect(200)
     expect(res.body.trusted).toBe(true)
   })
+
+  test('starts a project from a preset', async () => {
+    const http = await boot()
+    const presets = (await http.get('/api/v1/presets').expect(200)).body
+    expect(presets.map((p: { id: string }) => p.id)).toEqual([
+      'typescript-intro',
+      'javascript-basics',
+      'python-basics',
+    ])
+    const res = await http
+      .post('/api/v1/projects')
+      .send({ name: 'Py Ad', preset: 'python-basics' })
+      .expect(201)
+    const { project } = (await http.get(`/api/v1/projects/${res.body.slug}`)).body
+    expect(project.name).toBe('Py Ad')
+    expect(project.scenes[0].id).toBe('py-intro')
+    await http.post('/api/v1/projects').send({ name: 'X', preset: 'cobol' }).expect(400)
+  })
 })

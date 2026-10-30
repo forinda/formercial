@@ -12,6 +12,7 @@ import { createRegistry, driverReport, type FormercialConfig } from '@/core/rend
 import { renderProject } from '@/core/render/render-project'
 import { voiceProject } from '@/core/voice/voice-project'
 import { createTrust } from '@/core/trust'
+import { PRESETS, fromPreset } from '@/presets'
 import { createWorkspace } from '@/core/workspace'
 
 /** A slug under the projects folder, or a path to a project folder. */
@@ -86,10 +87,15 @@ export function formercialCliPlugin(config: FormercialConfig): KickCliPlugin {
 
       group
         .command('new <name>')
-        .description('Create a project with one starter scene')
-        .action(async (name: string) => {
+        .description('Create a project: one starter scene, or a 30s preset')
+        .option('--preset <id>', `start from a preset: ${PRESETS.map((p) => p.id).join(', ')}`)
+        .action(async (name: string, opts: { preset?: string }) => {
           const { root, slug, ws } = open(slugFrom(name))
-          await ws.write(slug, starterProject(name), null)
+          await ws.write(
+            slug,
+            opts.preset ? fromPreset(opts.preset, name) : starterProject(name),
+            null,
+          )
           ctx.log(`Created ${join(root, slug).replace(`${ctx.projectRoot}/`, '')}/project.json`)
         })
 

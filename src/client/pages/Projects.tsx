@@ -2,15 +2,24 @@ import { Link, router } from '@inertiajs/react'
 import { useState } from 'react'
 import { api } from '@/client/editor/useProject'
 
-export default function Projects({ projects }: { projects: { slug: string; name: string }[] }) {
+type PresetInfo = { id: string; title: string; description: string }
+
+export default function Projects({
+  projects,
+  presets,
+}: {
+  projects: { slug: string; name: string }[]
+  presets: PresetInfo[]
+}) {
   const [name, setName] = useState('')
+  const [preset, setPreset] = useState('')
   const [error, setError] = useState('')
   async function create(e: React.FormEvent) {
     e.preventDefault()
     try {
       const { slug } = await api<{ slug: string }>('/api/v1/projects', {
         method: 'POST',
-        json: { name },
+        json: { name, preset: preset || undefined },
       })
       router.visit(`/p/${slug}`)
     } catch (err) {
@@ -30,6 +39,17 @@ export default function Projects({ projects }: { projects: { slug: string; name:
           onChange={(e) => setName(e.target.value)}
           placeholder="Product name, e.g. @forinda/kickjs-db"
         />
+        <label htmlFor="new-preset" className="sr-only">
+          Start from
+        </label>
+        <select id="new-preset" value={preset} onChange={(e) => setPreset(e.target.value)}>
+          <option value="">Start from: one blank scene</option>
+          {presets.map((p) => (
+            <option key={p.id} value={p.id}>
+              Start from: {p.title} (30s)
+            </option>
+          ))}
+        </select>
         <button type="submit" disabled={!name.trim()}>
           New commercial
         </button>

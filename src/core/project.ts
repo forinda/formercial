@@ -31,7 +31,7 @@ const BlockSchema = z.discriminatedUnion('type', [
     type: z.literal('code'),
     at,
     label: z.string().optional(),
-    lang: z.enum(['ts', 'sql', 'json', 'plain']).default('ts'),
+    lang: z.enum(['ts', 'js', 'py', 'sql', 'json', 'plain']).default('ts'),
     source: z.string(),
     cps: z.number().positive().optional(),
   }),

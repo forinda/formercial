@@ -205,4 +205,13 @@ describe('player', () => {
     const player = createPlayer(host, p, resolveTimeline(p, {}, sceneNeeds), '16:9')
     expect(player.locked).toEqual(['c'])
   })
+
+  test('the stage and caption carry the classes their stylesheet styles', () => {
+    const { host } = mount(project(scenes))
+    const css = host.querySelector('style')!.textContent!
+    const stage = host.querySelector<HTMLElement>('[data-format]')!
+    const caption = host.querySelector<HTMLElement>('[data-caption]')!
+    expect(css).toContain(`.${stage.className} {`)
+    expect(css).toContain(`.${caption.className} {`)
+  })
 })

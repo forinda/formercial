@@ -3,6 +3,7 @@ import { inertia } from '@forinda/kickjs-inertia'
 import { FORMATS, type Format } from '@/core/project'
 import { clipLengths } from '@/core/voice/voice-project'
 import { Studio } from '@/modules/projects/studio.service'
+import { PRESETS } from '@/presets'
 
 const notFound = (message: string) => inertia('Error', { status: 404, message }, { status: 404 })
 
@@ -34,7 +35,10 @@ export class PagesController {
   async home() {
     return inertia(
       'Projects',
-      { projects: await this.studio.ws.list() },
+      {
+        projects: await this.studio.ws.list(),
+        presets: PRESETS.map(({ id, title, description }) => ({ id, title, description })),
+      },
       { meta: { title: 'Projects' } },
     )
   }

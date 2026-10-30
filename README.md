@@ -21,6 +21,7 @@ pnpm install
 pnpm dev                                   # the editor, at the address it prints
 pnpm kick formercial drivers               # what can render here
 pnpm kick formercial render kickjs-db      # render the example
+pnpm kick formercial new "Learn TypeScript" --preset typescript-intro   # or javascript-basics, python-basics
 ```
 
 ## What's in it

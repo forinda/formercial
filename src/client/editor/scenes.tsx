@@ -228,7 +228,7 @@ function BlockForm({
               value={block.lang}
               onChange={(e) => set({ lang: e.target.value })}
             >
-              {['ts', 'sql', 'json', 'plain'].map((l) => (
+              {['ts', 'js', 'py', 'sql', 'json', 'plain'].map((l) => (
                 <option key={l}>{l}</option>
               ))}
             </select>

@@ -17,6 +17,7 @@ import {
 import { clipLengths, recordingPath, voiceProject } from '@/core/voice/voice-project'
 import { withWorkdir } from '@/core/workdir'
 import { PathError, StaleWriteError } from '@/core/workspace'
+import { fromPreset } from '@/presets'
 import { Studio } from './studio.service'
 
 const MAX_UPLOAD = 50 * 1024 * 1024
@@ -105,7 +106,14 @@ export class ProjectsController {
       let slug = base
       for (let n = 2; taken.has(slug); n++) slug = `${base}-${n}`
       if (!SLUG.test(slug)) throw new HttpError(400, `can't make a project name from "${name}"`)
-      await this.studio.ws.write(slug, starterProject(name), null)
+      const preset = ctx.body?.preset ? String(ctx.body.preset) : undefined
+      let project
+      try {
+        project = preset ? fromPreset(preset, name) : starterProject(name)
+      } catch (err) {
+        throw new HttpError(400, (err as Error).message)
+      }
+      await this.studio.ws.write(slug, project, null)
       return ctx.json({ slug }, 201)
     })
   }

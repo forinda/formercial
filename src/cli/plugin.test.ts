@@ -98,4 +98,13 @@ describe('kick formercial', () => {
       program.parseAsync(['node', 'kick', 'formercial', 'render', 'c', '--driver', 'ok']),
     ).rejects.toThrow(/trust/)
   })
+
+  test('new --preset starts from a preset', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'formercial-cli-'))
+    await run(['formercial', 'new', 'TS Ad', '--preset', 'typescript-intro'], root)
+    const ws = createWorkspace(diskStorage({ root: join(root, 'projects') }))
+    const { project } = await ws.read('ts-ad')
+    expect(project.name).toBe('TS Ad')
+    expect(project.scenes.map((s) => s.id)[0]).toBe('ts-intro')
+  })
 })
