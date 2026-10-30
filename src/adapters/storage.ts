@@ -1,3 +1,4 @@
+import { resolve } from 'node:path'
 import { StorageAdapter } from '@forinda/kickjs-storage/adapter'
 import { diskStorage } from '@forinda/kickjs-storage/disk'
 import { S3Settings, s3FromSettings } from '@forinda/kickjs-storage/settings'
@@ -7,6 +8,10 @@ export type { Storage } from '@forinda/kickjs-storage'
 
 /** The projects folder: CXC_PROJECTS, or projects/ in the app. */
 export const projectsRoot = () => process.env.CXC_PROJECTS ?? 'projects'
+
+/** Where projects are, for keying trust: the bucket, or the folder's absolute path. */
+export const workspaceId = () =>
+  process.env.S3_BUCKET ? `s3:${process.env.S3_BUCKET}` : resolve(projectsRoot())
 
 /**
  * Where the app keeps projects: the projects/ folder until S3_BUCKET is set, then

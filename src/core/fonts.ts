@@ -21,18 +21,27 @@ export async function fetchGoogleFont(
   if (!res.ok) throw new Error(`Google Fonts has no "${family}" in those weights (${res.status})`)
   const css = await res.text()
   const out: { file: string; weight: number; data: Uint8Array }[] = []
+  const seen = new Map<string, (typeof out)[number]>()
   // One block per subset; keep the latin one for each weight.
   for (const m of css.matchAll(/\/\*\s*latin\s*\*\/\s*@font-face\s*\{([^}]*)\}/g)) {
     const weight = Number(/font-weight:\s*(\d+)/.exec(m[1])?.[1])
     const src = /src:\s*url\((https:\/\/fonts\.gstatic\.com\/[^)]+\.woff2)\)/.exec(m[1])?.[1]
     if (!weight || !src || out.some((o) => o.weight === weight)) continue
+    // A variable font comes back as one file for every weight: keep it once.
+    const same = seen.get(src)
+    if (same) {
+      out.push({ ...same, weight })
+      continue
+    }
     const file = await fetchFn(src)
     if (!file.ok) throw new Error(`couldn't download ${family} ${weight}`)
-    out.push({
+    const entry = {
       file: `media/fonts/${fontSlug(family)}-${weight}.woff2`,
       weight,
       data: new Uint8Array(await file.arrayBuffer()),
-    })
+    }
+    seen.set(src, entry)
+    out.push(entry)
   }
   if (out.length === 0) throw new Error(`Google Fonts returned no latin files for "${family}"`)
   return out
@@ -76,7 +85,9 @@ export async function storeGoogleFont(
     }
   }
   if (!files) throw lastError
-  for (const f of files) await ws.putFile(slug, f.file, f.data)
+  for (const file of new Set(files.map((f) => f.file))) {
+    await ws.putFile(slug, file, files.find((f) => f.file === file)!.data)
+  }
   const entries = files.map((f) => ({ family, weight: f.weight, path: f.file }))
   const { project, version } = await ws.read(slug)
   const kept = (project.theme.fonts.files ?? []).filter((f) => f.family !== family)

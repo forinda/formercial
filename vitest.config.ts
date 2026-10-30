@@ -1,3 +1,5 @@
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { defineConfig, mergeConfig } from 'vitest/config'
 import viteConfig from './vite.config.ts'
 
@@ -13,6 +15,8 @@ export default mergeConfig(
       globals: true,
       environment: 'node',
       include: ['src/**/*.test.ts'],
+      // Tests trust projects too: never in the real ~/.config file.
+      env: { CXC_TRUST_FILE: join(tmpdir(), `cxc-trust-test-${process.pid}.json`) },
     },
   }),
 )

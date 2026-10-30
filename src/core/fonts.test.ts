@@ -73,4 +73,22 @@ describe('fonts', () => {
       `font-family: 'Unbounded'; font-weight: 800; src: url('/f?path=media/fonts/unbounded-800.woff2') format('woff2')`,
     )
   })
+
+  test('a variable font served for several weights is stored once', async () => {
+    const css = [400, 700]
+      .map(
+        (w) =>
+          `/* latin */\n@font-face { font-weight: ${w}; src: url(https://fonts.gstatic.com/same.woff2) format('woff2'); }`,
+      )
+      .join('\n')
+    const fetchFn = vi.fn(async (url: string) =>
+      url.includes('googleapis') ? new Response(css) : new Response(new Uint8Array([1])),
+    )
+    const files = await fetchGoogleFont('Inter', [400, 700], fetchFn as unknown as typeof fetch)
+    expect(files.map((f) => [f.file, f.weight])).toEqual([
+      ['media/fonts/inter-400.woff2', 400],
+      ['media/fonts/inter-400.woff2', 700],
+    ])
+    expect(fetchFn).toHaveBeenCalledTimes(2)
+  })
 })

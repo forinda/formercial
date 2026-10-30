@@ -8,6 +8,7 @@ import type { Format } from '../../core/project'
 import type { Registry } from '../../core/render/registry'
 import { renderProject } from '../../core/render/render-project'
 import { createTrust } from '../../core/trust'
+import { workspaceId } from '../../adapters/storage'
 import { createWorkspace, type Workspace } from '../../core/workspace'
 import { RenderQueue, type JobInfo } from './render-queue'
 import { REGISTRY } from './tokens'
@@ -26,7 +27,7 @@ export class Studio {
     @Inject(REGISTRY) readonly registry: Registry,
   ) {
     this.ws = createWorkspace(storage)
-    this.trust = createTrust(storage)
+    this.trust = createTrust({ workspace: workspaceId() })
     this.queue = new RenderQueue((job) => this.emit(job.slug, 'job', job))
   }
 

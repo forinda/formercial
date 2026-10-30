@@ -5,6 +5,7 @@ import { diskStorage } from '@forinda/kickjs-storage/disk'
 import { Command } from 'commander'
 import { describe, expect, test } from 'vitest'
 import type { RenderDriver } from '../core/render/driver'
+import { parseProject, starterProject } from '../core/project'
 import { createWorkspace } from '../core/workspace'
 import { cxcCliPlugin, resolveProject } from './plugin'
 
@@ -71,5 +72,30 @@ describe('kick cxc', () => {
       'drivers',
       'preview',
     ])
+  })
+
+  test('render refuses a project whose custom scenes are not trusted', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'cxc-cli-'))
+    const ws = createWorkspace(diskStorage({ root: join(root, 'projects') }))
+    const project = parseProject({
+      ...starterProject('C'),
+      scenes: [{ id: 'c', kind: 'custom', caption: '', script: 'export function draw() {}' }],
+    })
+    await ws.write('c', project, null)
+    const ready: RenderDriver = {
+      ...fakeDriver,
+      name: 'ok',
+      check: async () => ({ ok: true, missing: [] }),
+    }
+    const program = new Command().exitOverride()
+    await cxcCliPlugin({ drivers: [ready] }).register!(program, {
+      cwd: root,
+      projectRoot: root,
+      config: null,
+      log: () => {},
+    })
+    await expect(
+      program.parseAsync(['node', 'kick', 'cxc', 'render', 'c', '--driver', 'ok']),
+    ).rejects.toThrow(/trust/)
   })
 })

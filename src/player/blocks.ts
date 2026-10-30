@@ -28,7 +28,8 @@ export function reveal(el: HTMLElement, since: number) {
 export function fitOnce(el: HTMLElement): () => void {
   let done = false
   return () => {
-    if (done || !el.clientWidth) return
+    // Measure with the real fonts: a fallback font would size it wrong for good.
+    if (done || !el.clientWidth || document.fonts?.status === 'loading') return
     done = true
     let size = parseFloat(getComputedStyle(el).fontSize)
     for (let i = 0; i < 16 && el.scrollWidth > el.clientWidth + 1; i++) {

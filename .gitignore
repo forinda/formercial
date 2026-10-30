@@ -20,4 +20,3 @@ projects/*/renders/
 projects/*/voice/*.tts.mp3
 projects/*/voice/.made.json
 .superpowers/
-projects/cxc-trust.json

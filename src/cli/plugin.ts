@@ -11,6 +11,7 @@ import { FORMATS, slugFrom, starterProject, type Format } from '../core/project'
 import { createRegistry, driverReport, type CxcConfig } from '../core/render/registry'
 import { renderProject } from '../core/render/render-project'
 import { voiceProject } from '../core/voice/voice-project'
+import { createTrust } from '../core/trust'
 import { createWorkspace } from '../core/workspace'
 
 /** A slug under the projects folder, or a path to a project folder. */
@@ -129,6 +130,11 @@ export function cxcCliPlugin(config: CxcConfig): KickCliPlugin {
             if (!check.ok)
               throw new Error(`${driver.name} can't run here: ${check.missing.join(', ')}`)
             const { project } = await ws.read(slug)
+            if (!(await createTrust({ workspace: root }).isTrusted(slug, project))) {
+              throw new Error(
+                `${slug} has custom scenes you haven't trusted: open it in the app (kick cxc preview ${arg}) and trust it first`,
+              )
+            }
             const formats = (opts.format === 'all' ? project.formats : [opts.format]) as Format[]
             if (!formats.every((f) => f in FORMATS))
               throw new Error('--format is 16:9, 9:16, 1:1 or all')
