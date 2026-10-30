@@ -1,13 +1,63 @@
 # Render drivers and voice providers
 
-How a render runs, and where a generated voice comes from, are both pluggable. Formercial ships with one of each:
+How a render runs, and where a generated voice comes from, are both pluggable. Formercial ships with:
 
-- `chromium-ffmpeg`: headless Chromium draws the frames, and ffmpeg encodes them.
+- `chromium-ffmpeg`: headless Chromium draws the frames, and ffmpeg encodes them with x264.
+- `chromium-nvenc`: the same, with an NVIDIA GPU drawing the frames and encoding them.
 - `edge-tts`: Microsoft's neural voices.
 
 Add your own in `src/formercial.config.ts`.
 
 ## Render drivers
+
+### chromium-nvenc
+
+Uses about half the CPU of `chromium-ffmpeg`, so the machine stays usable, but renders only a little faster, because frames are still captured one at a time. Files are about a third larger, at similar quality.
+
+It needs an NVIDIA GPU, its driver, and an ffmpeg built with `h264_nvenc`. `pnpm kick formercial drivers` tries encoding a frame to find out. It's tested on Linux. If Chromium can't use the GPU, it draws in software, and the video still comes out right.
+
+Choose it per render with `--driver chromium-nvenc`, or as your default with `FORMERCIAL_DRIVER=chromium-nvenc`.
+
+### Adding another GPU
+
+Each driver appears in the editor's **Driver** list and in `pnpm kick formercial drivers`, as ready or with what it needs. So a machine shows what it can use, and the rest say what's missing.
+
+To add other hardware, use `chromiumDriver` in `src/formercial.config.ts`. You give it ffmpeg's encoding arguments and, optionally, a `needs` check. This one encodes with VA-API, for AMD and Intel on Linux:
+
+```ts
+import { run } from './core/media'
+import { chromiumDriver } from './core/render/chromium-ffmpeg'
+import { defineConfig } from './core/render/registry'
+
+// The AMD or Intel render device: on a machine with two GPUs, it may be renderD129.
+const device = ['-vaapi_device', '/dev/dri/renderD128']
+const upload = ['-vf', 'format=nv12,hwupload']
+
+export default defineConfig({
+  drivers: [
+    chromiumDriver({
+      name: 'chromium-vaapi',
+      video: [...device, ...upload, '-c:v', 'h264_vaapi', '-qp', '20'],
+      needs: () =>
+        run('ffmpeg', [
+          '-loglevel', 'error',
+          ...device,
+          '-f', 'lavfi', '-i', 'color=black:s=256x256',
+          '-frames:v', '1',
+          ...upload, '-c:v', 'h264_vaapi',
+          '-f', 'null', '-',
+        ]).then(
+          () => [],
+          () => ['VA-API (a GPU and driver, and ffmpeg built with h264_vaapi)'],
+        ),
+    }),
+  ],
+})
+```
+
+Test by encoding a frame, as here: ffmpeg lists encoders the machine can't run. Pass `chrome: { args, env }` too if Chromium needs flags to use the GPU for drawing.
+
+### Writing a driver
 
 ```ts
 interface RenderDriver {
@@ -17,11 +67,11 @@ interface RenderDriver {
 }
 ```
 
-### check()
+#### check()
 
 Says whether the driver can run on this machine, and if not, what to install or set. The editor and `kick formercial drivers` show the result, and a render with a driver that isn't ready is refused before it starts.
 
-### render(job, dir, progress)
+#### render(job, dir, progress)
 
 `dir` is a work folder. The job's voice clips and music are already in it, at their project paths (`voice/s1.tts.mp3`, `media/music.mp3`). Write the MP4 and SRT under `dir`, and return their paths relative to it, like `renders/16x9-….mp4`. When `job.project.captions` is on, keep the SRT away from the MP4 (the built-in driver uses `renders/srt/`), or players that auto-load it will show the captions twice. They're copied back into the project and the folder is removed.
 
@@ -38,7 +88,7 @@ Says whether the driver can run on this machine, and if not, what to install or 
 
 Report progress with `progress({ phase: 'frames' | 'audio' | 'done', frame, frames })`.
 
-### The render page
+#### The render page
 
 `renderUrl` shows only the player, filling the window. Open it at the format's size (1920×1080, 1080×1920 or 1080×1080), and it sets up `window.formercial`:
 
@@ -50,7 +100,7 @@ Report progress with `progress({ phase: 'frames' | 'audio' | 'done', frame, fram
 
 That's all a driver needs to capture frames its own way, whether through a different browser, a GPU capture, or a remote machine.
 
-### Example
+#### Example
 
 ```ts
 import type { RenderDriver } from './core/render/driver'

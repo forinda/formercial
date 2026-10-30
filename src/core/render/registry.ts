@@ -2,7 +2,7 @@
 // src/formercial.config.ts adds.
 import { edgeTts } from '@/core/voice/edge-tts'
 import type { Check, VoiceProvider } from '@/core/voice/provider'
-import { chromiumFfmpeg } from './chromium-ffmpeg'
+import { chromiumFfmpeg, chromiumNvenc } from './chromium-ffmpeg'
 import type { RenderDriver } from './driver'
 
 export type FormercialConfig = { drivers?: RenderDriver[]; voices?: VoiceProvider[] }
@@ -21,7 +21,7 @@ function byName<T extends { name: string }>(kind: string, items: T[]): Map<strin
 
 export function createRegistry(config: FormercialConfig): Registry {
   return {
-    drivers: byName('render drivers', [chromiumFfmpeg, ...(config.drivers ?? [])]),
+    drivers: byName('render drivers', [chromiumFfmpeg, chromiumNvenc, ...(config.drivers ?? [])]),
     voices: byName('voice providers', [edgeTts, ...(config.voices ?? [])]),
   }
 }

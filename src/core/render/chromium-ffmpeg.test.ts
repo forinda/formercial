@@ -9,7 +9,7 @@ import { parseProject, starterProject } from '@/core/project'
 import { resolveTimeline } from '@/core/timeline'
 import { withWorkdir } from '@/core/workdir'
 import { createWorkspace } from '@/core/workspace'
-import { chromiumFfmpeg } from './chromium-ffmpeg'
+import { chromiumFfmpeg, chromiumNvenc } from './chromium-ffmpeg'
 import type { RenderJob } from './driver'
 
 // A page implementing the render contract: colour from t, and an error once
@@ -126,6 +126,24 @@ describe('chromium-ffmpeg', () => {
     )
     expect(out.srt).toBe(out.mp4.replace(/\.mp4$/, '.srt'))
     expect(existsSync(join(dir, out.srt))).toBe(true)
+  }, 60_000)
+
+  test('chromium-nvenc encodes with the GPU, where there is one', async (ctx) => {
+    if (!(await chromiumNvenc.check()).ok) return ctx.skip()
+    const dir = mkdtempSync(join(tmpdir(), 'formercial-test-'))
+    const out = await chromiumNvenc.render(job(dir, base), dir, () => {})
+    const codec = execFileSync('ffprobe', [
+      '-v',
+      'error',
+      '-select_streams',
+      'v:0',
+      '-show_entries',
+      'stream=codec_name,width,height',
+      '-of',
+      'csv=p=0',
+      join(dir, out.mp4),
+    ]).toString()
+    expect(codec).toMatch(/^h264,1080,1920/)
   }, 60_000)
 
   test('render fails with scene id when a scene throws', async (ctx) => {

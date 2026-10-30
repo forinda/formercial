@@ -9,15 +9,15 @@ const fakeDriver = (name: string, ok = true): RenderDriver => ({
 })
 
 describe('registry', () => {
-  test('built-in driver and voice are always present', () => {
+  test('built-in drivers and voice are always present', () => {
     const reg = createRegistry(defineConfig({}))
-    expect([...reg.drivers.keys()]).toEqual(['chromium-ffmpeg'])
+    expect([...reg.drivers.keys()]).toEqual(['chromium-ffmpeg', 'chromium-nvenc'])
     expect([...reg.voices.keys()]).toEqual(['edge-tts'])
   })
 
   test('config drivers are added', async () => {
     const reg = createRegistry(defineConfig({ drivers: [fakeDriver('farm', false)] }))
-    expect([...reg.drivers.keys()]).toEqual(['chromium-ffmpeg', 'farm'])
+    expect([...reg.drivers.keys()]).toEqual(['chromium-ffmpeg', 'chromium-nvenc', 'farm'])
     const report = await driverReport(reg)
     expect(report.find((r) => r.name === 'farm')).toEqual({
       name: 'farm',

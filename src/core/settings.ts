@@ -18,6 +18,11 @@ export const FormercialSettings = defineSettings(
         ),
       voice: z.string().min(1).default('en-US-AvaNeural').describe('Voice for new projects'),
       fps: fps.default(30).describe('Render frame rate unless a render asks for another, 1 to 60'),
+      driver: z
+        .string()
+        .min(1)
+        .default('chromium-ffmpeg')
+        .describe('Render driver unless a render asks for another'),
       // vite.config.ts reads this one itself: it loads before the app does.
       render: z
         .stringbool()

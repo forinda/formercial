@@ -1,4 +1,14 @@
-import { spawn } from 'node:child_process'
+import { type ChildProcess, spawn } from 'node:child_process'
+import { setPriority } from 'node:os'
+
+/** A render takes minutes of work: the rest of the machine goes first. */
+export function runInBackground(child: ChildProcess): void {
+  try {
+    if (child.pid) setPriority(child.pid, 10)
+  } catch {
+    // Already gone: its exit is reported where it's waited on.
+  }
+}
 
 /** Run a tool to completion; reject with its stderr when it fails or is missing. */
 export function run(cmd: string, args: string[]): Promise<string> {
