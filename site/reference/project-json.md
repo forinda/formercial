@@ -78,7 +78,8 @@ Every scene has:
 | `caption` | string | required | On screen and in the `.srt`. |
 | `spoken` | string | the caption | What the voice says. Whitespace only makes a silent scene. |
 | `minSeconds` | number | `4` | The shortest the scene may be. |
-| `transition` | `"fade"`, `"slide"` or `"cut"` | `"fade"` | Into this scene. |
+| `transition` | `"fade"`, `"cut"`, `"slide"`, `"wipe"`, `"zoom"`, `"iris"`, `"flip"`, `"blinds"`, `"break"`, `"shatter"` or `"crumble"` | `"fade"` | Into this scene. |
+| `transitionSeconds` | number, up to 5 | a length that suits the kind | How long the transition takes. It's part of this scene's time. |
 | `voice` | `"tts"` or `"recording"` | `"tts"` | `"recording"` uses `voice/<id>.rec.webm` when it exists. |
 
 A `blocks` scene adds `blocks`: an array of [blocks](./blocks).

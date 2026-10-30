@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, test } from 'vitest'
-import { parseProject, type Block, type Project, type Scene } from '@/core/project'
+import { parseProject, TRANSITIONS, type Block, type Project } from '@/core/project'
 import { resolveTimeline } from '@/core/timeline'
 import { createPlayer, sceneNeeds } from '@/player/player'
 import { PRESETS, fromPreset } from './index'
@@ -22,7 +22,6 @@ const BLOCK_TYPES: Record<Block['type'], true> = {
   end: true,
   doodle: true,
 }
-const TRANSITIONS: Scene['transition'][] = ['fade', 'cut', 'slide']
 const LANGS = ['ts', 'js', 'py', 'sql', 'json', 'plain']
 
 describe('presets', () => {
@@ -40,8 +39,9 @@ describe('presets', () => {
     describe(preset.id, () => {
       const project = parseProject(preset.project)
 
-      test('uses every transition', () => {
-        expect(new Set(project.scenes.map((s) => s.transition))).toEqual(new Set(TRANSITIONS))
+      test('uses the main transitions', () => {
+        const used = new Set(project.scenes.map((s) => s.transition))
+        for (const t of ['fade', 'cut', 'slide'] as const) expect(used.has(t), t).toBe(true)
       })
 
       if (preset.id !== 'doodle-light-bulb') {
@@ -130,6 +130,10 @@ describe('presets', () => {
   describe('showcase', () => {
     const project = PRESETS.find((p) => p.id === 'showcase')!.project
     const blocks = blocksOf(project)
+
+    test('shows every transition', () => {
+      expect(new Set(project.scenes.map((s) => s.transition))).toEqual(new Set(TRANSITIONS))
+    })
 
     test('shows every code language', () => {
       expect(new Set(blocks.flatMap((b) => (b.type === 'code' ? [b.lang] : [])))).toEqual(

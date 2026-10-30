@@ -8,6 +8,13 @@ import { BLOCKS, reveal, type BlockCtx } from './blocks'
 import { compileDraw } from './custom'
 import { esc } from './highlight'
 import { SCENE_CSS, STAGE_CSS, UNIT } from './styles'
+import {
+  defaultSeconds,
+  openingEffect,
+  transitionEffect,
+  type Effect,
+  type Look,
+} from './transitions'
 
 export interface Player {
   frame(t: number): void
@@ -16,9 +23,6 @@ export interface Player {
   /** Custom scenes not run because the project isn't trusted. */
   locked: string[]
 }
-
-/** Seconds of a new scene spent on its transition. */
-export const TRANSITION = 0.45
 
 /** How long a scene's blocks take to finish appearing, plus a second to read. */
 export function sceneNeeds(scene: Scene): number {
@@ -62,6 +66,12 @@ export function createPlayer(
   // @font-face can't live in a shadow root, so the project's fonts go here.
   style.textContent = STAGE_CSS + (opts.fontUrl ? fontFaceCss(project.theme, opts.fontUrl) : '')
   host.append(style, stage)
+  // Over the scenes, for the edges of a breaking transition.
+  const edges = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+  edges.setAttribute('class', 'fm-edges')
+  const edgePath = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+  edges.append(edgePath)
+  stage.append(edges)
 
   const errors = new Map<string, Error>()
   const lockedScenes: string[] = []
@@ -190,36 +200,39 @@ export function createPlayer(
 
   function place(
     s: (typeof scenes)[number],
-    state: { live: boolean; shown: boolean; opacity?: number; shift?: number; z: number },
+    state: { live: boolean; shown: boolean; look?: Look; z: number },
   ) {
+    const { opacity, shift, transform, clipPath } = state.look ?? {}
     s.el.dataset.live = String(state.live)
-    s.el.style.visibility = state.shown ? 'visible' : 'hidden'
-    s.el.style.opacity = String(state.shown ? round(state.opacity ?? 1) : 0)
-    s.el.style.transform = state.shift ? `translateX(${round(state.shift)}%)` : ''
-    s.el.style.zIndex = String(state.z)
+    // The whole style at once, so its text doesn't depend on what was drawn before.
+    s.el.style.cssText = [
+      `visibility: ${state.shown ? 'visible' : 'hidden'}`,
+      `opacity: ${state.shown ? round(opacity ?? 1) : 0}`,
+      `z-index: ${state.z}`,
+      ...(transform || shift ? [`transform: ${transform ?? `translateX(${round(shift!)}%)`}`] : []),
+      ...(clipPath ? [`clip-path: ${clipPath}`] : []),
+    ].join('; ')
   }
 
   function frame(t: number) {
     const i = indexAt(t)
     const current = scenes[i]
     const local = t - current.at.start
-    const p = Math.min(1, Math.max(0, local / TRANSITION))
-    const eased = 1 - (1 - p) ** 2
     const kind = current.scene.transition
-    // While a fade or slide runs, the previous scene stays underneath.
+    const seconds = current.scene.transitionSeconds ?? defaultSeconds(kind)
+    const p = Math.min(1, Math.max(0, local / seconds))
+    // While a transition runs, the previous scene stays in the picture.
     const under = kind !== 'cut' && p < 1 && i > 0 ? scenes[i - 1] : undefined
+    const effect: Effect =
+      p >= 1
+        ? { incoming: {} }
+        : (under ? transitionEffect : openingEffect)(kind, p, stage.clientWidth, stage.clientHeight)
     for (const s of scenes) {
       if (s === current) {
-        place(s, {
-          live: true,
-          shown: true,
-          opacity: kind === 'cut' ? 1 : eased,
-          shift: kind === 'slide' ? (1 - eased) * 6 : 0,
-          z: 2,
-        })
+        place(s, { live: true, shown: true, look: effect.incoming, z: effect.oldOnTop ? 1 : 2 })
         s.draw(local)
       } else if (s === under) {
-        place(s, { live: false, shown: true, z: 1 })
+        place(s, { live: false, shown: true, look: effect.outgoing, z: effect.oldOnTop ? 2 : 1 })
         s.draw(t - s.at.start)
       } else {
         place(s, { live: false, shown: false, z: 0 })
@@ -228,6 +241,8 @@ export function createPlayer(
         s.draw(Math.min(s.at.length, Math.max(0, t - s.at.start)))
       }
     }
+    edges.setAttribute('viewBox', `0 0 ${stage.clientWidth || 1} ${stage.clientHeight || 1}`)
+    edgePath.setAttribute('d', effect.edges ?? '')
     drawCaption(current.at, local)
   }
 

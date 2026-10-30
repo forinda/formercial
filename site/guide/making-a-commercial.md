@@ -24,7 +24,8 @@ Changes save on their own a moment after you stop typing. The status in the top 
 | Caption | Text on screen, and in the `.srt` subtitles. Written for reading. |
 | Spoken line | What the voice says. Written for the ear: spell out what a voice would misread ("KickJS D-B" for `@forinda/kickjs-db`), and use `...` for a pause. Leave it empty for a silent scene. |
 | At least (s) | The shortest the scene may be. |
-| Transition in | **fade**, **slide** or **cut** into this scene. |
+| Transition in | How the last scene gives way to this one: see below. |
+| Lasting | How long the transition takes, in seconds. It's part of this scene's time. |
 
 A scene lasts the **longest** of:
 
@@ -73,3 +74,22 @@ Under **Project**:
 - [Voice](./voice): generate or record each line.
 - [Custom scenes](./custom-scenes): when blocks aren't enough.
 - [Rendering](./rendering): getting the MP4s out.
+
+## Transitions
+
+| Transition | What it does |
+|---|---|
+| **fade** | The new scene fades in. |
+| **cut** | The new scene appears at once. |
+| **slide** | The new scene fades in, sliding a little. |
+| **wipe** | The new scene sweeps across the old one. |
+| **zoom** | The old scene pushes toward you as the new one arrives. |
+| **iris** | The new scene opens from the center. |
+| **flip** | The picture turns over like a card. |
+| **blinds** | Strips open across the screen. |
+| **break** | The old scene cracks down the middle, and the halves pull apart. |
+| **shatter** | The old scene breaks like glass. |
+| **crumble** | The old scene falls away in pieces, from the bottom up. |
+
+In **break**, **shatter** and **crumble**, the old scene is cut away to show the new one. The picture stays where it is inside each piece, which keeps them fast to render, and the pieces' edges are drawn so they show even when two scenes share a background. On the very first scene there's nothing to break from, so those and **flip** just show it. The `showcase` preset has a scene for each.
+

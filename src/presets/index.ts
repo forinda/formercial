@@ -865,6 +865,29 @@ const showcase = parseProject({
         '}',
       ].join('\n'),
     },
+    ...(
+      [
+        ['wipe', 'Wipe: the next scene slides across the old one.'],
+        ['zoom', 'Zoom: the old scene pushes toward you as the next arrives.'],
+        ['iris', 'Iris: the next scene opens from the center.'],
+        ['flip', 'Flip: the picture turns over like a card.'],
+        ['blinds', 'Blinds: strips open across the screen.'],
+        ['break', 'Break: the old scene cracks and pulls apart.'],
+        ['shatter', 'Shatter: the old scene breaks like glass.'],
+        ['crumble', 'Crumble: the old scene falls away in pieces.'],
+      ] as const
+    ).map(([transition, line]) =>
+      scene(
+        `transition-${transition}`,
+        line,
+        line,
+        [
+          { type: 'eyebrow', text: 'Transitions' },
+          { type: 'headline', text: `${transition[0].toUpperCase()}${transition.slice(1)}` },
+        ],
+        { minSeconds: 5.5, transition },
+      ),
+    ),
     scene(
       'end',
       'End on a wordmark, a line, a command and an address.',

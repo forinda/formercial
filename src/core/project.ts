@@ -130,13 +130,30 @@ const BlockSchema = z.discriminatedUnion('type', [
   }),
 ])
 
+export const TRANSITIONS = [
+  'fade',
+  'cut',
+  'slide',
+  'wipe',
+  'zoom',
+  'iris',
+  'flip',
+  'blinds',
+  'break',
+  'shatter',
+  'crumble',
+] as const
+export type Transition = (typeof TRANSITIONS)[number]
+
 const sceneBase = {
   // Used in file names (voice/<id>.tts.mp3), so no slashes or dots.
   id: z
     .string()
     .regex(/^[A-Za-z0-9][A-Za-z0-9_-]{0,62}$/, { error: 'letters, digits, - and _ only' }),
   minSeconds: z.number().min(0).default(4),
-  transition: z.enum(['cut', 'fade', 'slide']).default('fade'),
+  transition: z.enum(TRANSITIONS).default('fade'),
+  /** How long the transition takes. Default: a length that suits its kind. */
+  transitionSeconds: z.number().positive().max(5).optional(),
   caption: z.string(),
   spoken: z.string().optional(),
   voice: z.enum(['tts', 'recording']).default('tts'),
