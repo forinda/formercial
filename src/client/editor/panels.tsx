@@ -40,7 +40,7 @@ export function ThemePanel({
   const [fetching, setFetching] = useState('')
   const [link, setLink] = useState('')
   const [linkFamily, setLinkFamily] = useState('')
-  const isFontFile = /\.(woff2?|ttf|otf)([?#]|$)/i.test(link)
+  const [linkWeight, setLinkWeight] = useState('')
   const stored = new Map<string, number[]>()
   for (const f of theme.fonts.files ?? []) {
     stored.set(f.family, [...(stored.get(f.family) ?? []), f.weight])
@@ -51,10 +51,15 @@ export function ThemePanel({
     try {
       await api(`/api/v1/projects/${slug}/fonts`, {
         method: 'POST',
-        json: { url: link.trim(), family: isFontFile ? linkFamily.trim() : undefined },
+        json: {
+          url: link.trim(),
+          family: linkFamily.trim() || undefined,
+          weight: linkWeight ? Number(linkWeight) : undefined,
+        },
       })
       setLink('')
       setLinkFamily('')
+      setLinkWeight('')
       onFontsChanged()
     } catch (err) {
       setError((err as Error).message)
@@ -163,24 +168,34 @@ export function ThemePanel({
               value={link}
               onChange={(e) => setLink(e.target.value)}
             />
-            <Button
-              variant="secondary"
-              disabled={!!fetching || !link.trim() || (isFontFile && !linkFamily.trim())}
-              onClick={addLink}
-            >
+            <Button variant="secondary" disabled={!!fetching || !link.trim()} onClick={addLink}>
               {fetching === 'link' ? 'Adding…' : 'Add'}
             </Button>
           </div>
         </Field>
-        {isFontFile && (
-          <Field id="font-link-family" label="Family name for this file">
+        <div className="flex gap-2">
+          <Field id="font-link-family" label="Family (font file links only)">
             <Input
               id="font-link-family"
               value={linkFamily}
               onChange={(e) => setLinkFamily(e.target.value)}
             />
           </Field>
-        )}
+          <div className="w-24 shrink-0">
+            <Field id="font-link-weight" label="Weight">
+              <Input
+                id="font-link-weight"
+                type="number"
+                min={1}
+                max={1000}
+                step={100}
+                placeholder="400"
+                value={linkWeight}
+                onChange={(e) => setLinkWeight(e.target.value)}
+              />
+            </Field>
+          </div>
+        </div>
         {stored.size > 0 && (
           <ul className="grid gap-1.5">
             {[...stored].map(([family, weights]) => (
