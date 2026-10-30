@@ -32,7 +32,8 @@ export function fitOnce(el: HTMLElement): (() => void) & { done: boolean } {
     if (done || !el.clientWidth || document.fonts?.status === 'loading') return
     done = true
     let size = parseFloat(getComputedStyle(el).fontSize)
-    for (let i = 0; i < 16 && el.scrollWidth > el.clientWidth + 1; i++) {
+    // Enough steps to reach about 14% of the size, so no line stays clipped.
+    for (let i = 0; i < 32 && el.scrollWidth > el.clientWidth + 1; i++) {
       size *= 0.94
       el.style.fontSize = `${size}px`
     }
