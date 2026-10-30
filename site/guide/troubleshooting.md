@@ -22,6 +22,10 @@ The render page stopped responding. This usually means:
 
 A custom scene threw an error, or isn't trusted. The message names the scene. Open it in the editor: the preview shows the same error inside the scene.
 
+## Captions show twice
+
+Your video player is showing a same-named `.srt` on top of the captions in the picture. New renders with captions on keep the `.srt` in `renders/srt/` so this doesn't happen. For an older render, delete the `.srt` beside the MP4, or turn subtitles off in the player.
+
 ## "Changed on disk"
 
 `project.json` changed outside the editor (a script, `git pull`, another editor) while you had unsaved edits.

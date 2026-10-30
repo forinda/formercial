@@ -1,7 +1,7 @@
 // The built-in render driver: Chromium draws each frame of the render page,
 // ffmpeg encodes them and lays the voice and music under the picture.
 import { mkdir, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { audioGraph } from '@/core/audio'
 import { hasCommand, run } from '@/core/media'
 import { FORMATS } from '@/core/project'
@@ -145,8 +145,12 @@ export const chromiumFfmpeg: RenderDriver = {
     await run('ffmpeg', args)
     await run('rm', ['-f', picture])
 
-    await writeFile(join(dir, `${name}.srt`), toSrt(job.project, job.timeline))
+    // Players auto-load a same-named .srt beside the video. With captions in the
+    // picture that would show them twice, so the file goes where they don't look.
+    const srt = job.project.captions ? `renders/srt/${basename(name)}.srt` : `${name}.srt`
+    await mkdir(dirname(join(dir, srt)), { recursive: true })
+    await writeFile(join(dir, srt), toSrt(job.project, job.timeline))
     progress({ phase: 'done', frame: frames, frames })
-    return { mp4: `${name}.mp4`, srt: `${name}.srt` }
+    return { mp4: `${name}.mp4`, srt }
   },
 }
