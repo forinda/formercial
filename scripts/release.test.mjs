@@ -1,7 +1,30 @@
 import assert from 'node:assert/strict'
+import { execFileSync, spawnSync } from 'node:child_process'
+import {
+  chmodSync,
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs'
+import { tmpdir } from 'node:os'
+import { dirname, join } from 'node:path'
 import { describe, it } from 'node:test'
+import { fileURLToPath } from 'node:url'
 
-import { bumpSemver, groupCommits, parseCommit, renderNotes } from './release.mjs'
+import {
+  addToChangelog,
+  bumpSemver,
+  changelogEntry,
+  groupCommits,
+  parseCommit,
+  planSteps,
+  renderNotes,
+} from './release.mjs'
 
 const REPO = 'https://github.com/forinda/formercial'
 
@@ -133,3 +156,256 @@ describe('renderNotes', () => {
     assert.match(empty, /No conventional-commit changes/)
   })
 })
+
+describe('changelog helpers', () => {
+  const log = addToChangelog(addToChangelog('', '## v1.0.0 (d)\n\nfirst\n'), '## v1.1.0 (d)\n\nsecond\n')
+
+  it('adds new entries at the top', () => {
+    assert.ok(log.indexOf('v1.1.0') < log.indexOf('v1.0.0'))
+    assert.ok(log.startsWith('# Changelog\n'))
+  })
+
+  it('reads one entry back, exactly', () => {
+    assert.equal(changelogEntry(log, 'v1.1.0'), '## v1.1.0 (d)\n\nsecond\n')
+    assert.equal(changelogEntry(log, 'v1.0.0'), '## v1.0.0 (d)\n\nfirst\n')
+    assert.equal(changelogEntry(log, 'v1.2.0'), null)
+  })
+
+  it("doesn't confuse v1.1.0 with v1x1.0 or v1.1.01", () => {
+    assert.equal(changelogEntry('## v1x1x0 (d)\n', 'v1.1.0'), null)
+    assert.equal(changelogEntry('## v1.1.01 (d)\n', 'v1.1.0'), null)
+  })
+})
+
+describe('planSteps', () => {
+  const all = {
+    changelog: true,
+    version: true,
+    committed: true,
+    tagged: true,
+    branchPushed: true,
+    tagPushed: true,
+    released: true,
+  }
+
+  it('has nothing to do once everything is done', () => {
+    assert.deepEqual(planSteps(all), [])
+  })
+
+  it('does only what is left', () => {
+    assert.deepEqual(planSteps({ ...all, released: false }), ['github-release'])
+    assert.deepEqual(planSteps({ ...all, tagPushed: false, released: false }), [
+      'push-tag',
+      'github-release',
+    ])
+  })
+
+  it('stops at the tag without pushing', () => {
+    assert.deepEqual(planSteps({ noPush: true }), ['changelog', 'version', 'commit', 'tag'])
+  })
+})
+
+// The whole script against a real git remote, with a stand-in for gh that can be
+// told to fail, so a release can really break part-way and be re-run.
+describe('release flow', () => {
+  const here = dirname(fileURLToPath(import.meta.url))
+  const git = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim()
+
+  function setup() {
+    const root = mkdtempSync(join(tmpdir(), 'formercial-release-'))
+    const bare = join(root, 'origin.git')
+    const work = join(root, 'work')
+    const bin = join(root, 'bin')
+    mkdirSync(bin)
+    git(root, 'init', '--quiet', '--bare', '--initial-branch=main', bare)
+    git(root, 'init', '--quiet', '--initial-branch=main', work)
+    git(work, 'config', 'user.name', 'T')
+    git(work, 'config', 'user.email', 't@example.com')
+    // The script reads the GitHub name; git really talks to the bare repo.
+    git(work, 'remote', 'add', 'origin', 'https://github.com/acme/app.git')
+    git(work, 'config', `url.${bare}.insteadOf`, 'https://github.com/acme/app.git')
+    mkdirSync(join(work, 'scripts'))
+    copyFileSync(join(here, 'release.mjs'), join(work, 'scripts/release.mjs'))
+    symlinkSync(join(here, '../node_modules'), join(work, 'node_modules'))
+    writeFileSync(join(work, '.gitignore'), 'node_modules\n.tmp\n')
+    writeFileSync(join(work, 'package.json'), '{\n  "version": "1.0.0"\n}\n')
+    git(work, 'add', '.')
+    git(work, 'commit', '--quiet', '-m', 'feat: first')
+    git(work, 'push', '--quiet', 'origin', 'main')
+    const state = join(root, 'gh-state')
+    mkdirSync(state)
+    writeFileSync(
+      join(bin, 'gh'),
+      `#!/bin/sh
+if [ "$1" = auth ]; then exit 0; fi
+tag="$3"
+if [ "$2" = view ]; then [ -e "${state}/$tag" ]; exit $?; fi
+if [ "$2" = create ]; then
+  [ -e "${state}/fail" ] && { echo "gh: down" >&2; exit 1; }
+  touch "${state}/$tag"; echo "$tag" >> "${state}/created"; exit 0
+fi
+exit 1
+`,
+    )
+    chmodSync(join(bin, 'gh'), 0o755)
+    const run = (...args) =>
+      spawnSync(process.execPath, ['scripts/release.mjs', ...args], {
+        cwd: work,
+        encoding: 'utf8',
+        env: { ...process.env, PATH: `${bin}:${process.env.PATH}` },
+      })
+    return {
+      root,
+      work,
+      bare,
+      state,
+      run,
+      version: () => JSON.parse(readFileSync(join(work, 'package.json'), 'utf8')).version,
+      changelog: () => readFileSync(join(work, 'CHANGELOG.md'), 'utf8'),
+      created: () =>
+        existsSync(join(state, 'created'))
+          ? readFileSync(join(state, 'created'), 'utf8').trim().split('\n')
+          : [],
+      tagOnOrigin: (tag) => git(bare, 'tag', '--list', tag),
+      done: () => rmSync(root, { recursive: true, force: true }),
+    }
+  }
+  const entries = (text, tag) => text.split(`## ${tag} (`).length - 1
+  const expectOk = (r) => assert.equal(r.status, 0, r.stderr)
+
+  it('releases everything in one go', () => {
+    const t = setup()
+    expectOk(t.run('1.1.0'))
+    assert.equal(t.version(), '1.1.0')
+    assert.equal(t.tagOnOrigin('v1.1.0'), 'v1.1.0')
+    assert.deepEqual(t.created(), ['v1.1.0'])
+    assert.equal(git(t.bare, 'log', '-1', '--format=%s', 'main'), 'chore(release): v1.1.0')
+    t.done()
+  })
+
+  it('running a finished release again changes nothing', () => {
+    const t = setup()
+    expectOk(t.run('1.1.0'))
+    const head = git(t.work, 'rev-parse', 'HEAD')
+    const again = t.run('1.1.0')
+    expectOk(again)
+    assert.match(again.stderr, /already released/)
+    assert.equal(git(t.work, 'rev-parse', 'HEAD'), head)
+    assert.deepEqual(t.created(), ['v1.1.0'])
+    assert.equal(entries(t.changelog(), 'v1.1.0'), 1)
+    t.done()
+  })
+
+  it('finishes after the GitHub release fails, without repeating anything', () => {
+    const t = setup()
+    writeFileSync(join(t.state, 'fail'), '')
+    const broken = t.run('1.1.0')
+    assert.equal(broken.status, 1)
+    assert.match(broken.stderr, /re-run/)
+    assert.equal(t.tagOnOrigin('v1.1.0'), 'v1.1.0')
+    assert.deepEqual(t.created(), [])
+    const head = git(t.work, 'rev-parse', 'HEAD')
+    rmSync(join(t.state, 'fail'))
+    expectOk(t.run('1.1.0'))
+    assert.deepEqual(t.created(), ['v1.1.0'])
+    assert.equal(git(t.work, 'rev-parse', 'HEAD'), head)
+    assert.equal(entries(t.changelog(), 'v1.1.0'), 1)
+    t.done()
+  })
+
+  it('--bump finishes the unfinished release instead of bumping again', () => {
+    const t = setup()
+    writeFileSync(join(t.state, 'fail'), '')
+    assert.equal(t.run('--bump', 'minor').status, 1)
+    assert.equal(t.version(), '1.1.0')
+    rmSync(join(t.state, 'fail'))
+    expectOk(t.run('--bump', 'minor'))
+    assert.equal(t.version(), '1.1.0')
+    assert.deepEqual(t.created(), ['v1.1.0'])
+    expectOk(t.run('--bump', 'minor'))
+    assert.equal(t.version(), '1.2.0')
+    t.done()
+  })
+
+  it('stops before writing anything when the branch is behind', () => {
+    const t = setup()
+    const other = join(t.root, 'other')
+    git(t.root, 'clone', '--quiet', t.bare, other)
+    git(other, 'config', 'user.name', 'T')
+    git(other, 'config', 'user.email', 't@example.com')
+    git(other, 'commit', '--quiet', '--allow-empty', '-m', 'fix: elsewhere')
+    git(other, 'push', '--quiet', 'origin', 'main')
+    const r = t.run('1.1.0')
+    assert.equal(r.status, 1)
+    assert.match(r.stderr, /behind origin/)
+    assert.equal(t.version(), '1.0.0')
+    assert.equal(existsSync(join(t.work, 'CHANGELOG.md')), false)
+    assert.equal(git(t.work, 'tag', '--list'), '')
+    t.done()
+  })
+
+  it('finishes a release that got ahead of a pull, like a rejected push', () => {
+    const t = setup()
+    expectOk(t.run('1.1.0', '--no-push'))
+    const other = join(t.root, 'other')
+    git(t.root, 'clone', '--quiet', t.bare, other)
+    git(other, 'config', 'user.name', 'T')
+    git(other, 'config', 'user.email', 't@example.com')
+    git(other, 'commit', '--quiet', '--allow-empty', '-m', 'fix: elsewhere')
+    git(other, 'push', '--quiet', 'origin', 'main')
+    assert.match(t.run('1.1.0').stderr, /behind origin/)
+    git(t.work, 'pull', '--quiet', '--no-rebase', '--no-edit', 'origin', 'main')
+    expectOk(t.run('1.1.0'))
+    assert.deepEqual(t.created(), ['v1.1.0'])
+    assert.equal(git(t.bare, 'tag', '--list', 'v1.1.0'), 'v1.1.0')
+    assert.equal(entries(t.changelog(), 'v1.1.0'), 1)
+    assert.equal(git(t.work, 'rev-list', '--count', 'origin/main..HEAD'), '0')
+    t.done()
+  })
+
+  it('finishes after a crash that left its files uncommitted', () => {
+    const t = setup()
+    writeFileSync(join(t.work, 'CHANGELOG.md'), addToChangelog('', '## v1.1.0 (2026-01-01)\n\nkept\n'))
+    writeFileSync(join(t.work, 'package.json'), '{\n  "version": "1.1.0"\n}\n')
+    expectOk(t.run('1.1.0'))
+    assert.equal(git(t.bare, 'log', '-1', '--format=%s', 'main'), 'chore(release): v1.1.0')
+    assert.match(t.changelog(), /kept/)
+    assert.equal(git(t.work, 'status', '--porcelain'), '')
+    t.done()
+  })
+
+  it('still refuses other uncommitted work, even when resuming', () => {
+    const t = setup()
+    writeFileSync(join(t.work, 'CHANGELOG.md'), addToChangelog('', '## v1.1.0 (d)\n\nx\n'))
+    writeFileSync(join(t.work, 'notes.txt'), 'mine')
+    const r = t.run('1.1.0')
+    assert.equal(r.status, 1)
+    assert.match(r.stderr, /dirty/)
+    t.done()
+  })
+
+  it('a dry run writes nothing', () => {
+    const t = setup()
+    const r = t.run('1.1.0', '--dry-run')
+    expectOk(r)
+    assert.match(r.stderr, /steps: {3}changelog, version, commit, tag, push-branch, push-tag, github-release/)
+    assert.equal(t.version(), '1.0.0')
+    assert.equal(git(t.work, 'status', '--porcelain'), '')
+    t.done()
+  })
+
+  it('refuses a tag that differs from the one on origin', () => {
+    const t = setup()
+    git(t.work, 'commit', '--quiet', '--allow-empty', '-m', 'feat: a')
+    git(t.work, 'tag', '-a', 'v1.1.0', '-m', 'one')
+    git(t.work, 'push', '--quiet', 'origin', 'main', 'v1.1.0')
+    git(t.work, 'tag', '-d', 'v1.1.0')
+    git(t.work, 'commit', '--quiet', '--allow-empty', '-m', 'feat: b')
+    git(t.work, 'tag', '-a', 'v1.1.0', '-m', 'two')
+    const r = t.run('1.1.0')
+    assert.equal(r.status, 1)
+    assert.match(r.stderr, /different commit/)
+    t.done()
+  })
+})
+

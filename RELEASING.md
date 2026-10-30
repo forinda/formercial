@@ -13,6 +13,19 @@ pnpm release --help
 
 SemVer, with tags as `v<version>`. Formercial isn't published to a registry: people clone it, so a release is a tag, a changelog entry and a GitHub release.
 
+## If it breaks part-way
+
+Re-run the same command. Each step checks whether it's already done, so a lost connection, a rejected push or a crash can't double-tag or double-bump, and a finished release does nothing:
+
+```bash
+pnpm release 0.2.0            # fails while creating the GitHub release
+pnpm release 0.2.0            # finds the rest done, and creates only that
+```
+
+`pnpm release --bump minor` is just as safe: it finishes an unfinished release before starting a new one. Use `pnpm release:dry` to see which steps are left.
+
+It stops before writing anything if your branch is behind origin. Run `git pull`, then re-run. It also stops if a tag on origin points somewhere other than the one here, because that needs a person to decide.
+
 ## What the command does
 
 1. Refuses to run unless you're on `main`, the tree is clean, `gh` is signed in and the tag is free. `--allow-branch`, `--allow-dirty` and `--no-push` each lift one of those.
