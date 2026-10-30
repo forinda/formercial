@@ -16,6 +16,7 @@ Put them in `.env` at the repository root (copy `.env.example`), or set them in 
 |---|---|---|
 | `FORMERCIAL_PROJECTS` | `projects` | The projects folder, relative to the repository or absolute. |
 | `FORMERCIAL_TRUST_FILE` | `~/.config/formercial/trust.json` | Where [trust](../guide/custom-scenes#trust) for custom scenes is kept. Keep it outside the projects folder. |
+| `FORMERCIAL_HISTORY_FILE` | a file under `.formercial/` | Where [project history](../guide/history) is kept. |
 | `FORMERCIAL_VOICE` | `en-US-AvaNeural` | Voice for new projects. Each project then keeps its own in `project.json`. |
 | `FORMERCIAL_FPS` | `30` | Render frame rate unless a render asks for another: a whole number from 1 to 60. |
 | `FORMERCIAL_DRIVER` | `chromium-ffmpeg` | Render driver unless a render asks for another. Set it to `chromium-nvenc` to use an NVIDIA GPU. |

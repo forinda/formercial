@@ -67,10 +67,12 @@ describe('mcp tools', () => {
       'get_project',
       'get_renders',
       'list_drivers',
+      'list_history',
       'list_presets',
       'list_projects',
       'project_schema',
       'render_project',
+      'restore_revision',
       'update_project',
       'voice_project',
     ])

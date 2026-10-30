@@ -1,4 +1,5 @@
 import { defineConfig } from '@forinda/kickjs-cli'
+import { dbCliPlugin } from '@forinda/kickjs-db/cli'
 import { formercialCliPlugin } from './src/cli/plugin'
 import formercialConfig from './src/formercial.config'
 
@@ -11,7 +12,19 @@ export default defineConfig({
   runtime: 'express',
   // `kick formercial new|voice|render|drivers|preview`. Add your own commands with
   // another defineCliPlugin in this list.
-  plugins: [formercialCliPlugin(formercialConfig)],
+  plugins: [formercialCliPlugin(formercialConfig), dbCliPlugin],
+  // The history database's schema. The app applies these migrations itself when
+  // it opens the database; `kick db generate` writes new ones.
+  db: {
+    schemaPath: 'src/db/schema.ts',
+    migrationsDir: 'db/migrations',
+    dialect: 'sqlite',
+    adapter: async () => {
+      const Database = (await import('better-sqlite3')).default
+      const { sqliteAdapter } = await import('@forinda/kickjs-db/sqlite')
+      return sqliteAdapter({ database: new Database(':memory:') })
+    },
+  },
   // Pinned so `kick add` and other dep-installing commands always use the
   // project's intended package manager, regardless of which lockfile exists.
   packageManager: 'pnpm',

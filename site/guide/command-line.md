@@ -44,6 +44,16 @@ It voices first (when edge-tts is installed), then renders each format. Without 
 
 A project with custom scenes must be [trusted](./custom-scenes#trust) first: open it with `preview` and trust it in the editor.
 
+### history, rollback, name
+
+```bash
+pnpm kick formercial history my-product
+pnpm kick formercial rollback my-product 12
+pnpm kick formercial name my-product 12 v1
+```
+
+List a project's steps, put it back to one, or name one. See [History](./history).
+
 ### drivers
 
 ```bash

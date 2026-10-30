@@ -42,6 +42,7 @@ describe('FormercialSettings', () => {
     expect([...FormercialSettings.envNames].sort()).toEqual([
       'FORMERCIAL_DRIVER',
       'FORMERCIAL_FPS',
+      'FORMERCIAL_HISTORY_FILE',
       'FORMERCIAL_PROJECTS',
       'FORMERCIAL_RENDER',
       'FORMERCIAL_TRUST_FILE',

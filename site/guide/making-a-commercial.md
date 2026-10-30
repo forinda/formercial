@@ -11,6 +11,7 @@ A commercial is a list of scenes. Each scene has a picture, a caption and a spok
   - **Voice:** the spoken line, generating it, and recording it.
   - **Project:** name, formats, colors, fonts, captions, logo, music.
   - **Render:** render drivers, renders in progress, and finished videos.
+  - **History:** every change so far. See [History](./history).
 
 Drag the lines between the panes to resize them, or hide the panel and the timeline with the buttons above the picture. The sun and moon button in the top bar switches between system, light and dark themes. The theme is only for the app: it doesn't change your video.
 

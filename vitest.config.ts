@@ -14,6 +14,8 @@ export default mergeConfig(
       environment: 'node',
       include: ['src/**/*.test.ts'],
       setupFiles: ['src/test-setup.ts'],
+      // Tests that boot the app keep history in memory, not in projects/.
+      env: { FORMERCIAL_HISTORY_FILE: ':memory:' },
     },
   }),
 )

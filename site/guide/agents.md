@@ -47,6 +47,8 @@ This runs the built app, building it first if there's no `dist/`. **Run `pnpm bu
 | `update_project` | Replace `project.json`: `project` and `baseVersion` |
 | `voice_project` | Generate missing or changed lines. They're sent to Microsoft's speech service. |
 | `list_drivers` | Render drivers, and what each one needs |
+| `list_history` | The steps a project has been through |
+| `restore_revision` | Put a project back to one of those steps; the rest are kept |
 | `render_project` | Queue a render: `format` (`16:9`, `9:16`, `1:1` or `all`), optional `driver` and `fps`. Returns job ids at once. |
 | `get_renders` | Job progress, finished files, and the `folder` they're in |
 

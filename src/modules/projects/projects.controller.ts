@@ -156,6 +156,7 @@ export class ProjectsController {
         version,
         clips: Object.fromEntries(Object.entries(clips).filter(([, c]) => c)),
         trusted,
+        history: await this.studio.historyState(slug),
       })
     })
   }
@@ -184,13 +185,108 @@ export class ProjectsController {
         slug,
         project as Project,
         String(baseVersion ?? ''),
+        ctx.headers['x-mcp-tool'] ? 'agent' : fromEditor ? 'editor' : 'app',
       )
       const saved = (await this.studio.ws.read(slug)).project
       if (keepTrust) await this.studio.trust.set(slug, saved, true)
       const trusted = await this.studio.trust.isTrusted(slug, saved)
       this.studio.emit(slug, 'project-changed', { version })
-      return ctx.json({ version, trusted })
+      return ctx.json({ version, trusted, history: await this.studio.historyState(slug) })
     })
+  }
+
+  private history() {
+    const { history } = this.studio.ws
+    if (!history) throw new HttpError(503, "history is off: SQLite couldn't start")
+    return history
+  }
+
+  /** After the file changed underneath the editor: tell it, and say what it can do next. */
+  private async restored(ctx: RequestContext, slug: string, version: string) {
+    const { project } = await this.studio.ws.read(slug)
+    this.studio.emit(slug, 'project-changed', { version })
+    return ctx.json({
+      version,
+      trusted: await this.studio.trust.isTrusted(slug, project),
+      history: await this.studio.historyState(slug),
+    })
+  }
+
+  @McpTool({
+    name: 'list_history',
+    description:
+      'The steps a project has been through, newest first, and which one is current. Each has an id, what changed, who changed it, when, and its name if it has one.',
+    annotations: { readOnlyHint: true },
+  })
+  @Get('/:slug/history')
+  listHistory(ctx: RequestContext) {
+    return this.handle(ctx, async () => {
+      const { slug } = ctx.params
+      const history = this.history()
+      // Edits made while the app wasn't running show up here too.
+      await this.studio.ws.remember(
+        slug,
+        await this.studio.ws.getFile(slug, 'project.json'),
+        'outside',
+      )
+      return ctx.json({
+        current: (await history.head(slug))?.id ?? null,
+        revisions: await history.list(slug),
+      })
+    })
+  }
+
+  @McpTool({
+    name: 'restore_revision',
+    description:
+      'Put a project back to a step from list_history, exactly as it was. Nothing is lost: the step it leaves stays in the history. Custom scene code that differs from what the user trusted needs trusting again.',
+    inputSchema: z.object({
+      id: z.number().int().describe('A step id from list_history'),
+      baseVersion: z.string().optional().describe('Refuse if the project has changed since this'),
+    }),
+  })
+  @Post('/:slug/history/:id/restore')
+  restoreRevision(ctx: RequestContext) {
+    return this.handle(ctx, async () => {
+      const { slug } = ctx.params
+      this.history()
+      const baseVersion = ctx.body?.baseVersion
+      const { version } = await this.studio.ws.restore(
+        slug,
+        Number(ctx.params.id),
+        baseVersion === undefined ? undefined : String(baseVersion),
+      )
+      return this.restored(ctx, slug, version)
+    })
+  }
+
+  @Put('/:slug/history/:id/label')
+  labelRevision(ctx: RequestContext) {
+    return this.handle(ctx, async () => {
+      const label = String(ctx.body?.label ?? '')
+        .trim()
+        .slice(0, 80)
+      await this.history().setLabel(ctx.params.slug, Number(ctx.params.id), label || null)
+      return ctx.noContent()
+    })
+  }
+
+  @Post('/:slug/undo')
+  undo(ctx: RequestContext) {
+    return this.handle(ctx, () => this.step(ctx, 'undo'))
+  }
+
+  @Post('/:slug/redo')
+  redo(ctx: RequestContext) {
+    return this.handle(ctx, () => this.step(ctx, 'redo'))
+  }
+
+  private async step(ctx: RequestContext, direction: 'undo' | 'redo') {
+    const { slug } = ctx.params
+    this.history()
+    const done = await this.studio.ws[direction](slug)
+    if (!done) throw new HttpError(409, `nothing to ${direction}`)
+    return this.restored(ctx, slug, done.version)
   }
 
   @Post('/:slug/trust')

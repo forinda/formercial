@@ -28,3 +28,6 @@ projects/*/voice/.made.json
 docs/
 site/.vitepress/cache/
 site/.vitepress/dist/
+
+# Local data: project history
+.formercial/
