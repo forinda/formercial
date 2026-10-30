@@ -9,6 +9,7 @@ import { InertiaAdapter, h, inertiaErrorHandler, inertiaNotFound } from '@forind
 import express from 'express'
 import { modules } from './modules'
 import { storageAdapter } from './adapters/storage'
+import { projectsWatchAdapter } from './adapters/watch'
 
 // Export the app for the Vite plugin (dev mode)
 export const app = await bootstrap({
@@ -53,6 +54,7 @@ export const app = await bootstrap({
     }),
     // Files on disk under uploads/ until S3_BUCKET is set. Inject with @Autowired(STORAGE).
     storageAdapter(),
+    projectsWatchAdapter(),
   ],
   // A failed validation on an Inertia visit goes back to the form with
   // `props.errors` instead of answering 422.

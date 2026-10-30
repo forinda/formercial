@@ -5,8 +5,11 @@ import { S3Settings, s3FromSettings } from '@forinda/kickjs-storage/settings'
 export { STORAGE } from '@forinda/kickjs-storage/adapter'
 export type { Storage } from '@forinda/kickjs-storage'
 
+/** The projects folder: CXC_PROJECTS, or projects/ in the app. */
+export const projectsRoot = () => process.env.CXC_PROJECTS ?? 'projects'
+
 /**
- * Where the app keeps files: the uploads/ folder until S3_BUCKET is set, then
+ * Where the app keeps projects: the projects/ folder until S3_BUCKET is set, then
  * that bucket (S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_REGION; S3_ENDPOINT
  * for Cloudflare R2 or MinIO). Inject it with `@Autowired(STORAGE)`. The bucket's
  * section is declared optional, so `kick env example` lists S3_* while files are
@@ -14,6 +17,6 @@ export type { Storage } from '@forinda/kickjs-storage'
  */
 export const storageAdapter = () =>
   StorageAdapter({
-    storage: process.env.S3_BUCKET ? s3FromSettings() : diskStorage({ root: 'uploads' }),
+    storage: process.env.S3_BUCKET ? s3FromSettings() : diskStorage({ root: projectsRoot() }),
     settings: [S3Settings.optional()],
   })
