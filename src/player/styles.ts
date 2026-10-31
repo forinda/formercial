@@ -115,8 +115,8 @@ export const SCENE_CSS = `
 .chips b { font-weight: 500; color: var(--muted); margin-right: calc(.6 * var(--u)) }
 .chips span { border: 1px solid var(--accent); color: var(--accent); border-radius: 99px; padding: calc(.3 * var(--u)) calc(1.4 * var(--u)); font-family: var(--mono); font-size: calc(1.35 * var(--u)) }
 .icons { display: flex; flex-wrap: wrap; justify-content: center; gap: calc(2.4 * var(--u)) }
-.icon { display: flex; flex-direction: column; align-items: center; gap: calc(.8 * var(--u)); font-size: calc(1.6 * var(--u)); color: var(--muted); text-align: center }
-.icon img { display: block; width: auto; max-width: 100% }
+.icon { max-width: 100%; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: calc(.8 * var(--u)); font-size: calc(1.6 * var(--u)); color: var(--muted); text-align: center }
+.icon img { display: block; width: auto; max-width: 100%; object-fit: contain }
 .doodle { display: block; width: 100%; height: auto; overflow: visible }
 .doodle-label { font-family: var(--display); font-weight: 700 }
 .block:has(> .end) { flex: 1; display: flex }
