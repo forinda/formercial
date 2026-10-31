@@ -98,7 +98,11 @@ describe('voiceProject', { timeout: 20_000 }, () => {
   test('skips empty spoken lines', async () => {
     const ws = await setup(project([scene('a', 'Shown', { spoken: '   ' })]))
     const { provider, calls } = fake()
-    const clips = await voiceProject(ws, 'demo', provider)
+    const totals: number[] = []
+    const clips = await voiceProject(ws, 'demo', provider, {
+      onProgress: (_done, total) => totals.push(total),
+    })
+    expect(totals).toEqual([0])
     expect(calls).toEqual([])
     expect(clips.a).toBeUndefined()
   })
