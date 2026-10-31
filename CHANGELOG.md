@@ -1,5 +1,36 @@
 # Changelog
 
+## v0.2.2 (2026-10-31)
+
+[Full changelog](https://github.com/forinda/formercial/compare/v0.2.1...v0.2.2)
+
+### 🚀 Features
+
+- **studio:** stop renders on shutdown and show the queue in DevTools [`9b0a868`](https://github.com/forinda/formercial/commit/9b0a86875291d8245a9ec238df9725a04cc77252)
+- **dev:** add KickJS DevTools under kick dev [`6f9cbdd`](https://github.com/forinda/formercial/commit/6f9cbddabd66993185f62238936fafc8e9324e22)
+- **blocks:** add an icon block with Iconify search [`d4d7a20`](https://github.com/forinda/formercial/commit/d4d7a20a5889a6f4780526ebf4473eca87fb49da)
+- **logs:** show render and voice activity in the console [`94eca71`](https://github.com/forinda/formercial/commit/94eca71acc2cc9355dd0c0957f032fa89799f950)
+
+### 🐛 Bug Fixes
+
+- **voice:** don't count scenes with no spoken line as lines to generate [`64656e0`](https://github.com/forinda/formercial/commit/64656e0edabb58c526fd17d163bddfb7face9554)
+- **player:** keep an icon's shape when it's wider than the scene [`8287e1d`](https://github.com/forinda/formercial/commit/8287e1d54949b463e0e188db9ae4034a88453c27)
+- **player:** center the end card and stop clipping the wordmark [`f66581d`](https://github.com/forinda/formercial/commit/f66581d3d4137d0a0be7ca0778c823d6c7f1a966)
+
+### ♻ Refactors
+
+- **projects:** replace Studio with injected services [`b00cc94`](https://github.com/forinda/formercial/commit/b00cc949c5fe23f79c8cc0e357a83bdd584e8ae1)
+- **core:** group core into project, storage, assets and media [`4ea6f24`](https://github.com/forinda/formercial/commit/4ea6f2482b55ba5eff8bd5a89729bc29586c63f5)
+- **projects:** route controllers to use cases, return values and throw HttpException [`196b46e`](https://github.com/forinda/formercial/commit/196b46e116b1983741e526afc987b89c6b61ece5)
+
+### 📝 Documentation
+
+- add the intro video to the docs home and README [`3b09034`](https://github.com/forinda/formercial/commit/3b09034071c1e20b9b678d0ba5ff0fd7d17c8e07)
+
+### 🔧 Chores
+
+- **deps:** bump @forinda/kickjs-devtools to 7.19.1 [`3e76419`](https://github.com/forinda/formercial/commit/3e76419629c864619781fad6167980c969bc10dc)
+
 ## v0.2.1 (2026-10-31)
 
 [Full changelog](https://github.com/forinda/formercial/compare/v0.2.0...v0.2.1)
