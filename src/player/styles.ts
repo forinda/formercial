@@ -116,8 +116,9 @@ export const SCENE_CSS = `
 .chips span { border: 1px solid var(--accent); color: var(--accent); border-radius: 99px; padding: calc(.3 * var(--u)) calc(1.4 * var(--u)); font-family: var(--mono); font-size: calc(1.35 * var(--u)) }
 .doodle { display: block; width: 100%; height: auto; overflow: visible }
 .doodle-label { font-family: var(--display); font-weight: 700 }
-.end { display: flex; flex-direction: column; gap: calc(2 * var(--u)); align-items: flex-start; justify-content: center; flex: 1 }
-.wordmark { font-family: var(--display); font-weight: 800; font-size: calc(8 * var(--u)); line-height: 1; letter-spacing: -0.03em; margin: 0; white-space: nowrap; max-width: 100%; overflow: hidden }
+.block:has(> .end) { flex: 1; display: flex }
+.end { display: flex; flex-direction: column; gap: calc(2 * var(--u)); align-items: center; justify-content: center; flex: 1; min-width: 0; text-align: center }
+.wordmark { font-family: var(--display); font-weight: 800; font-size: calc(8 * var(--u)); line-height: 1; letter-spacing: -0.03em; margin: 0; white-space: nowrap; max-width: 100%; overflow: hidden; padding: .1em .12em }
 .wordmark i { font-style: normal; color: var(--accent) }
 .cmd { font-family: var(--mono); font-size: calc(2.2 * var(--u)); background: var(--accent); color: var(--bg); padding: calc(.6 * var(--u)) calc(1.6 * var(--u)); border-radius: 4px; font-weight: 600 }
 .url { font-size: calc(1.7 * var(--u)); color: var(--muted) }
@@ -125,6 +126,7 @@ export const SCENE_CSS = `
 .scene-error { position: absolute; left: calc(2 * var(--u)); right: calc(2 * var(--u)); bottom: calc(2 * var(--u)); font-family: var(--mono); font-size: calc(1.2 * var(--u)); color: #fff; background: #b3261e; padding: calc(.8 * var(--u)) calc(1.2 * var(--u)); border-radius: 4px; white-space: pre-wrap; z-index: 9 }
 :host([data-format="9:16"]) .scene { padding-top: calc(8 * var(--u)); justify-content: center }
 :host([data-format="9:16"]) .cards { grid-template-columns: 1fr }
+:host([data-format="9:16"]) .end .text { font-size: calc(3 * var(--u)) }
 /* Read on a phone: larger, and wider than the rest of the scene. Long lines still shrink to fit. */
 :host([data-format="9:16"]) .code, :host([data-format="9:16"]) .term, :host([data-format="9:16"]) .tree { font-size: calc(2 * var(--u)); margin-left: calc(-3 * var(--u)); margin-right: calc(-3 * var(--u)); padding: calc(1.6 * var(--u)) calc(1.4 * var(--u)) }
 :host([data-format="9:16"]) .label { font-size: calc(1.4 * var(--u)) }
