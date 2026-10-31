@@ -1,16 +1,17 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { HttpException, Service } from '@forinda/kickjs'
+import { HttpException, Inject, Service } from '@forinda/kickjs'
 import { probeSeconds } from '@/core/media/media'
-import { recordingPath } from '@/core/voice/voice-project'
 import { withWorkdir } from '@/core/storage/workdir'
-import { Studio } from '../services/studio.service'
+import type { Workspace } from '@/core/storage/workspace'
+import { recordingPath } from '@/core/voice/voice-project'
+import { WORKSPACE } from '../tokens'
 
 const AUDIO = /^audio\/(webm|ogg)\b/
 
 @Service()
 export class SaveRecordingUseCase {
-  constructor(private readonly studio: Studio) {}
+  constructor(@Inject(WORKSPACE) private readonly ws: Workspace) {}
 
   async execute(input: {
     slug: string
@@ -20,14 +21,14 @@ export class SaveRecordingUseCase {
   }) {
     const { slug } = input
     const path = recordingPath(input.sceneId)
-    this.studio.ws.key(slug, path)
+    this.ws.key(slug, path)
     if (!AUDIO.test(input.contentType)) {
       throw HttpException.badRequest('send audio/webm or audio/ogg')
     }
     const bytes = await input.read()
     if (bytes.length === 0) throw HttpException.badRequest('the recording is empty')
     // Probe before storing, so a file ffprobe can't read never replaces a good one.
-    const seconds = await withWorkdir(this.studio.ws, slug, [], async (dir) => {
+    const seconds = await withWorkdir(this.ws, slug, [], async (dir) => {
       await mkdir(join(dir, 'voice'), { recursive: true })
       await writeFile(join(dir, path), bytes)
       const s = await probeSeconds(join(dir, path)).catch(() => {

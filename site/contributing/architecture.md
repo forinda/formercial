@@ -29,7 +29,7 @@ Formercial is a KickJS app (Express runtime, Inertia + React pages) plus a kick 
 | `src/player/` | Draws a project at any time `t`. Used by the editor's preview and by the render page. |
 | `src/modules/projects/controllers/` | The JSON API and MCP tools, grouped by task. A controller only routes to a use case. |
 | `src/modules/projects/use-cases/` | One class per task, with `execute()`. Returns plain values and throws `HttpException`. |
-| `src/modules/projects/services/` | What use cases share: the workspace, trust, the render queue and live events. |
+| `src/modules/projects/services/` | What use cases share: the render queue, live events, the folder watcher and undo state. The workspace and trust are injected by token (`tokens.ts`). |
 | `src/modules/projects/http/` | Helpers that know about requests, including turning core's errors into HTTP answers. |
 | `src/adapters/studio.ts` | Starts and stops the projects folder watch and the render queue, and shows the queue in DevTools. |
 | `src/modules/pages/` | Inertia pages: projects, editor, render page. |

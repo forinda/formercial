@@ -2,7 +2,8 @@
 // a project goes here, so swapping the disk driver for S3 is a config change.
 import { createHash } from 'node:crypto'
 import { checkKey, type Body, type FileInfo, type Storage } from '@forinda/kickjs-storage'
-import type { History } from './history'
+import { FormercialSettings } from '@/core/settings'
+import { historyFileFor, openHistory, type History } from './history'
 import { SLUG, parseProject, type Project } from '@/core/project/project'
 
 export class StaleWriteError extends Error {
@@ -22,6 +23,12 @@ export class PathError extends Error {
 export type Workspace = ReturnType<typeof createWorkspace>
 
 const versionOf = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex')
+
+/** A workspace with its undo history, kept beside the projects in `root`. */
+export function openWorkspace(storage: Storage, at: { cwd: string; root: string }) {
+  const file = historyFileFor(at.cwd, at.root, FormercialSettings.get().historyFile)
+  return createWorkspace(storage, { history: openHistory(file) })
+}
 
 export function createWorkspace(storage: Storage, opts: { history?: History } = {}) {
   const { history } = opts

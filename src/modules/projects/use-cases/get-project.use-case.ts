@@ -1,20 +1,27 @@
-import { Service } from '@forinda/kickjs'
+import { Inject, Service } from '@forinda/kickjs'
+import type { Trust } from '@/core/storage/trust'
+import type { Workspace } from '@/core/storage/workspace'
 import { clipLengths } from '@/core/voice/voice-project'
-import { Studio } from '../services/studio.service'
+import { ProjectHistory } from '../services/project-history.service'
+import { TRUST, WORKSPACE } from '../tokens'
 
 @Service()
 export class GetProjectUseCase {
-  constructor(private readonly studio: Studio) {}
+  constructor(
+    @Inject(WORKSPACE) private readonly ws: Workspace,
+    @Inject(TRUST) private readonly trust: Trust,
+    private readonly history: ProjectHistory,
+  ) {}
 
   async execute(slug: string) {
-    const { project, version } = await this.studio.ws.read(slug)
-    const clips = await clipLengths(this.studio.ws, slug, project)
+    const { project, version } = await this.ws.read(slug)
+    const clips = await clipLengths(this.ws, slug, project)
     return {
       project,
       version,
       clips: Object.fromEntries(Object.entries(clips).filter(([, c]) => c)),
-      trusted: await this.studio.trust.isTrusted(slug, project),
-      history: await this.studio.historyState(slug),
+      trusted: await this.trust.isTrusted(slug, project),
+      history: await this.history.state(slug),
     }
   }
 }

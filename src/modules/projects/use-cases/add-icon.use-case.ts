@@ -1,13 +1,14 @@
-import { HttpException, Service } from '@forinda/kickjs'
+import { HttpException, Inject, Service } from '@forinda/kickjs'
 import { storeIcon } from '@/core/assets/icons'
-import { Studio } from '../services/studio.service'
+import type { Workspace } from '@/core/storage/workspace'
+import { WORKSPACE } from '../tokens'
 
 @Service()
 export class AddIconUseCase {
-  constructor(private readonly studio: Studio) {}
+  constructor(@Inject(WORKSPACE) private readonly ws: Workspace) {}
 
   async execute(slug: string, name: string) {
-    const path = await storeIcon(this.studio.ws, slug, name).catch((err: Error) => {
+    const path = await storeIcon(this.ws, slug, name).catch((err: Error) => {
       throw HttpException.badRequest(err.message)
     })
     return { path }

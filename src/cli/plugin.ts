@@ -15,8 +15,7 @@ import { voiceProject } from '@/core/voice/voice-project'
 import { FormercialSettings, checkFps } from '@/core/settings'
 import { createTrust } from '@/core/storage/trust'
 import { PRESETS, fromPreset, storePresetFonts } from '@/presets'
-import { historyFileFor, openHistory } from '@/core/storage/history'
-import { createWorkspace } from '@/core/storage/workspace'
+import { openWorkspace } from '@/core/storage/workspace'
 
 /** A slug under the projects folder, or a path to a project folder. */
 export function resolveProject(arg: string, projectRoot: string): { root: string; slug: string } {
@@ -103,10 +102,11 @@ export function formercialCliPlugin(config: FormercialConfig): KickCliPlugin {
       const registry = createRegistry(config)
       const open = (arg: string) => {
         const { root, slug } = resolveProject(arg, ctx.projectRoot)
-        const history = openHistory(
-          historyFileFor(ctx.projectRoot, root, FormercialSettings.get().historyFile),
-        )
-        return { root, slug, ws: createWorkspace(diskStorage({ root }), { history }) }
+        return {
+          root,
+          slug,
+          ws: openWorkspace(diskStorage({ root }), { cwd: ctx.projectRoot, root }),
+        }
       }
       const group = program
         .command('formercial')

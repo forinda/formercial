@@ -1,31 +1,38 @@
-import { Controller, Get, type RequestContext } from '@forinda/kickjs'
+import { Controller, Get, type RequestContext, Inject } from '@forinda/kickjs'
 import { inertia } from '@forinda/kickjs-inertia'
 import { FORMATS, type Format } from '@/core/project/project'
+import type { Trust } from '@/core/storage/trust'
+import type { Workspace } from '@/core/storage/workspace'
 import { clipLengths } from '@/core/voice/voice-project'
-import { Studio } from '@/modules/projects/services/studio.service'
+import { ProjectHistory } from '@/modules/projects/services/project-history.service'
+import { TRUST, WORKSPACE } from '@/modules/projects/tokens'
 import { PRESETS } from '@/presets'
 
 const notFound = (message: string) => inertia('Error', { status: 404, message }, { status: 404 })
 
 @Controller()
 export class PagesController {
-  constructor(private readonly studio: Studio) {}
+  constructor(
+    @Inject(WORKSPACE) private readonly ws: Workspace,
+    @Inject(TRUST) private readonly trust: Trust,
+    private readonly history: ProjectHistory,
+  ) {}
 
   // Each page loads the project from the workspace; a missing or invalid one
   // is a 404 page rather than an error.
   private async load(slug: string) {
     try {
-      const { project, version } = await this.studio.ws.read(slug)
+      const { project, version } = await this.ws.read(slug)
       const clips = Object.fromEntries(
-        Object.entries(await clipLengths(this.studio.ws, slug, project)).filter(([, c]) => c),
+        Object.entries(await clipLengths(this.ws, slug, project)).filter(([, c]) => c),
       )
       return {
         slug,
         project,
         version,
         clips,
-        trusted: await this.studio.trust.isTrusted(slug, project),
-        history: await this.studio.historyState(slug),
+        trusted: await this.trust.isTrusted(slug, project),
+        history: await this.history.state(slug),
       }
     } catch {
       return null
@@ -37,7 +44,7 @@ export class PagesController {
     return inertia(
       'Projects',
       {
-        projects: await this.studio.ws.list(),
+        projects: await this.ws.list(),
         presets: PRESETS.map(({ id, title, description }) => ({ id, title, description })),
       },
       { meta: { title: 'Projects' } },

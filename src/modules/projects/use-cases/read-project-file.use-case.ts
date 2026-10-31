@@ -1,6 +1,9 @@
-import { HttpException, Service } from '@forinda/kickjs'
+import { HttpException, Inject, Service } from '@forinda/kickjs'
 import { checkRange } from '@forinda/kickjs-storage'
-import { Studio } from '../services/studio.service'
+import type { Storage } from '@forinda/kickjs-storage'
+import { STORAGE } from '@forinda/kickjs-storage/adapter'
+import type { Workspace } from '@/core/storage/workspace'
+import { WORKSPACE } from '../tokens'
 
 const TYPES: Record<string, string> = {
   mp3: 'audio/mpeg',
@@ -24,10 +27,13 @@ const typeOf = (path: string) =>
 /** A file from a project as a streamed response, honoring a Range header. */
 @Service()
 export class ReadProjectFileUseCase {
-  constructor(private readonly studio: Studio) {}
+  constructor(
+    @Inject(WORKSPACE) private readonly ws: Workspace,
+    @Inject(STORAGE) private readonly storage: Storage,
+  ) {}
 
   async execute(slug: string, path: string, range?: string): Promise<Response> {
-    const { storage, ws } = this.studio
+    const { storage, ws } = this
     const key = ws.key(slug, path)
     const info = await storage.stat(key)
     if (!info) throw HttpException.notFound()
