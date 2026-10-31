@@ -2,7 +2,7 @@
 // larger on tall and square frames, whose width is smaller), so one set of
 // rules fits all three shapes. The stage sets everything a scene would inherit,
 // so the page around it can't change the video.
-import type { Format } from '@/core/project'
+import type { Format } from '@/core/project/project'
 
 export const UNIT: Record<Format, number> = { '16:9': 1, '1:1': 1.35, '9:16': 1.85 }
 

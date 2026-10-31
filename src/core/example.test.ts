@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { expect, test } from 'vitest'
-import { parseProject } from './project'
+import { parseProject } from '@/core/project/project'
 
 test('example project parses and covers every block type', () => {
   const project = parseProject(JSON.parse(readFileSync('projects/kickjs-db/project.json', 'utf8')))

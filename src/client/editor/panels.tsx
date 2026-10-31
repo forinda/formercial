@@ -1,6 +1,6 @@
 // Project-wide settings (theme, captions, music, formats) and rendering.
 import { useEffect, useState } from 'react'
-import { FORMATS, type Format, type Project } from '@/core/project'
+import { FORMATS, type Format, type Project } from '@/core/project/project'
 import { Button } from '@/client/components/ui/button'
 import { Input } from '@/client/components/ui/input'
 import { Label } from '@/client/components/ui/label'

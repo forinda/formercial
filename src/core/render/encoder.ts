@@ -2,7 +2,7 @@
 // once instead of waiting for a drain that will never come, and no rejection
 // is ever left unhandled.
 import { spawn } from 'node:child_process'
-import { runInBackground } from '@/core/media'
+import { runInBackground } from '@/core/media/media'
 
 export interface Encoder {
   write(frame: Buffer): Promise<void>

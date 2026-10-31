@@ -1,6 +1,6 @@
 // Microsoft's neural voices through the edge-tts CLI. The spoken text is sent
 // to Microsoft's speech service.
-import { hasCommand, run } from '@/core/media'
+import { hasCommand, run } from '@/core/media/media'
 import type { VoiceProvider } from './provider'
 
 export const edgeTts: VoiceProvider = {

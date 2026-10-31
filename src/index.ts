@@ -11,6 +11,7 @@ import { McpAdapter } from '@forinda/kickjs-mcp'
 import express from 'express'
 import { FormercialSettings } from './core/settings'
 import { LOCAL_HOST, localOnly } from './middleware/local-only'
+import { withDomainErrors } from './modules/projects/http/domain-errors'
 import { modules } from './modules'
 import { storageAdapter } from './adapters/storage'
 import { projectsWatchAdapter } from './adapters/watch'
@@ -75,7 +76,7 @@ export const app = await bootstrap({
   ],
   // A failed validation on an Inertia visit goes back to the form with
   // `props.errors` instead of answering 422.
-  onError: inertiaErrorHandler(),
+  onError: withDomainErrors(inertiaErrorHandler()),
   // Unknown URLs: the Error page for browsers, the usual 404 / 405 for API calls.
   onNotFound: inertiaNotFound(),
   // Answer unknown URLs here in dev too — not by handing them back to Vite —

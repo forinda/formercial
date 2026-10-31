@@ -1,4 +1,4 @@
-import { expressRuntime } from '@forinda/kickjs'
+import { errorHandler, expressRuntime } from '@forinda/kickjs'
 import { MCP_ADAPTER, McpAdapter, type McpAdapterInstance } from '@forinda/kickjs-mcp'
 import { memoryStorage } from '@forinda/kickjs-storage'
 import { STORAGE } from '@forinda/kickjs-storage/adapter'
@@ -6,12 +6,13 @@ import { createTestApp } from '@forinda/kickjs-testing'
 import express from 'express'
 import request from 'supertest'
 import { describe, expect, test, vi } from 'vitest'
-import { starterProject } from '@/core/project'
+import { starterProject } from '@/core/project/project'
 import type { RenderDriver } from '@/core/render/driver'
 import { createRegistry } from '@/core/render/registry'
 import { localOnly } from '@/middleware/local-only'
+import { withDomainErrors } from './http/domain-errors'
 import { ProjectsModule } from './projects.module'
-import { renderOrigin } from './render-origin'
+import { renderOrigin } from './http/render-origin'
 import { REGISTRY } from './tokens'
 
 const fake: RenderDriver = {
@@ -25,6 +26,7 @@ async function boot() {
     runtime: expressRuntime(),
     modules: [ProjectsModule()],
     middlewares: [localOnly(), express.json()],
+    onError: withDomainErrors(errorHandler()),
     adapters: [McpAdapter({ name: 'formercial', mode: 'explicit' })],
     overrides: [
       [STORAGE, memoryStorage()],

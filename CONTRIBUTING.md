@@ -47,6 +47,7 @@ If your change affects what a render looks like, attach a frame or a short clip 
 - TypeScript, formatted by oxfmt (no semicolons, single quotes, 100 columns).
 - Import across folders through the `@/` alias (`@/core/project`). Use `./` inside a folder.
 - `src/core` has no framework code, so the server and the CLI can share it. `src/player` runs in the browser only.
+- Handlers return a value or `reply(...)`, and failures throw `HttpException`. A controller only calls a use case; the work goes in `use-cases/`. Streams and live events are the exceptions, since they write their own response.
 - Comments say why, not what. Name things by what people recognise ("recording", "caption"), not how they're built.
 - Prefer the platform and what's already here over a new dependency.
 - Changes to behavior, commands or configuration update the docs in `site/` (`pnpm docs:dev` to preview).

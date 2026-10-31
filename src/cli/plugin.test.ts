@@ -5,8 +5,8 @@ import { diskStorage } from '@forinda/kickjs-storage/disk'
 import { Command } from 'commander'
 import { describe, expect, test } from 'vitest'
 import type { RenderDriver } from '@/core/render/driver'
-import { parseProject, starterProject } from '@/core/project'
-import { createWorkspace } from '@/core/workspace'
+import { parseProject, starterProject } from '@/core/project/project'
+import { createWorkspace } from '@/core/storage/workspace'
 import { formercialCliPlugin, mcpEnv, resolveProject } from './plugin'
 
 const fakeDriver: RenderDriver = {

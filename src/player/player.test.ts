@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, expect, test } from 'vitest'
-import { parseProject, starterProject, type Project } from '@/core/project'
-import { resolveTimeline, type Clip } from '@/core/timeline'
+import { parseProject, starterProject, type Project } from '@/core/project/project'
+import { resolveTimeline, type Clip } from '@/core/project/timeline'
 import { doodleTimes } from './blocks'
 import { createPlayer, sceneNeeds } from './player'
 

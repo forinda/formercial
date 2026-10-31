@@ -1,7 +1,7 @@
 // The editor's copy of a project: saves on a short pause, notices when the
 // file changed on disk, and never silently overwrites someone else's edit.
-import type { Project } from '@/core/project'
-import type { Clip } from '@/core/timeline'
+import type { Project } from '@/core/project/project'
+import type { Clip } from '@/core/project/timeline'
 
 export type Status = 'saved' | 'saving' | 'conflict' | 'error'
 export interface SessionState {
@@ -66,7 +66,7 @@ export class ProjectSession {
       version?: string
       trusted?: boolean
       history?: SessionState['history']
-      error?: string
+      detail?: string
     }
     try {
       res = await this.fetchFn(this.url(), {
@@ -80,7 +80,7 @@ export class ProjectSession {
     }
     if (res.status === 409) return this.update({ status: 'conflict' })
     if (!res.ok)
-      return this.update({ status: 'error', error: body.error ?? `save failed (${res.status})` })
+      return this.update({ status: 'error', error: body.detail ?? `save failed (${res.status})` })
     // Edits made while this save was on its way are still to be saved.
     this.dirty = this.state.project !== sent
     this.update({
@@ -122,7 +122,7 @@ export class ProjectSession {
     const res = await this.fetchFn(this.url(path), { method: 'POST' })
     if (!res.ok) {
       const body = await res.json().catch(() => ({}))
-      return this.update({ status: 'error', error: body.error ?? `failed (${res.status})` })
+      return this.update({ status: 'error', error: body.detail ?? `failed (${res.status})` })
     }
     await this.reload()
   }
