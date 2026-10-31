@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.2.1 (2026-10-31)
+
+[Full changelog](https://github.com/forinda/formercial/compare/v0.2.0...v0.2.1)
+
+### 🚀 Features
+
+- **fonts:** add fonts from a link to any stylesheet or font file [`b8ae6d4`](https://github.com/forinda/formercial/commit/b8ae6d45f1e9fb761f7916c68011ec6700701595)
+- set the pause after each spoken line [`5ef4347`](https://github.com/forinda/formercial/commit/5ef43477251889370d529172843dbfd56d515e39)
+
+### 🐛 Bug Fixes
+
+- **fonts:** let the panel name and weigh any font file link [`656c246`](https://github.com/forinda/formercial/commit/656c24607c208bc529055059963cbb02e566789d)
+- code colors are chosen against the box they sit on; long lines shrink further [`9920f3f`](https://github.com/forinda/formercial/commit/9920f3f12227c80e1a76cbd05ae950083ab526fc)
+- code blocks read on light themes and on a phone [`657a28c`](https://github.com/forinda/formercial/commit/657a28c3049014d1930cc3be4f1323591115c308)
+
 ## v0.2.0 (2026-10-30)
 
 [Full changelog](https://github.com/forinda/formercial/compare/v0.1.2...v0.2.0)
