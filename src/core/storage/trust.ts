@@ -28,6 +28,8 @@ export function customHash(project: Project): string | null {
 }
 
 /** `workspace` names where the projects are: an absolute folder, or `s3:<bucket>`. */
+export type Trust = ReturnType<typeof createTrust>
+
 export function createTrust(opts: { workspace: string; file?: string }) {
   const file = opts.file ?? defaultTrustFile()
   const read = async (): Promise<TrustFile> => {

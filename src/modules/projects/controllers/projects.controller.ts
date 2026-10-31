@@ -7,11 +7,14 @@ import {
   Put,
   reply,
   type RequestContext,
+  Inject,
 } from '@forinda/kickjs'
 import { McpTool } from '@forinda/kickjs-mcp'
 import { z } from 'zod'
 import { SLUG, type Project } from '@/core/project/project'
-import { Studio } from '../services/studio.service'
+import type { Workspace } from '@/core/storage/workspace'
+import { ProjectEvents } from '../services/project-events.service'
+import { WORKSPACE } from '../tokens'
 import { CreateProjectUseCase } from '../use-cases/create-project.use-case'
 import { GetProjectUseCase } from '../use-cases/get-project.use-case'
 import { SetTrustUseCase } from '../use-cases/set-trust.use-case'
@@ -20,7 +23,8 @@ import { UpdateProjectUseCase } from '../use-cases/update-project.use-case'
 @Controller()
 export class ProjectsController {
   constructor(
-    private readonly studio: Studio,
+    @Inject(WORKSPACE) private readonly ws: Workspace,
+    private readonly projectEvents: ProjectEvents,
     private readonly createProject: CreateProjectUseCase,
     private readonly getProject: GetProjectUseCase,
     private readonly updateProject: UpdateProjectUseCase,
@@ -34,7 +38,7 @@ export class ProjectsController {
   })
   @Get('/')
   list() {
-    return this.studio.ws.list()
+    return this.ws.list()
   }
 
   @McpTool({
@@ -98,6 +102,6 @@ export class ProjectsController {
     const { slug } = ctx.params
     if (!SLUG.test(slug)) throw HttpException.badRequest('invalid project name')
     const sse = ctx.sse()
-    sse.onClose(this.studio.listen(slug, sse))
+    sse.onClose(this.projectEvents.listen(slug, sse))
   }
 }

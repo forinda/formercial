@@ -1,14 +1,19 @@
-import { HttpException, Service } from '@forinda/kickjs'
-import { Studio } from '../services/studio.service'
+import { HttpException, Inject, Service } from '@forinda/kickjs'
+import type { Workspace } from '@/core/storage/workspace'
+import { ProjectHistory } from '../services/project-history.service'
+import { WORKSPACE } from '../tokens'
 
 @Service()
 export class StepHistoryUseCase {
-  constructor(private readonly studio: Studio) {}
+  constructor(
+    @Inject(WORKSPACE) private readonly ws: Workspace,
+    private readonly history: ProjectHistory,
+  ) {}
 
   async execute(slug: string, direction: 'undo' | 'redo') {
-    this.studio.requireHistory()
-    const done = await this.studio.ws[direction](slug)
+    this.history.require()
+    const done = await this.ws[direction](slug)
     if (!done) throw HttpException.conflict(`nothing to ${direction}`)
-    return this.studio.changedUnderneath(slug, done.version)
+    return this.history.changedUnderneath(slug, done.version)
   }
 }

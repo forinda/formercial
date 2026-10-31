@@ -1,17 +1,18 @@
-import { HttpException, Service } from '@forinda/kickjs'
+import { HttpException, Inject, Service } from '@forinda/kickjs'
 import { SLUG, slugFrom, starterProject } from '@/core/project/project'
 import { FormercialSettings } from '@/core/settings'
+import type { Workspace } from '@/core/storage/workspace'
 import { fromPreset, storePresetFonts } from '@/presets'
-import { Studio } from '../services/studio.service'
+import { WORKSPACE } from '../tokens'
 
 @Service()
 export class CreateProjectUseCase {
-  constructor(private readonly studio: Studio) {}
+  constructor(@Inject(WORKSPACE) private readonly ws: Workspace) {}
 
   async execute(input: { name: string; preset?: string }) {
     const name = input.name.trim()
     if (!name) throw HttpException.badRequest('name is required')
-    const taken = new Set((await this.studio.ws.list()).map((p) => p.slug))
+    const taken = new Set((await this.ws.list()).map((p) => p.slug))
     const base = slugFrom(name)
     let slug = base
     for (let n = 2; taken.has(slug); n++) slug = `${base}-${n}`
@@ -23,8 +24,8 @@ export class CreateProjectUseCase {
     } catch (err) {
       throw HttpException.badRequest((err as Error).message)
     }
-    await this.studio.ws.write(slug, project, null)
-    if (input.preset) await storePresetFonts(this.studio.ws, slug, input.preset)
+    await this.ws.write(slug, project, null)
+    if (input.preset) await storePresetFonts(this.ws, slug, input.preset)
     return { slug }
   }
 }

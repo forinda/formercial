@@ -1,15 +1,20 @@
-import { Logger, ProblemException, Service } from '@forinda/kickjs'
+import { Logger, ProblemException, Service, Inject } from '@forinda/kickjs'
+import type { Registry } from '@/core/render/registry'
+import type { Workspace } from '@/core/storage/workspace'
 import { voiceProject } from '@/core/voice/voice-project'
-import { Studio } from '../services/studio.service'
+import { REGISTRY, WORKSPACE } from '../tokens'
 
 const log = Logger.for('Voice')
 
 @Service()
 export class GenerateVoiceUseCase {
-  constructor(private readonly studio: Studio) {}
+  constructor(
+    @Inject(WORKSPACE) private readonly ws: Workspace,
+    @Inject(REGISTRY) private readonly registry: Registry,
+  ) {}
 
   async execute(slug: string, only?: string) {
-    const provider = this.studio.registry.voices.get('edge-tts')!
+    const provider = this.registry.voices.get('edge-tts')!
     const check = await provider.check()
     if (!check.ok) {
       throw new ProblemException({
@@ -18,7 +23,7 @@ export class GenerateVoiceUseCase {
         missing: check.missing,
       })
     }
-    const clips = await voiceProject(this.studio.ws, slug, provider, {
+    const clips = await voiceProject(this.ws, slug, provider, {
       only,
       onProgress: (done, total) => {
         if (total && done === 0) {
