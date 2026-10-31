@@ -1,4 +1,4 @@
-import { Controller, Get, type RequestContext } from '@forinda/kickjs'
+import { Controller, Get } from '@forinda/kickjs'
 import { McpTool } from '@forinda/kickjs-mcp'
 import { PRESETS } from '@/presets'
 
@@ -11,7 +11,7 @@ export class PresetsController {
     annotations: { readOnlyHint: true },
   })
   @Get('/')
-  list(ctx: RequestContext) {
-    ctx.json(PRESETS.map(({ id, title, description, lang }) => ({ id, title, description, lang })))
+  list() {
+    return PRESETS.map(({ id, title, description, lang }) => ({ id, title, description, lang }))
   }
 }

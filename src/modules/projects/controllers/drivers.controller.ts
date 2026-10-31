@@ -1,8 +1,8 @@
-import { Controller, Get, type RequestContext } from '@forinda/kickjs'
+import { Controller, Get } from '@forinda/kickjs'
 import { McpTool } from '@forinda/kickjs-mcp'
 import { driverReport } from '@/core/render/registry'
 import { FormercialSettings } from '@/core/settings'
-import { Studio } from './studio.service'
+import { Studio } from '../services/studio.service'
 
 @Controller()
 export class DriversController {
@@ -15,9 +15,9 @@ export class DriversController {
     annotations: { readOnlyHint: true },
   })
   @Get('/')
-  async list(ctx: RequestContext) {
+  async list() {
     const { driver } = FormercialSettings.get()
     const report = await driverReport(this.studio.registry)
-    ctx.json(report.sort((a, b) => Number(b.name === driver) - Number(a.name === driver)))
+    return report.sort((a, b) => Number(b.name === driver) - Number(a.name === driver))
   }
 }

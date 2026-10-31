@@ -36,7 +36,7 @@ export async function api<T = unknown>(
   const body = text ? JSON.parse(text) : undefined
   if (!res.ok) {
     const missing = body?.missing?.length ? ` (missing: ${body.missing.join(', ')})` : ''
-    throw new Error(`${body?.error ?? `request failed (${res.status})`}${missing}`)
+    throw new Error(`${body?.detail ?? `request failed (${res.status})`}${missing}`)
   }
   return body as T
 }

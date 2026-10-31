@@ -1,4 +1,4 @@
-import { Controller, Get, type RequestContext } from '@forinda/kickjs'
+import { Controller, Get } from '@forinda/kickjs'
 import { McpTool } from '@forinda/kickjs-mcp'
 import { z } from 'zod'
 import { ProjectSchema } from '@/core/project'
@@ -12,7 +12,7 @@ export class SchemaController {
     annotations: { readOnlyHint: true },
   })
   @Get('/')
-  schema(ctx: RequestContext) {
-    ctx.json(z.toJSONSchema(ProjectSchema, { io: 'input', unrepresentable: 'any' }))
+  schema() {
+    return z.toJSONSchema(ProjectSchema, { io: 'input', unrepresentable: 'any' })
   }
 }

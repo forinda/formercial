@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { expressRuntime } from '@forinda/kickjs'
+import { errorHandler, expressRuntime } from '@forinda/kickjs'
 import { memoryStorage } from '@forinda/kickjs-storage'
 import { STORAGE } from '@forinda/kickjs-storage/adapter'
 import { createTestApp } from '@forinda/kickjs-testing'
@@ -12,6 +12,7 @@ import { describe, expect, test, vi } from 'vitest'
 import { starterProject } from '@/core/project'
 import type { RenderDriver } from '@/core/render/driver'
 import { createRegistry } from '@/core/render/registry'
+import { withDomainErrors } from './http/domain-errors'
 import { ProjectsModule } from './projects.module'
 import { REGISTRY } from './tokens'
 import { localOnly } from '@/middleware/local-only'
@@ -49,6 +50,7 @@ async function boot(drivers: RenderDriver[] = [driver('fake')]) {
     runtime: expressRuntime(),
     modules: [ProjectsModule()],
     middlewares: [localOnly(), express.json()],
+    onError: withDomainErrors(errorHandler()),
     overrides: [
       [STORAGE, storage],
       [REGISTRY, createRegistry({ drivers })],
@@ -110,6 +112,7 @@ describe('projects api', () => {
       .send({ project: starterProject('Three'), baseVersion: version })
       .expect(409)
     expect(res.body.current).toBe(next)
+    expect(res.body.detail).toEqual(expect.any(String))
   })
 
   test('PUT with an invalid project is 400 listing the zod path', async () => {

@@ -1,7 +1,7 @@
 // Everything the projects routes share: the workspace over the app's storage,
 // trust, the render queue and the per-project event streams.
 import { watch as fsWatch } from 'node:fs'
-import { Inject, Logger, Service } from '@forinda/kickjs'
+import { HttpException, Inject, Logger, Service } from '@forinda/kickjs'
 import type { Storage } from '@forinda/kickjs-storage'
 import { STORAGE } from '@forinda/kickjs-storage/adapter'
 import type { Format } from '@/core/project'
@@ -13,7 +13,7 @@ import { createTrust } from '@/core/trust'
 import { projectsRoot, workspaceId } from '@/adapters/storage'
 import { createWorkspace, type Workspace } from '@/core/workspace'
 import { RenderQueue, jobActivity, type JobInfo } from './render-queue'
-import { REGISTRY } from './tokens'
+import { REGISTRY } from '../tokens'
 
 type Listener = { send(data: unknown, event?: string): void }
 
@@ -80,6 +80,23 @@ export class Studio {
       )
     })
     return () => watcher.close()
+  }
+
+  requireHistory() {
+    const { history } = this.ws
+    if (!history) throw HttpException.serviceUnavailable("history is off: SQLite couldn't start")
+    return history
+  }
+
+  /** After the file changed underneath the editor: tell it, and say what it can do next. */
+  async changedUnderneath(slug: string, version: string) {
+    const { project } = await this.ws.read(slug)
+    this.emit(slug, 'project-changed', { version })
+    return {
+      version,
+      trusted: await this.trust.isTrusted(slug, project),
+      history: await this.historyState(slug),
+    }
   }
 
   /** Whether undo and redo have anywhere to go, for the editor's buttons. */
