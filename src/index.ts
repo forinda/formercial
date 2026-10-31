@@ -73,6 +73,10 @@ export const app = await bootstrap({
       mode: 'explicit',
       allowedHosts: (host: string) => LOCAL_HOST.test(host),
     }),
+    // DevTools at /_debug under `kick dev` only. `kick build` compiles this
+    // branch out, so the package never reaches the production bundle
+    // (guide/devtools, "Stripping DevTools from production bundles").
+    ...(__KICKJS_DEVTOOLS__ ? [(await import('@forinda/kickjs-devtools')).DevToolsAdapter()] : []),
   ],
   // A failed validation on an Inertia visit goes back to the form with
   // `props.errors` instead of answering 422.
