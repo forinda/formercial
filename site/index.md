@@ -27,3 +27,17 @@ features:
   - title: Bring your own pipeline
     details: Rendering and voice are drivers. Plug in a GPU encoder, a render farm or another speech engine without touching the app.
 ---
+<script setup>
+import { withBase } from 'vitepress'
+</script>
+
+<div id="intro" style="max-width: 880px; margin: 48px auto 0">
+
+<h2 style="margin-bottom: 16px; border: 0; padding: 0">See what it can do</h2>
+
+<video controls preload="metadata" playsinline :poster="withBase('/formercial-intro.jpg')" :src="withBase('/formercial-intro.mp4')" style="width: 100%; border-radius: 8px" aria-label="A 100-second introduction to Formercial, with captions, made with Formercial"></video>
+
+<p>A 100-second tour, made with Formercial itself.</p>
+
+</div>
+

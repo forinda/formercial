@@ -17,6 +17,8 @@ Make short product commercials on your own machine. Put scenes together in an ed
 
 **Documentation: [forinda.github.io/formercial](https://forinda.github.io/formercial/)**
 
+**New here? [Watch the 100-second intro](https://forinda.github.io/formercial/#intro),** made with Formercial itself.
+
 It's early (0.x): `project.json` may still change between releases, and each change will say how to update existing projects.
 
 ## Quick start
