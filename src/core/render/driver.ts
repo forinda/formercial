@@ -34,5 +34,7 @@ export interface RenderDriver {
     job: RenderJob,
     dir: string,
     progress: (p: RenderProgress) => void,
+    /** Aborted when the server is stopping. A driver that ignores it holds up the shutdown. */
+    signal?: AbortSignal,
   ): Promise<{ mp4: string; srt: string }>
 }

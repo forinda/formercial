@@ -63,7 +63,7 @@ Test by encoding a frame, as here: ffmpeg lists encoders the machine can't run. 
 interface RenderDriver {
   name: string
   check(): Promise<{ ok: boolean; missing: string[] }>
-  render(job: RenderJob, dir: string, progress: (p: RenderProgress) => void): Promise<{ mp4: string; srt: string }>
+  render(job: RenderJob, dir: string, progress: (p: RenderProgress) => void, signal?: AbortSignal): Promise<{ mp4: string; srt: string }>
 }
 ```
 
@@ -71,7 +71,7 @@ interface RenderDriver {
 
 Says whether the driver can run on this machine, and if not, what to install or set. The editor and `kick formercial drivers` show the result, and a render with a driver that isn't ready is refused before it starts.
 
-#### render(job, dir, progress)
+#### render(job, dir, progress, signal)
 
 `dir` is a work folder. The job's voice clips and music are already in it, at their project paths (`voice/s1.tts.mp3`, `media/music.mp3`). Write the MP4 and SRT under `dir`, and return their paths relative to it, like `renders/16x9-….mp4`. When `job.project.captions` is on, keep the SRT away from the MP4 (the built-in driver uses `renders/srt/`), or players that auto-load it will show the captions twice. They're copied back into the project and the folder is removed.
 
@@ -87,6 +87,8 @@ Says whether the driver can run on this machine, and if not, what to install or 
 | `music` | `{ path, volume, duck }` if the project has music |
 
 Report progress with `progress({ phase: 'frames' | 'audio' | 'done', frame, frames })`.
+
+`signal` is aborted when the server is stopping. Check it as you go and stop your processes: a driver that ignores it keeps running after the job has been dropped, and holds up the shutdown.
 
 #### The render page
 

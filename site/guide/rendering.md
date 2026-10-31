@@ -13,6 +13,8 @@ Press **Render** at the top of the editor:
 
 Renders run one at a time. More wait their turn as **queued**.
 
+Stopping or restarting the server stops any render in progress and fails the ones waiting, so start them again afterwards. Under `pnpm dev`, a hot reload from saving or pulling a file in `src/` counts as a restart.
+
 ## From the command line
 
 ```bash

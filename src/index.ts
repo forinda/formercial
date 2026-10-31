@@ -14,7 +14,7 @@ import { LOCAL_HOST, localOnly } from './middleware/local-only'
 import { withDomainErrors } from './modules/projects/http/domain-errors'
 import { modules } from './modules'
 import { storageAdapter } from './adapters/storage'
-import { projectsWatchAdapter } from './adapters/watch'
+import { studioAdapter } from './adapters/studio'
 
 // Export the app for the Vite plugin (dev mode)
 export const app = await bootstrap({
@@ -63,7 +63,7 @@ export const app = await bootstrap({
     }),
     // Files on disk under uploads/ until S3_BUCKET is set. Inject with @Autowired(STORAGE).
     storageAdapter(),
-    projectsWatchAdapter(),
+    studioAdapter(),
     // Tools for agents: the routes marked @McpTool, called through the same
     // middleware as the editor. At /_mcp/messages, or over stdio via kick formercial mcp.
     McpAdapter({
@@ -73,6 +73,10 @@ export const app = await bootstrap({
       mode: 'explicit',
       allowedHosts: (host: string) => LOCAL_HOST.test(host),
     }),
+    // DevTools at /_debug under `kick dev` only. `kick build` compiles this
+    // branch out, so the package never reaches the production bundle
+    // (guide/devtools, "Stripping DevTools from production bundles").
+    ...(__KICKJS_DEVTOOLS__ ? [(await import('@forinda/kickjs-devtools')).DevToolsAdapter()] : []),
   ],
   // A failed validation on an Inertia visit goes back to the form with
   // `props.errors` instead of answering 422.

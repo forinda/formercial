@@ -25,9 +25,11 @@ export async function renderProject(opts: {
   origin: string
   voice?: VoiceProvider
   onProgress?: (p: RenderProgress) => void
+  signal?: AbortSignal
 }): Promise<{ mp4: string; srt: string }> {
   const { ws, slug, format } = opts
   if (opts.voice) await voiceProject(ws, slug, opts.voice)
+  opts.signal?.throwIfAborted()
   const { project } = await ws.read(slug)
   const clips = await clipLengths(ws, slug, project)
   const timeline = resolveTimeline(project, clips, sceneNeeds)
@@ -51,6 +53,7 @@ export async function renderProject(opts: {
       },
       dir,
       opts.onProgress ?? (() => {}),
+      opts.signal,
     )
     return { result: out, outputs: [out.mp4, out.srt] }
   })
