@@ -1,7 +1,7 @@
 // Everything the projects routes share: the workspace over the app's storage,
 // trust, the render queue and the per-project event streams.
 import { watch as fsWatch } from 'node:fs'
-import { Inject, Service } from '@forinda/kickjs'
+import { Inject, Logger, Service } from '@forinda/kickjs'
 import type { Storage } from '@forinda/kickjs-storage'
 import { STORAGE } from '@forinda/kickjs-storage/adapter'
 import type { Format } from '@/core/project'
@@ -12,7 +12,7 @@ import { FormercialSettings } from '@/core/settings'
 import { createTrust } from '@/core/trust'
 import { projectsRoot, workspaceId } from '@/adapters/storage'
 import { createWorkspace, type Workspace } from '@/core/workspace'
-import { RenderQueue, type JobInfo } from './render-queue'
+import { RenderQueue, jobActivity, type JobInfo } from './render-queue'
 import { REGISTRY } from './tokens'
 
 type Listener = { send(data: unknown, event?: string): void }
@@ -33,7 +33,11 @@ export class Studio {
     )
     this.ws = createWorkspace(storage, { history })
     this.trust = createTrust({ workspace: workspaceId() })
-    this.queue = new RenderQueue((job) => this.emit(job.slug, 'job', job))
+    const activity = jobActivity(Logger.for('Render'))
+    this.queue = new RenderQueue((job) => {
+      activity(job)
+      this.emit(job.slug, 'job', job)
+    })
   }
 
   listen(slug: string, listener: Listener): () => void {

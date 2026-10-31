@@ -1,7 +1,16 @@
 // JSON routes the editor calls. Projects are addressed by slug; files inside a
 // project by `?path=`, checked against the project folder on every call.
 import { join, resolve } from 'node:path'
-import { Controller, Delete, Get, Post, Put, getEnv, type RequestContext } from '@forinda/kickjs'
+import {
+  Controller,
+  Delete,
+  Get,
+  Logger,
+  Post,
+  Put,
+  getEnv,
+  type RequestContext,
+} from '@forinda/kickjs'
 import { McpTool } from '@forinda/kickjs-mcp'
 import { z } from 'zod'
 import { checkRange } from '@forinda/kickjs-storage'
@@ -360,7 +369,19 @@ export class ProjectsController {
     const check = await provider.check()
     if (!check.ok)
       throw new HttpError(400, `${provider.name} can't run here`, { missing: check.missing })
-    const clips = await voiceProject(this.studio.ws, ctx.params.slug, provider, { only })
+    const { slug } = ctx.params
+    const log = Logger.for('Voice')
+    const clips = await voiceProject(this.studio.ws, slug, provider, {
+      only,
+      onProgress: (done, total) => {
+        if (total && done === 0)
+          log.info(`${slug} generating ${total} line${total === 1 ? '' : 's'}`)
+        else if (total && done === total) log.info(`${slug} voice done`)
+      },
+    }).catch((err: Error) => {
+      log.error(`${slug} voice failed: ${err.message}`)
+      throw err
+    })
     return ctx.json({ clips: Object.fromEntries(Object.entries(clips).filter(([, c]) => c)) })
   }
 
