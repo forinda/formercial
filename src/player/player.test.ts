@@ -189,11 +189,34 @@ describe('player', () => {
     const host = document.createElement('div')
     document.body.append(host)
     createPlayer(host, p, resolveTimeline(p, {}, sceneNeeds), '16:9', {
-      fontUrl: (path) => `/files/${path}`,
+      fileUrl: (path) => `/files/${path}`,
     })
     expect(host.querySelector('style')!.textContent).toContain(
       "src: url('/files/media/fonts/unbounded-800.woff2')",
     )
+  })
+
+  test('an icon block uses project files, and a failed image is an error', async () => {
+    const p = project([
+      {
+        id: 'a',
+        kind: 'blocks',
+        minSeconds: 1,
+        caption: '',
+        spoken: '',
+        blocks: [{ type: 'icon', size: 8, items: [{ path: 'media/icons/x.svg', label: 'X' }] }],
+      },
+    ])
+    const host = document.createElement('div')
+    document.body.append(host)
+    HTMLImageElement.prototype.decode = () => Promise.reject(new Error('nope'))
+    const player = createPlayer(host, p, resolveTimeline(p, {}, sceneNeeds), '16:9', {
+      fileUrl: (path) => `/files/${path}`,
+    })
+    const root = host.querySelector<HTMLElement>('[data-scene="a"]')!.shadowRoot!
+    expect(root.querySelector('img')!.getAttribute('src')).toBe('/files/media/icons/x.svg')
+    await player.loaded()
+    expect(player.errors.get('media/icons/x.svg')?.message).toMatch(/can't load/)
   })
 
   test('locked custom scenes are listed, so a render can refuse them', () => {

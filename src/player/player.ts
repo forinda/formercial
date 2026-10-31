@@ -22,6 +22,8 @@ export interface Player {
   errors: Map<string, Error>
   /** Custom scenes not run because the project isn't trusted. */
   locked: string[]
+  /** Every image a block shows has loaded, or been noted in `errors`. */
+  loaded(): Promise<void>
 }
 
 /** How long a scene's blocks take to finish appearing, plus time to read them. */
@@ -43,7 +45,7 @@ export function createPlayer(
    * `trusted`: run custom scenes' HTML, CSS and scripts. They're code, and a
    * project may come from someone else, so the app asks before running them.
    */
-  opts: { captions?: boolean; trusted?: boolean; fontUrl?: (path: string) => string } = {},
+  opts: { captions?: boolean; trusted?: boolean; fileUrl?: (path: string) => string } = {},
 ): Player {
   const [width, height] = FORMATS[format]
   const { colors, fonts } = project.theme
@@ -68,7 +70,7 @@ export function createPlayer(
   ].join('; ')
   const style = document.createElement('style')
   // @font-face can't live in a shadow root, so the project's fonts go here.
-  style.textContent = STAGE_CSS + (opts.fontUrl ? fontFaceCss(project.theme, opts.fontUrl) : '')
+  style.textContent = STAGE_CSS + (opts.fileUrl ? fontFaceCss(project.theme, opts.fileUrl) : '')
   host.append(style, stage)
   // Over the scenes, for the edges of a breaking transition.
   const edges = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
@@ -79,7 +81,21 @@ export function createPlayer(
 
   const errors = new Map<string, Error>()
   const lockedScenes: string[] = []
-  const ctx: BlockCtx = { theme: project.theme, format, width, height }
+  const loading: Promise<void>[] = []
+  const ctx: BlockCtx = {
+    theme: project.theme,
+    format,
+    width,
+    height,
+    fileUrl: opts.fileUrl ?? ((path) => path),
+    load(path, img) {
+      loading.push(
+        (img.decode?.() ?? Promise.resolve()).catch(() => {
+          errors.set(path, new Error(`can't load ${path}`))
+        }),
+      )
+    },
+  }
   const byId = new Map(project.scenes.map((s) => [s.id, s]))
 
   const scenes = timeline.scenes.map((at) => {
@@ -262,6 +278,7 @@ export function createPlayer(
     frame,
     errors,
     locked: lockedScenes,
+    loaded: () => Promise.all(loading).then(() => {}),
     destroy() {
       stage.remove()
       style.remove()

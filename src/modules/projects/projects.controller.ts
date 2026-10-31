@@ -6,6 +6,7 @@ import { McpTool } from '@forinda/kickjs-mcp'
 import { z } from 'zod'
 import { checkRange } from '@forinda/kickjs-storage'
 import { storeFontFromUrl } from '@/core/font-links'
+import { searchIcons, storeIcon } from '@/core/icons'
 import { storeGoogleFont } from '@/core/fonts'
 import { probeSeconds } from '@/core/media'
 import { FormercialSettings, checkFps } from '@/core/settings'
@@ -309,6 +310,44 @@ export class ProjectsController {
       const { project } = await this.studio.ws.read(slug)
       await this.studio.trust.set(slug, project, ctx.body?.trusted === true)
       return ctx.noContent()
+    })
+  }
+
+  @McpTool({
+    name: 'search_icons',
+    description:
+      'Find product and language icons by name, like vscode or typescript. Returns names to pass to add_icon. Searches through Iconify.',
+    inputSchema: z.object({ query: z.string() }),
+    annotations: { readOnlyHint: true },
+  })
+  @Get('/:slug/icons')
+  findIcons(ctx: RequestContext) {
+    return this.handle(ctx, async () => {
+      const icons = await searchIcons(String(ctx.query.query ?? '')).catch((err: Error) => {
+        throw new HttpError(502, err.message)
+      })
+      return ctx.json({ icons })
+    })
+  }
+
+  /** Download an Iconify icon into the project's media/icons/. */
+  @McpTool({
+    name: 'add_icon',
+    description:
+      'Download an icon by name, like logos:typescript-icon, into the project. Returns the `path` to use in an icon block.',
+    inputSchema: z.object({ name: z.string() }),
+  })
+  @Post('/:slug/icons')
+  addIcon(ctx: RequestContext) {
+    return this.handle(ctx, async () => {
+      const path = await storeIcon(
+        this.studio.ws,
+        ctx.params.slug,
+        String(ctx.body?.name ?? ''),
+      ).catch((err: Error) => {
+        throw new HttpError(400, err.message)
+      })
+      return ctx.json({ path })
     })
   }
 

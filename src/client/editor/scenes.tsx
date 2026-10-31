@@ -46,6 +46,7 @@ import { defaultSeconds } from '@/player/transitions'
 import { DoodleBoard } from './doodle/board'
 import { Field } from './field'
 import { IconButton } from './icon-button'
+import { api, fileUrl } from './useProject'
 
 const newId = () => `s${Date.now().toString(36)}${Math.floor(Math.random() * 36 ** 2).toString(36)}`
 
@@ -150,6 +151,7 @@ const BLANK: { [T in Block['type']]: Extract<Block, { type: T }> } = {
   stamp: { type: 'stamp', text: 'Shipped', tone: 'good' },
   cards: { type: 'cards', items: [{ title: 'Title', sub: 'detail' }] },
   chips: { type: 'chips', label: 'Works with', items: ['One', 'Two'] },
+  icon: { type: 'icon', size: 8, items: [] },
   doodle: {
     type: 'doodle',
     viewBox: '0 0 1600 720',
@@ -299,14 +301,123 @@ function DoodleDraw(props: {
   )
 }
 
+/** Search Iconify, download what's picked into the project, and name each icon. */
+function IconPicker(props: {
+  block: Extract<Block, { type: 'icon' }>
+  id: string
+  slug: string
+  onItems(items: Extract<Block, { type: 'icon' }>['items']): void
+}) {
+  const { block, id, slug } = props
+  const [query, setQuery] = useState('')
+  const [found, setFound] = useState<string[]>([])
+  const [error, setError] = useState('')
+  const attempt = async (fn: () => Promise<void>) => {
+    setError('')
+    try {
+      await fn()
+    } catch (err) {
+      setError((err as Error).message)
+    }
+  }
+  const search = () =>
+    attempt(async () => {
+      const r = await api<{ icons: string[] }>(
+        `/api/v1/projects/${slug}/icons?query=${encodeURIComponent(query)}`,
+      )
+      setFound(r.icons)
+    })
+  return (
+    <div className="grid gap-2">
+      {block.items.map((item, i) => (
+        <div className="flex items-center gap-2" key={item.path}>
+          <img src={fileUrl(slug, item.path)} alt="" className="size-7 shrink-0" />
+          <Input
+            aria-label={`Label for ${item.path}`}
+            placeholder="Label (optional)"
+            value={item.label ?? ''}
+            onChange={(e) =>
+              props.onItems(
+                block.items.map((x, j) =>
+                  j === i ? { ...x, label: e.target.value || undefined } : x,
+                ),
+              )
+            }
+          />
+          <IconButton
+            label={`Remove ${item.path}`}
+            className="text-destructive"
+            onClick={() => props.onItems(block.items.filter((_, j) => j !== i))}
+          >
+            <IconTrash />
+          </IconButton>
+        </div>
+      ))}
+      <Field id={`${id}-search`} label="Find an icon (vscode, typescript, postgres)">
+        <div className="flex gap-2">
+          <Input
+            id={`${id}-search`}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') void search()
+            }}
+          />
+          <Button variant="secondary" disabled={!query.trim()} onClick={() => void search()}>
+            Search
+          </Button>
+        </div>
+      </Field>
+      {found.length > 0 && (
+        <div className="grid grid-cols-6 gap-1">
+          {found.map((name) => (
+            <button
+              key={name}
+              type="button"
+              title={name}
+              aria-label={`Add ${name}`}
+              className="grid place-items-center rounded-sm border bg-white p-1.5 hover:border-ring"
+              onClick={() =>
+                attempt(async () => {
+                  const { path } = await api<{ path: string }>(`/api/v1/projects/${slug}/icons`, {
+                    method: 'POST',
+                    json: { name },
+                  })
+                  if (!block.items.some((x) => x.path === path)) {
+                    props.onItems([...block.items, { path }])
+                  }
+                })
+              }
+            >
+              <img
+                src={`https://api.iconify.design/${name.replace(':', '/')}.svg`}
+                alt=""
+                loading="lazy"
+                className="size-7"
+              />
+            </button>
+          ))}
+        </div>
+      )}
+      <p className="text-xs text-muted-foreground">
+        Icons come from Iconify and are kept in media/icons/. Check a brand's own rules before using
+        its logo.
+      </p>
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
+  )
+}
+
 function BlockForm({
   block,
   id,
+  slug,
   project,
   onChange,
 }: {
   block: Block
   id: string
+  slug: string
   project: Project
   onChange(b: Block): void
 }) {
@@ -466,6 +577,28 @@ function BlockForm({
           {number('at', 'Appears at (s)')}
         </>
       )
+    case 'icon':
+      return (
+        <>
+          <IconPicker block={block} id={id} slug={slug} onItems={(items) => set({ items })} />
+          <div className="flex gap-2">
+            <Field id={`${id}-size`} label="Size">
+              <Input
+                id={`${id}-size`}
+                type="number"
+                min={1}
+                max={40}
+                value={block.size}
+                onChange={(e) => {
+                  const size = Number(e.target.value)
+                  if (size > 0 && size <= 40) set({ size })
+                }}
+              />
+            </Field>
+            {number('at', 'Appears at (s)')}
+          </div>
+        </>
+      )
     case 'doodle':
       return (
         <>
@@ -540,10 +673,12 @@ function BlockCard(props: { index: number; type: string; onRemove(): void; child
 
 export function SceneForm({
   scene,
+  slug,
   project,
   onChange,
 }: {
   scene: Scene
+  slug: string
   project: Project
   onChange(s: Scene): void
 }) {
@@ -620,6 +755,7 @@ export function SceneForm({
                   <BlockForm
                     id={`${id}-b${i}`}
                     block={block}
+                    slug={slug}
                     project={project}
                     onChange={(b) => set({ blocks: scene.blocks.map((x, j) => (j === i ? b : x)) })}
                   />

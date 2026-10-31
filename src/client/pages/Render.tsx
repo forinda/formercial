@@ -24,7 +24,7 @@ export default function Render(props: {
     const timeline = resolveTimeline(props.project, props.clips, sceneNeeds)
     const player = createPlayer(host.current!, props.project, timeline, props.format, {
       trusted: props.trusted,
-      fontUrl: (path) => fileUrl(props.slug, path),
+      fileUrl: (path) => fileUrl(props.slug, path),
     })
     player.frame(0)
     window.formercial = {
@@ -39,6 +39,7 @@ export default function Render(props: {
         ),
       )
         .then(() => document.fonts.ready)
+        .then(() => player.loaded())
         .then(() => {}),
       frame: (t) => player.frame(t),
       errors: () => ({

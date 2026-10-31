@@ -184,7 +184,7 @@ export default function Editor(props: {
             </TabsList>
             <div className="min-h-0 flex-1 overflow-auto p-4">
               <TabsContent value="scene">
-                <SceneForm scene={scene} project={project} onChange={setScene} />
+                <SceneForm slug={props.slug} scene={scene} project={project} onChange={setScene} />
               </TabsContent>
               <TabsContent value="voice">
                 <VoicePanel

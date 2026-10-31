@@ -116,6 +116,23 @@ const BlockSchema = z.discriminatedUnion('type', [
     url: z.string().optional(),
   }),
   z.object({
+    type: z.literal('icon'),
+    at,
+    /** Height of each icon, in the same units as the scene's text. */
+    size: z.number().positive().max(40).default(8),
+    items: z.array(
+      z.object({
+        path: z
+          .string()
+          .regex(/^media\/[\w./-]+\.(svg|png|webp|jpe?g)$/, {
+            error: 'an image under media/',
+          })
+          .refine((p) => !p.includes('..'), { error: 'an image under media/' }),
+        label: z.string().optional(),
+      }),
+    ),
+  }),
+  z.object({
     type: z.literal('doodle'),
     at,
     /** The drawing's own coordinates. Paths and labels are placed in them. */

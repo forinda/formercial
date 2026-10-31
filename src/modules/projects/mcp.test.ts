@@ -5,7 +5,7 @@ import { STORAGE } from '@forinda/kickjs-storage/adapter'
 import { createTestApp } from '@forinda/kickjs-testing'
 import express from 'express'
 import request from 'supertest'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import { starterProject } from '@/core/project'
 import type { RenderDriver } from '@/core/render/driver'
 import { createRegistry } from '@/core/render/registry'
@@ -55,6 +55,31 @@ const custom = (script: string) => ({
 })
 
 describe('mcp tools', () => {
+  test('finds an icon and adds it to the project', async () => {
+    const { call } = await boot()
+    const { json: created } = await call('create_project', { name: 'Icons' })
+    const slug = created.slug
+    const real = globalThis.fetch
+    vi.stubGlobal('fetch', (url: string, init: RequestInit) => {
+      if (!String(url).startsWith('https://api.iconify.design')) return real(url, init)
+      return Promise.resolve(
+        new Response(
+          String(url).includes('/search?')
+            ? JSON.stringify({ icons: ['logos:postgresql'] })
+            : '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
+        ),
+      )
+    })
+    try {
+      const found = await call('search_icons', { slug, query: 'postgres' })
+      expect(found.json.icons).toEqual(['logos:postgresql'])
+      const added = await call('add_icon', { slug, name: 'logos:postgresql' })
+      expect(added.json.path).toBe('media/icons/logos-postgresql.svg')
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
   test('exposes exactly the agent tools: no trust, recordings, uploads or deletes', async () => {
     const { mcp } = await boot()
     expect(
@@ -63,6 +88,7 @@ describe('mcp tools', () => {
         .map((t) => t.name)
         .sort(),
     ).toEqual([
+      'add_icon',
       'create_project',
       'get_project',
       'get_renders',
@@ -73,6 +99,7 @@ describe('mcp tools', () => {
       'project_schema',
       'render_project',
       'restore_revision',
+      'search_icons',
       'update_project',
       'voice_project',
     ])

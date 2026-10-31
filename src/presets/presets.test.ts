@@ -21,6 +21,7 @@ const BLOCK_TYPES: Record<Block['type'], true> = {
   stamp: true,
   cards: true,
   chips: true,
+  icon: true,
   end: true,
   doodle: true,
 }
@@ -49,7 +50,8 @@ describe('presets', () => {
       if (preset.id !== 'doodle-light-bulb') {
         test('uses every block type', () => {
           const wanted = Object.keys(BLOCK_TYPES).filter(
-            (t) => t !== 'doodle' || preset.id === 'showcase',
+            // Icons are files a project downloads; a preset ships none.
+            (t) => t !== 'icon' && (t !== 'doodle' || preset.id === 'showcase'),
           )
           expect(new Set(blocksOf(project).map((b) => b.type))).toEqual(new Set(wanted))
         })
