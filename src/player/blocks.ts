@@ -4,7 +4,15 @@
 import type { Block, Format, Theme } from '@/core/project'
 import { esc, highlight, terminal } from './highlight'
 
-export type BlockCtx = { theme: Theme; format: Format; width: number; height: number }
+export type BlockCtx = {
+  theme: Theme
+  format: Format
+  width: number
+  height: number
+  fileUrl(path: string): string
+  /** Hold the first frame until this image is ready; a missing one fails the render. */
+  load(path: string, img: HTMLImageElement): void
+}
 type Of<T extends Block['type']> = Extract<Block, { type: T }>
 export interface BlockDef<B extends Block> {
   needs(b: B): number
@@ -234,6 +242,26 @@ export const BLOCKS: { [T in Block['type']]: BlockDef<Of<T>> } = {
       })
       root.append(box)
       return (local) => chips.forEach((chip, i) => reveal(chip, local - (b.at ?? 0) - i * 0.3))
+    },
+  },
+  icon: {
+    needs: (b) => (b.at ?? 0) + b.items.length * 0.3 + REVEAL,
+    mount(root, b, ctx) {
+      const box = el('div', 'icons')
+      const items = b.items.map((item) => {
+        const fig = el('div', 'icon')
+        const img = document.createElement('img')
+        img.alt = item.label ?? ''
+        img.src = ctx.fileUrl(item.path)
+        img.style.height = `calc(${b.size} * var(--u))`
+        ctx.load(item.path, img)
+        fig.append(img)
+        if (item.label) fig.append(el('span', '', esc(item.label)))
+        box.append(fig)
+        return fig
+      })
+      root.append(box)
+      return (local) => items.forEach((fig, i) => reveal(fig, local - (b.at ?? 0) - i * 0.3))
     },
   },
   doodle: {

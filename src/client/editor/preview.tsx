@@ -50,6 +50,7 @@ const MIN_CLIP_PX = 72
 
 /** One scene's picture, late enough in the scene that its blocks have appeared. */
 function SceneThumb(props: {
+  slug: string
   project: Project
   scene: Project['scenes'][number]
   clip?: Clip
@@ -61,7 +62,11 @@ function SceneThumb(props: {
   useEffect(() => {
     const one = { ...project, scenes: [scene] }
     const timeline = resolveTimeline(one, clip ? { [scene.id]: clip } : {}, sceneNeeds)
-    const player = createPlayer(host.current!, one, timeline, format, { trusted, captions: false })
+    const player = createPlayer(host.current!, one, timeline, format, {
+      trusted,
+      captions: false,
+      fileUrl: (path) => fileUrl(props.slug, path),
+    })
     player.frame(timeline.total * 0.8)
     return () => player.destroy()
     // Only what this picture shows: typing in another scene leaves it alone.
@@ -95,6 +100,7 @@ function useWide(): boolean {
 
 /** One scene on the timeline, as long as it runs. Drag it to reorder. */
 function SceneClip(props: {
+  slug: string
   project: Project
   at: Timeline['scenes'][number]
   index: number
@@ -139,6 +145,7 @@ function SceneClip(props: {
         )}
       >
         <SceneThumb
+          slug={props.slug}
           project={project}
           scene={scene}
           clip={at.clip ?? undefined}
@@ -217,7 +224,7 @@ export function Preview(props: {
     host.current.innerHTML = ''
     player.current = createPlayer(host.current, project, timeline, format, {
       trusted: props.trusted,
-      fontUrl: (path) => fileUrl(props.slug, path),
+      fileUrl: (path) => fileUrl(props.slug, path),
     })
     player.current.frame(Math.min(tRef.current, timeline.total))
     return () => player.current?.destroy()
@@ -388,6 +395,7 @@ export function Preview(props: {
               <ol className="flex min-h-0 flex-1 gap-px">
                 {timeline.scenes.map((s, i) => (
                   <SceneClip
+                    slug={props.slug}
                     key={s.id}
                     project={project}
                     at={s}

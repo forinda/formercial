@@ -45,7 +45,11 @@ async function publicUrl(raw: string): Promise<string> {
   return url.href
 }
 
-async function download(url: string, limit: number, fetchFn: typeof fetch): Promise<Uint8Array> {
+export async function download(
+  url: string,
+  limit: number,
+  fetchFn: typeof fetch,
+): Promise<Uint8Array> {
   const res = await fetchFn(await publicUrl(url), {
     headers: { 'user-agent': UA },
     // Following a redirect would skip the address check.
