@@ -15,6 +15,43 @@ export interface JobInfo {
   mp4?: string
 }
 
+const elapsed = (ms: number) => {
+  const s = Math.round(ms / 1000)
+  return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${s % 60}s`
+}
+
+/** One console line per step of a job: its start, each 10% of frames, and how it ended. */
+export function jobActivity(log: { info(msg: string): void; error(msg: string): void }) {
+  const open = new Map<string, { started: number; step: number; audio: boolean }>()
+  return (job: JobInfo) => {
+    const name = `${job.slug} ${job.format}`
+    let seen = open.get(job.id)
+    if (!seen) {
+      seen = { started: Date.now(), step: 0, audio: false }
+      open.set(job.id, seen)
+      log.info(`${name} started (${job.driver})`)
+    }
+    if (job.state === 'failed' || job.state === 'done') {
+      open.delete(job.id)
+      const took = elapsed(Date.now() - seen.started)
+      if (job.state === 'failed') log.error(`${name} failed after ${took}: ${job.error}`)
+      else log.info(`${name} done in ${took}: ${job.mp4}`)
+      return
+    }
+    const { phase, frame, frames } = job.progress ?? {}
+    if (phase === 'frames' && frame !== undefined && frames) {
+      const step = Math.floor((frame / frames) * 10)
+      if (step > seen.step) {
+        seen.step = step
+        log.info(`${name} frames ${step * 10}% (${frame}/${frames})`)
+      }
+    } else if (phase === 'audio' && !seen.audio) {
+      seen.audio = true
+      log.info(`${name} mixing audio`)
+    }
+  }
+}
+
 export class RenderQueue {
   readonly jobs: JobInfo[] = []
   private running = false

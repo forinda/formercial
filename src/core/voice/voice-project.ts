@@ -62,13 +62,14 @@ export async function voiceProject(
   const { project } = await ws.read(slug)
   const made = await readMade(ws, slug)
   const clips = await clipLengths(ws, slug, project)
-  const todo = project.scenes.filter((s) => (!opts.only || s.id === opts.only) && !clips[s.id])
+  const todo = project.scenes.filter(
+    (s) => (!opts.only || s.id === opts.only) && s.spoken.trim() && !clips[s.id],
+  )
   let done = 0
   for (const scene of todo) {
     opts.onProgress?.(done++, todo.length)
     if (scene.voice === 'recording' && (await ws.stat(slug, recordingPath(scene.id)))) continue
     const text = scene.spoken.trim()
-    if (!text) continue
     const path = ttsPath(scene.id)
     const seconds = await withWorkdir(ws, slug, [], async (dir) => {
       await mkdir(dirname(join(dir, path)), { recursive: true })
