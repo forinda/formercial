@@ -41,7 +41,7 @@ export const chromiumDriver = ({
     return { ok: missing.length === 0, missing }
   },
 
-  async render(job, dir, progress) {
+  async render(job, dir, progress, signal) {
     const [width, height] = FORMATS[job.format]
     const total = Math.min(job.timeline.total, job.seconds ?? Infinity)
     const frames = Math.round(total * job.fps)
@@ -90,6 +90,7 @@ export const chromiumDriver = ({
         setTimeout(poll, 50) })() })`)
 
       for (let f = 0; f < frames; f++) {
+        signal?.throwIfAborted()
         await evaluate(`window.formercial.frame(${f / job.fps})`)
         {
           const errors = await evaluate<Record<string, string>>('window.formercial.errors()')

@@ -67,6 +67,7 @@
   "devDependencies": {
     "@forinda/kickjs-cli": "^8.17.2",
     "@forinda/kickjs-devtools": "^7.19.0",
+    "@forinda/kickjs-devtools-kit": "7.3.0",
     "@forinda/kickjs-testing": "^8.3.1",
     "@forinda/kickjs-vite": "^8.5.1",
     "@swc/core": "^1.16.20",

@@ -99,6 +99,11 @@ export class Studio {
     }
   }
 
+  async stop() {
+    await this.queue.stop()
+    this.ws.history?.close()
+  }
+
   /** Whether undo and redo have anywhere to go, for the editor's buttons. */
   async historyState(slug: string): Promise<{ undo: boolean; redo: boolean }> {
     const { history } = this.ws
@@ -121,17 +126,20 @@ export class Studio {
 
   render(slug: string, format: Format, driverName: string, origin: string, fps?: number): JobInfo {
     const driver = this.registry.drivers.get(driverName)!
-    return this.queue.enqueue({ slug, format, driver: driverName }, async (_job, progress) =>
-      renderProject({
-        ws: this.ws,
-        slug,
-        format,
-        driver,
-        fps,
-        origin,
-        voice: await this.voice(),
-        onProgress: progress,
-      }),
+    return this.queue.enqueue(
+      { slug, format, driver: driverName },
+      async (_job, progress, signal) =>
+        renderProject({
+          ws: this.ws,
+          slug,
+          format,
+          driver,
+          fps,
+          origin,
+          voice: await this.voice(),
+          onProgress: progress,
+          signal,
+        }),
     )
   }
 }

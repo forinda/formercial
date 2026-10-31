@@ -13,6 +13,8 @@ export interface JobInfo {
   progress?: RenderProgress
   error?: string
   mp4?: string
+  createdAt: number
+  finishedAt?: number
 }
 
 const elapsed = (ms: number) => {
@@ -55,15 +57,26 @@ export function jobActivity(log: { info(msg: string): void; error(msg: string): 
 export class RenderQueue {
   readonly jobs: JobInfo[] = []
   private running = false
+  private current?: AbortController
+  private finished: Promise<unknown> = Promise.resolve()
   private next = 1
 
   constructor(private readonly onChange: (job: JobInfo) => void) {}
 
   enqueue(
     spec: Pick<JobInfo, 'slug' | 'format' | 'driver'>,
-    run: (job: JobInfo, progress: (p: RenderProgress) => void) => Promise<{ mp4: string }>,
+    run: (
+      job: JobInfo,
+      progress: (p: RenderProgress) => void,
+      signal: AbortSignal,
+    ) => Promise<{ mp4: string }>,
   ): JobInfo {
-    const job: JobInfo = { id: String(this.next++), ...spec, state: 'queued' }
+    const job: JobInfo = {
+      id: String(this.next++),
+      ...spec,
+      state: 'queued',
+      createdAt: Date.now(),
+    }
     this.jobs.push(job)
     this.runs.set(job.id, run)
     this.pump()
@@ -71,6 +84,18 @@ export class RenderQueue {
   }
 
   private runs = new Map<string, Parameters<RenderQueue['enqueue']>[1]>()
+
+  /** Fail what's waiting and stop what's running, so no Chromium outlives the server. */
+  async stop() {
+    const reason = new Error('stopped: the server restarted')
+    for (const job of this.jobs.filter((j) => j.state === 'queued')) {
+      Object.assign(job, { state: 'failed', error: reason.message, finishedAt: Date.now() })
+      this.runs.delete(job.id)
+      this.onChange(job)
+    }
+    if (this.running) this.current?.abort(reason)
+    await this.finished
+  }
 
   // Marks the next job running synchronously, so a caller sees its state at once.
   private pump() {
@@ -81,10 +106,15 @@ export class RenderQueue {
     job.state = 'running'
     this.onChange(job)
     const run = this.runs.get(job.id)!
-    run(job, (p) => {
-      job.progress = p
-      this.onChange(job)
-    })
+    this.current = new AbortController()
+    this.finished = run(
+      job,
+      (p) => {
+        job.progress = p
+        this.onChange(job)
+      },
+      this.current.signal,
+    )
       .then(
         ({ mp4 }) => Object.assign(job, { state: 'done', mp4 }),
         (err: Error) => Object.assign(job, { state: 'failed', error: err.message }),
@@ -92,6 +122,7 @@ export class RenderQueue {
       .finally(() => {
         this.runs.delete(job.id)
         this.running = false
+        job.finishedAt = Date.now()
         this.onChange(job)
         this.pump()
       })
