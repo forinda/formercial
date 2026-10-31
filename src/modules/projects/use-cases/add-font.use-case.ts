@@ -1,6 +1,6 @@
 import { HttpException, Service } from '@forinda/kickjs'
-import { storeFontFromUrl } from '@/core/font-links'
-import { storeGoogleFont } from '@/core/fonts'
+import { storeFontFromUrl } from '@/core/assets/font-links'
+import { storeGoogleFont } from '@/core/assets/fonts'
 import { Studio } from '../services/studio.service'
 
 /** Download a Google Fonts family, or what a link holds, into the project's media/fonts/. */

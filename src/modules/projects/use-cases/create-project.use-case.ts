@@ -1,5 +1,5 @@
 import { HttpException, Service } from '@forinda/kickjs'
-import { SLUG, slugFrom, starterProject } from '@/core/project'
+import { SLUG, slugFrom, starterProject } from '@/core/project/project'
 import { FormercialSettings } from '@/core/settings'
 import { fromPreset, storePresetFonts } from '@/presets'
 import { Studio } from '../services/studio.service'

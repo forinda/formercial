@@ -1,6 +1,6 @@
 import { Controller, Get, type RequestContext } from '@forinda/kickjs'
 import { inertia } from '@forinda/kickjs-inertia'
-import { FORMATS, type Format } from '@/core/project'
+import { FORMATS, type Format } from '@/core/project/project'
 import { clipLengths } from '@/core/voice/voice-project'
 import { Studio } from '@/modules/projects/services/studio.service'
 import { PRESETS } from '@/presets'

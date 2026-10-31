@@ -1,5 +1,5 @@
 import { Service } from '@forinda/kickjs'
-import type { Project } from '@/core/project'
+import type { Project } from '@/core/project/project'
 import { Studio } from '../services/studio.service'
 
 @Service()

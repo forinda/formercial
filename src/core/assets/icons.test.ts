@@ -4,8 +4,8 @@ import { join } from 'node:path'
 import { diskStorage } from '@forinda/kickjs-storage/disk'
 import { expect, test } from 'vitest'
 import { searchIcons, storeIcon } from './icons'
-import { parseProject, starterProject } from './project'
-import { createWorkspace } from './workspace'
+import { parseProject, starterProject } from '@/core/project/project'
+import { createWorkspace } from '@/core/storage/workspace'
 
 const SVG = '<svg xmlns="http://www.w3.org/2000/svg"></svg>'
 const answering = (body: string, seen: string[] = []) =>

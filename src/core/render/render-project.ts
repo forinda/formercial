@@ -2,13 +2,13 @@
 // voice (when a provider is given), resolve the timeline, copy the clips and
 // music into a work folder, run the driver, and keep its MP4 and SRT.
 import { sceneNeeds } from '@/player/player'
-import type { Format } from '@/core/project'
+import type { Format } from '@/core/project/project'
 import { FormercialSettings } from '@/core/settings'
-import { resolveTimeline } from '@/core/timeline'
+import { resolveTimeline } from '@/core/project/timeline'
 import type { VoiceProvider } from '@/core/voice/provider'
 import { clipLengths, voiceProject } from '@/core/voice/voice-project'
-import { withWorkdir } from '@/core/workdir'
-import type { Workspace } from '@/core/workspace'
+import { withWorkdir } from '@/core/storage/workdir'
+import type { Workspace } from '@/core/storage/workspace'
 import type { RenderDriver, RenderProgress } from './driver'
 
 /** Formats appear in URLs and file names as 16x9, 9x16, 1x1. */

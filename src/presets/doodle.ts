@@ -1,7 +1,7 @@
 // A whiteboard-style lesson: how resistance works, and why that makes a light
 // bulb glow. Every drawing is plain data in doodle blocks, so a teacher can
 // reword it, redraw it or delete scenes, with no code to trust.
-import { parseProject } from '@/core/project'
+import { parseProject } from '@/core/project/project'
 
 /** Labels don't wrap, so one too long for its drawing is drawn smaller. Kalam runs about 0.5 of its size per character. */
 const fit = (strokes: unknown[], width: number) =>

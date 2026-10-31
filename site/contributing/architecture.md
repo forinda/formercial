@@ -20,16 +20,17 @@ Formercial is a KickJS app (Express runtime, Inertia + React pages) plus a kick 
 
 | Folder | What it does |
 |---|---|
-| `src/core/project.ts` | The `project.json` schema (zod). Everything loads through `parseProject`. |
-| `src/core/workspace.ts` | Projects over `@forinda/kickjs-storage`: read, write with a version check, files inside a project. Keys can't leave the project. |
-| `src/core/workdir.ts` | Copies files into a temp folder for tools that need real paths, and uploads their results back. |
-| `src/core/timeline.ts` | Each scene's start and length: the longest of its minimum, its blocks' animation, and its voice clip + 1.3s. |
+| `src/core/project/` | The `project.json` schema (zod), which everything loads through with `parseProject`, and each scene's start and length. |
+| `src/core/storage/` | Projects over `@forinda/kickjs-storage` (`workspace`), temp folders for tools that need real paths (`workdir`), undo history, and which projects may run custom scenes (`trust`). |
+| `src/core/assets/` | Fonts and icons downloaded into a project. |
+| `src/core/media/` | ffprobe, the ffmpeg sound mix (voice placed per scene, music ducked under it) and subtitles. |
 | `src/core/voice/` | Voice providers (edge-tts built in) and `voiceProject`, which makes missing or changed clips. |
 | `src/core/render/` | Render drivers, the Chromium + ffmpeg driver, the DevTools-protocol client, `renderProject`. |
-| `src/core/audio.ts`, `srt.ts` | The ffmpeg sound mix (voice placed per scene, music ducked under it) and subtitles. |
-| `src/core/trust.ts` | Which projects may run custom scenes. Kept in the user's config folder. |
 | `src/player/` | Draws a project at any time `t`. Used by the editor's preview and by the render page. |
-| `src/modules/projects/` | The JSON API, the render queue, live events, and the file watcher. |
+| `src/modules/projects/controllers/` | The JSON API and MCP tools, grouped by task. A controller only routes to a use case. |
+| `src/modules/projects/use-cases/` | One class per task, with `execute()`. Returns plain values and throws `HttpException`. |
+| `src/modules/projects/services/` | What use cases share: the workspace, trust, the render queue and live events. |
+| `src/modules/projects/http/` | Helpers that know about requests, including turning core's errors into HTTP answers. |
 | `src/modules/pages/` | Inertia pages: projects, editor, render page. |
 | `src/client/` | React: the editor, its panels, and the save session. |
 | `src/cli/plugin.ts` | `kick formercial`, registered in `kick.config.ts`. |

@@ -34,8 +34,8 @@ import {
   IconX,
 } from '@tabler/icons-react'
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
-import type { Block, Project, Scene } from '@/core/project'
-import { resolveTimeline } from '@/core/timeline'
+import type { Block, Project, Scene } from '@/core/project/project'
+import { resolveTimeline } from '@/core/project/timeline'
 import { createPlayer, sceneNeeds } from '@/player/player'
 import { Button } from '@/client/components/ui/button'
 import { Input } from '@/client/components/ui/input'

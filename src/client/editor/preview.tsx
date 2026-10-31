@@ -25,8 +25,8 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react'
-import { FORMATS, type Format, type Project } from '@/core/project'
-import { resolveTimeline, type Clip, type Timeline } from '@/core/timeline'
+import { FORMATS, type Format, type Project } from '@/core/project/project'
+import { resolveTimeline, type Clip, type Timeline } from '@/core/project/timeline'
 import { createPlayer, sceneNeeds, type Player } from '@/player/player'
 import { Button } from '@/client/components/ui/button'
 import {

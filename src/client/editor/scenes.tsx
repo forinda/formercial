@@ -36,7 +36,7 @@ import {
   type Block,
   type Project,
   type Scene,
-} from '@/core/project'
+} from '@/core/project/project'
 import { Button } from '@/client/components/ui/button'
 import { Input } from '@/client/components/ui/input'
 import { Select } from '@/client/components/ui/select'

@@ -1,5 +1,5 @@
 import { HttpException, ProblemException, Service } from '@forinda/kickjs'
-import { FORMATS, type Format } from '@/core/project'
+import { FORMATS, type Format } from '@/core/project/project'
 import { FormercialSettings, checkFps } from '@/core/settings'
 import { Studio } from '../services/studio.service'
 

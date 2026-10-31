@@ -1,7 +1,7 @@
 // The editor's copy of a project: saves on a short pause, notices when the
 // file changed on disk, and never silently overwrites someone else's edit.
-import type { Project } from '@/core/project'
-import type { Clip } from '@/core/timeline'
+import type { Project } from '@/core/project/project'
+import type { Clip } from '@/core/project/timeline'
 
 export type Status = 'saved' | 'saving' | 'conflict' | 'error'
 export interface SessionState {

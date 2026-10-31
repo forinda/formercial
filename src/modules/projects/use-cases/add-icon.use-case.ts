@@ -1,5 +1,5 @@
 import { HttpException, Service } from '@forinda/kickjs'
-import { storeIcon } from '@/core/icons'
+import { storeIcon } from '@/core/assets/icons'
 import { Studio } from '../services/studio.service'
 
 @Service()

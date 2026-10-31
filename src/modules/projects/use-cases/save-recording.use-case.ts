@@ -1,9 +1,9 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { HttpException, Service } from '@forinda/kickjs'
-import { probeSeconds } from '@/core/media'
+import { probeSeconds } from '@/core/media/media'
 import { recordingPath } from '@/core/voice/voice-project'
-import { withWorkdir } from '@/core/workdir'
+import { withWorkdir } from '@/core/storage/workdir'
 import { Studio } from '../services/studio.service'
 
 const AUDIO = /^audio\/(webm|ogg)\b/

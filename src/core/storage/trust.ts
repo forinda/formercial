@@ -8,8 +8,8 @@ import { createHash } from 'node:crypto'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
-import type { Project } from './project'
-import { FormercialSettings } from './settings'
+import type { Project } from '@/core/project/project'
+import { FormercialSettings } from '@/core/settings'
 
 type TrustFile = Record<string, Record<string, string>>
 

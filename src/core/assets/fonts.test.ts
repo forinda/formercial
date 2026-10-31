@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from 'vitest'
 import { parseFontFaces } from './font-links'
 import { fetchGoogleFont, fontFaceCss } from './fonts'
-import { DEFAULT_THEME } from './project'
+import { DEFAULT_THEME } from '@/core/project/project'
 
 const CSS2 = `/* cyrillic */
 @font-face {

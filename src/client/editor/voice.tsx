@@ -1,7 +1,7 @@
 // Voice for the selected scene: generate it, or record it here.
 import { useEffect, useRef, useState } from 'react'
-import type { Scene } from '@/core/project'
-import type { Clip } from '@/core/timeline'
+import type { Scene } from '@/core/project/project'
+import type { Clip } from '@/core/project/timeline'
 import { Button } from '@/client/components/ui/button'
 import { Textarea } from '@/client/components/ui/textarea'
 import { Field, Group } from './field'

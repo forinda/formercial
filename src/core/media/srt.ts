@@ -1,5 +1,5 @@
-import type { Project } from './project'
-import type { Timeline } from './timeline'
+import type { Project } from '@/core/project/project'
+import type { Timeline } from '@/core/project/timeline'
 
 const stamp = (s: number) => {
   const ms = Math.round(s * 1000)

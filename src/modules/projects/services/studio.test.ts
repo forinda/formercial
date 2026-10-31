@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { diskStorage } from '@forinda/kickjs-storage/disk'
 import { expect, test } from 'vitest'
-import { starterProject } from '@/core/project'
+import { starterProject } from '@/core/project/project'
 import { createRegistry } from '@/core/render/registry'
 import { Studio } from './studio.service'
 

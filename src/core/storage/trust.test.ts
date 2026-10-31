@@ -2,7 +2,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, test } from 'vitest'
-import { parseProject, starterProject } from './project'
+import { parseProject, starterProject } from '@/core/project/project'
 import { createTrust, customHash } from './trust'
 
 const custom = parseProject({

@@ -1,7 +1,7 @@
 import { Controller, Get } from '@forinda/kickjs'
 import { McpTool } from '@forinda/kickjs-mcp'
 import { z } from 'zod'
-import { ProjectSchema } from '@/core/project'
+import { ProjectSchema } from '@/core/project/project'
 
 @Controller()
 export class SchemaController {

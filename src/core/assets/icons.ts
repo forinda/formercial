@@ -1,6 +1,6 @@
 // Product and language icons from Iconify, stored in the project so a render needs no network.
 import { download } from './font-links'
-import type { Workspace } from './workspace'
+import type { Workspace } from '@/core/storage/workspace'
 
 const API = 'https://api.iconify.design'
 const NAME = /^[a-z0-9]+(-[a-z0-9]+)*:[a-z0-9]+(-[a-z0-9]+)*$/

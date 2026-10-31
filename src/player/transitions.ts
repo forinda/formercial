@@ -2,7 +2,7 @@
 // or randomness, so a moment in a transition always draws the same frame. The
 // breaking effects cut the old scene's picture with one clip path instead of
 // copying it into pieces, which keeps them cheap to render.
-import type { Transition } from '@/core/project'
+import type { Transition } from '@/core/project/project'
 
 export type Look = {
   opacity?: number

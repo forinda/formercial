@@ -1,9 +1,9 @@
 // Ready-made commercials to start a project from. Each shows off what a project
 // can do, so you can keep what suits you and delete the rest. Every code sample
 // and its output is real, so a preset can be rendered as-is.
-import { storeGoogleFont } from '@/core/fonts'
-import { parseProject, type Project } from '@/core/project'
-import type { Workspace } from '@/core/workspace'
+import { storeGoogleFont } from '@/core/assets/fonts'
+import { parseProject, type Project } from '@/core/project/project'
+import type { Workspace } from '@/core/storage/workspace'
 import { doodleLesson } from './doodle'
 
 export interface Preset {

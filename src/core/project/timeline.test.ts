@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
-import { audioGraph } from './audio'
+import { audioGraph } from '@/core/media/audio'
 import { parseProject, starterProject, type Project } from './project'
-import { toSrt } from './srt'
+import { toSrt } from '@/core/media/srt'
 import { resolveTimeline } from './timeline'
 
 export const proj = (scenes: { id: string; minSeconds: number; caption?: string }[]): Project =>

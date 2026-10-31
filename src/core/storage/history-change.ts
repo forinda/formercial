@@ -1,6 +1,6 @@
 // What changed between two versions of a project, in words. The same two
 // projects always give the same answer: history shows this beside each step.
-import type { Project } from './project'
+import type { Project } from '@/core/project/project'
 
 export type Change = {
   text: string

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { TRANSITIONS } from '@/core/project'
+import { TRANSITIONS } from '@/core/project/project'
 import { defaultSeconds, transitionEffect } from './transitions'
 
 const W = 1920

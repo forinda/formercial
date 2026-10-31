@@ -1,5 +1,5 @@
 import { HttpException, Service } from '@forinda/kickjs'
-import { searchIcons } from '@/core/icons'
+import { searchIcons } from '@/core/assets/icons'
 
 @Service()
 export class SearchIconsUseCase {

@@ -1,6 +1,6 @@
 import { memoryStorage } from '@forinda/kickjs-storage'
 import { describe, expect, test } from 'vitest'
-import { starterProject } from './project'
+import { starterProject } from '@/core/project/project'
 import { PathError, StaleWriteError, createWorkspace } from './workspace'
 
 const ws = () => createWorkspace(memoryStorage())

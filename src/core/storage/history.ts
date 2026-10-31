@@ -15,7 +15,7 @@ import { createDbClient, migrateLatest } from '@forinda/kickjs-db'
 import { sqliteAdapter, sqliteDialect } from '@forinda/kickjs-db/sqlite'
 import * as schema from '@/db/schema'
 import { describeChange } from './history-change'
-import { parseProject, type Project } from './project'
+import { parseProject, type Project } from '@/core/project/project'
 
 /** Saves of one edit this close together are one step, so undo isn't a keystroke at a time. */
 const MERGE_WITHIN_MS = 30_000

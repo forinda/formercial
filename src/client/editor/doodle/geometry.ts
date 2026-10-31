@@ -1,6 +1,6 @@
 // The drawing board's sums: turning pointer movements, shapes, parts and imported
 // SVGs into the paths a doodle block stores. No DOM here except for reading an SVG.
-import type { Block } from '@/core/project'
+import type { Block } from '@/core/project/project'
 
 export type DoodleItem = Extract<Block, { type: 'doodle' }>['strokes'][number]
 export type Point = { x: number; y: number }

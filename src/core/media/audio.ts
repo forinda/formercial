@@ -1,7 +1,7 @@
 // The ffmpeg filter graph for the soundtrack. Input 0 is the picture, inputs
 // 1..n are the scene clips in `inputs` order, and the music (if any) is at
 // `music.input`. The graph ends in [aout].
-import type { Timeline } from './timeline'
+import type { Timeline } from '@/core/project/timeline'
 
 export function audioGraph(
   timeline: Timeline,

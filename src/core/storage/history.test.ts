@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest'
 import { memoryStorage } from '@forinda/kickjs-storage'
 import { describeChange } from './history-change'
 import { createHistory, historyFileFor } from './history'
-import { parseProject, starterProject, type Project } from './project'
+import { parseProject, starterProject, type Project } from '@/core/project/project'
 import { createWorkspace } from './workspace'
 
 const scene = (id: string, caption = id) => ({

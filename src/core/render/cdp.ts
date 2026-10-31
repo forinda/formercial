@@ -4,7 +4,7 @@ import { spawn } from 'node:child_process'
 import { existsSync, readdirSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
-import { runInBackground } from '@/core/media'
+import { runInBackground } from '@/core/media/media'
 
 /** CHROME, else the newest Playwright headless shell in its cache. */
 export function findChrome(): string | null {

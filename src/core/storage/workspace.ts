@@ -3,7 +3,7 @@
 import { createHash } from 'node:crypto'
 import { checkKey, type Body, type FileInfo, type Storage } from '@forinda/kickjs-storage'
 import type { History } from './history'
-import { SLUG, parseProject, type Project } from './project'
+import { SLUG, parseProject, type Project } from '@/core/project/project'
 
 export class StaleWriteError extends Error {
   constructor(readonly current: string) {

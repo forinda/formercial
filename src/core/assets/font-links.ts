@@ -2,8 +2,8 @@
 import { lookup } from 'node:dns/promises'
 import { BlockList, isIP } from 'node:net'
 import { fontSlug, recordFonts, stalled, UA, type FontKind } from './fonts'
-import { FONT_FAMILY as FAMILY } from './project'
-import type { Workspace } from './workspace'
+import { FONT_FAMILY as FAMILY } from '@/core/project/project'
+import type { Workspace } from '@/core/storage/workspace'
 
 // A link to a stylesheet or a font file, from any host. It's downloaded once, like
 // a Google font, so the project never depends on that host at render time.

@@ -10,7 +10,7 @@ import {
 } from '@forinda/kickjs'
 import { McpTool } from '@forinda/kickjs-mcp'
 import { z } from 'zod'
-import { SLUG, type Project } from '@/core/project'
+import { SLUG, type Project } from '@/core/project/project'
 import { Studio } from '../services/studio.service'
 import { CreateProjectUseCase } from '../use-cases/create-project.use-case'
 import { GetProjectUseCase } from '../use-cases/get-project.use-case'

@@ -1,5 +1,5 @@
-import type { Format, Project } from '@/core/project'
-import type { Timeline } from '@/core/timeline'
+import type { Format, Project } from '@/core/project/project'
+import type { Timeline } from '@/core/project/timeline'
 import type { Check } from '@/core/voice/provider'
 
 export interface RenderJob {

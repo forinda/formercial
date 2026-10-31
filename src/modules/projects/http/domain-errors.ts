@@ -1,8 +1,8 @@
 // Core stays free of HTTP (some of it runs in the browser), so its errors become
 // HTTP answers here, once, for every route.
 import { HttpException, ProblemException } from '@forinda/kickjs'
-import { ProjectError } from '@/core/project'
-import { PathError, StaleWriteError } from '@/core/workspace'
+import { ProjectError } from '@/core/project/project'
+import { PathError, StaleWriteError } from '@/core/storage/workspace'
 
 function toHttpException(err: unknown): unknown {
   if (err instanceof PathError) return HttpException.badRequest(err.message)

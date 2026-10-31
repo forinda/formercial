@@ -1,6 +1,6 @@
 // Renders run one at a time, in order. Each job reports progress through
 // `onChange` (the events stream).
-import type { Format } from '@/core/project'
+import type { Format } from '@/core/project/project'
 import type { RenderProgress } from '@/core/render/driver'
 
 export type JobState = 'queued' | 'running' | 'done' | 'failed'

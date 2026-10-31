@@ -1,9 +1,9 @@
 // @vitest-environment happy-dom
 import { memoryStorage } from '@forinda/kickjs-storage'
 import { describe, expect, test, vi } from 'vitest'
-import { createWorkspace } from '@/core/workspace'
-import { parseProject, TRANSITIONS, type Block, type Project } from '@/core/project'
-import { resolveTimeline } from '@/core/timeline'
+import { createWorkspace } from '@/core/storage/workspace'
+import { parseProject, TRANSITIONS, type Block, type Project } from '@/core/project/project'
+import { resolveTimeline } from '@/core/project/timeline'
 import { createPlayer, sceneNeeds } from '@/player/player'
 import { PRESETS, fromPreset, storePresetFonts } from './index'
 

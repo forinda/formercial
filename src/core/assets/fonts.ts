@@ -1,8 +1,8 @@
 // Theme fonts live in the project (media/fonts/), so a render looks the same
 // offline and on any machine. Picking a Google Fonts family downloads its
 // latin files once.
-import { FONT_FAMILY as FAMILY, type Theme } from './project'
-import type { Workspace } from './workspace'
+import { FONT_FAMILY as FAMILY, type Theme } from '@/core/project/project'
+import type { Workspace } from '@/core/storage/workspace'
 
 // A modern browser agent: the css2 API answers it with woff2.
 export const UA =
