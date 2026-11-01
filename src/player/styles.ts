@@ -100,7 +100,7 @@ export const SCENE_CSS = `
 .text { font-size: calc(1.8 * var(--u)); color: var(--muted); margin: 0; max-width: 70ch }
 .code, .term, .tree { font-family: var(--mono); font-size: calc(1.3 * var(--u)); line-height: 1.55; background: var(--box); border: 1px solid var(--line); border-radius: 4px; padding: calc(1.6 * var(--u)) calc(2 * var(--u)); margin: 0; white-space: pre; overflow: hidden; font-variant-ligatures: none }
 .label { display: block; font-size: calc(1.05 * var(--u)); color: var(--muted); letter-spacing: .08em; text-transform: uppercase; margin-bottom: calc(.8 * var(--u)) }
-.editor { --ed-line: 1.55em; font-variant-ligatures: none; font-family: var(--mono); font-size: calc(1.5 * var(--u)); background: #1e1e1e; color: #d4d4d4; border-radius: 10px; overflow: hidden; box-shadow: 0 calc(.8 * var(--u)) calc(2.4 * var(--u)) rgb(0 0 0 / .3) }
+.editor { --ed-line: 1.55em; font-variant-ligatures: none; font-family: var(--mono); font-size: calc(2.2 * var(--u)); background: #1e1e1e; color: #d4d4d4; border-radius: 10px; overflow: hidden; box-shadow: 0 calc(.8 * var(--u)) calc(2.4 * var(--u)) rgb(0 0 0 / .3) }
 .ed-tabs { background: #252526; display: flex; font-size: .8em }
 .ed-tab { background: #1e1e1e; color: #fff; padding: .7em 1.6em; border-top: 2px solid #007acc }
 .ed-view { --ed-line: 1.55em; position: relative; overflow: hidden }
