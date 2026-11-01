@@ -48,19 +48,19 @@ That renders the first 10 seconds to `projects/kickjs-db/renders/`. Leave out `-
 
 ## Make your own
 
-Start blank, or from a preset. Presets are full commercials that use every block and transition, so you can keep what suits you and delete the rest:
+Start blank, or from a preset. The showcase tours every feature, so you can keep what suits you and delete the rest. Each lesson teaches one thing, using the [lesson pattern](./teaching-videos), so you can reword it for your own topic:
 
-| Preset | What it shows |
+| Preset | What it is |
 |---|---|
 | `showcase` | Everything: every block, every code language, stamps that come and go, a silent scene, a scene with no caption, and a custom scene. Each caption says what the scene shows. |
-| `doodle-light-bulb` | A hand-drawn lesson on current and resistance, and why a bulb glows. See [Doodle videos](./doodles). |
-| `typescript-intro` | Types on variables, a mistake `tsc` catches and its fix, an interface, what to learn next |
-| `javascript-basics` | `const` and `let`, `console.log` and its output, changing a `const` and fixing it |
-| `python-basics` | Hello world, then a dictionary: create, read, add and loop over it, and handle a missing key |
+| `doodle-light-bulb` | A hand-drawn lesson on why a bulb glows. See [Doodle videos](./doodles). |
+| `typescript-types` | A lesson on using types to catch a real bug before the code runs |
+| `javascript-const-let` | A lesson on choosing between `const` and `let` |
+| `python-objects` | A lesson that mixes doodles and code: what an object is, drawn in plain words, then a wallet class |
 
 ```bash
 pnpm kick formercial new "My Product"
-pnpm kick formercial new "Learn TypeScript" --preset typescript-intro
+pnpm kick formercial new "Learn TypeScript" --preset typescript-types
 ```
 
 Creating a project from a preset downloads its fonts from Google Fonts into the project, so it looks the same on any machine. If that fails, the project is still made, and you can press **Download** under **Project → Fonts** later.

@@ -32,12 +32,13 @@ pnpm install
 pnpm dev                                   # the editor, at the address it prints
 pnpm kick formercial drivers               # what can render here
 pnpm kick formercial render kickjs-db      # render the example
-pnpm kick formercial new "Learn TypeScript" --preset typescript-intro   # or javascript-basics, python-basics
+pnpm kick formercial new "Learn TypeScript" --preset typescript-types   # or javascript-const-let, python-objects
 ```
 
 ## What's in it
 
 - **Doodles:** whiteboard drawings that draw themselves, for short lessons, with a full template to start from.
+- **A guide to teaching:** a lesson pattern based on research into how adults learn, with the steps to build it. See [Making teaching videos](https://forinda.github.io/formercial/guide/teaching-videos).
 - **Scenes from blocks or code:** headlines, code that types itself, terminals, file trees, cards and end cards, or your own HTML, CSS and `draw(t, ctx)`.
 - **Voice:** generated per line, or recorded in the browser. Scenes last as long as their lines.
 - **Preview is the render:** both run the same player, frame for frame.
@@ -50,6 +51,7 @@ pnpm kick formercial new "Learn TypeScript" --preset typescript-intro   # or jav
 
 - [Getting started](https://forinda.github.io/formercial/guide/getting-started)
 - [Making a commercial](https://forinda.github.io/formercial/guide/making-a-commercial)
+- [Making teaching videos](https://forinda.github.io/formercial/guide/teaching-videos)
 - [Custom scenes](https://forinda.github.io/formercial/guide/custom-scenes)
 - [Command line](https://forinda.github.io/formercial/guide/command-line)
 - [Agents (MCP)](https://forinda.github.io/formercial/guide/agents)
