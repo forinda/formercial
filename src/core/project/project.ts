@@ -69,6 +69,163 @@ export const DoodleTallSchema = z.strictObject({
   strokes: DoodleStrokesSchema,
 })
 
+// A 3D scene as plain data: things to place, and a timeline of what they do.
+const vec3 = z.tuple([z.number(), z.number(), z.number()])
+const hex = z.string().regex(/^#[0-9a-fA-F]{3,8}$/)
+const actorBase = {
+  id: z
+    .string()
+    .regex(/^[A-Za-z0-9][A-Za-z0-9_-]{0,62}$/)
+    // The timeline uses this name for the camera itself.
+    .refine((id) => id !== 'camera', '"camera" is reserved for the camera'),
+  position: vec3.default([0, 0, 0]),
+  /** Degrees around the vertical axis. */
+  rotate: z.number().default(0),
+  scale: z.number().positive().default(1),
+  hidden: z.boolean().default(false),
+}
+const surface = {
+  color: hex.default('#c8c8c8'),
+  rough: z.number().min(0).max(1).default(0.75),
+  metal: z.number().min(0).max(1).default(0),
+  /** A glossy top coat, for paint and glass. */
+  coat: z.number().min(0).max(1).default(0),
+  /** How strongly it lights itself. */
+  glow: z.number().min(0).default(0),
+}
+const positive = z.number().positive()
+const ActorSchema = z.discriminatedUnion('kind', [
+  z.strictObject({
+    ...actorBase,
+    ...surface,
+    kind: z.literal('box'),
+    size: z.tuple([positive, positive, positive]),
+  }),
+  z.strictObject({
+    ...actorBase,
+    ...surface,
+    kind: z.literal('cylinder'),
+    radius: positive,
+    height: positive,
+  }),
+  z.strictObject({
+    ...actorBase,
+    ...surface,
+    kind: z.literal('cone'),
+    radius: positive,
+    height: positive,
+  }),
+  z.strictObject({ ...actorBase, ...surface, kind: z.literal('sphere'), radius: positive }),
+  z.strictObject({ ...actorBase, ...surface, kind: z.literal('disc'), radius: positive }),
+  z.strictObject({
+    ...actorBase,
+    ...surface,
+    kind: z.literal('lathe'),
+    /** [radius, height] points, spun around the vertical axis: bottles, cans, vases. */
+    profile: z
+      .array(z.tuple([z.number().min(0), z.number()]))
+      .min(2)
+      .max(200),
+    /** A printed label that wraps around it. */
+    label: z
+      .strictObject({
+        text: z.string().min(1),
+        sub: z.string().optional(),
+        y: z.number(),
+        height: positive,
+        paper: hex.default('#f5ecd9'),
+        ink: hex.default('#4b2412'),
+      })
+      .optional(),
+  }),
+  z.strictObject({
+    ...actorBase,
+    kind: z.literal('road'),
+    length: positive.max(1000).default(90),
+    width: positive.max(1000).default(6),
+  }),
+  z.strictObject({
+    ...actorBase,
+    kind: z.literal('building'),
+    label: z.string().default(''),
+    color: hex.default('#e8e0cc'),
+    roof: hex.default('#8c5a2e'),
+  }),
+  z.strictObject({ ...actorBase, kind: z.literal('car'), color: hex.default('#c8211f') }),
+  z.strictObject({
+    ...actorBase,
+    kind: z.literal('person'),
+    shirt: hex.default('#2c6fb0'),
+    trousers: hex.default('#20242e'),
+    skin: hex.default('#8d5a3b'),
+    hair: hex.default('#1c1412'),
+  }),
+  z.strictObject({ ...actorBase, kind: z.literal('tree') }),
+  z.strictObject({ ...actorBase, kind: z.literal('lamp') }),
+  z.strictObject({
+    ...actorBase,
+    kind: z.literal('model'),
+    /** A self-contained .glb file in the project, with any animation clips it holds. */
+    path: z
+      .string()
+      .regex(/^media\/[\w./-]+\.glb$/)
+      .refine((p) => !p.includes('..'), 'a model path stays inside media/'),
+  }),
+])
+const Stage3dActionSchema = z.strictObject({
+  /** Seconds into the block. */
+  at: z.number().min(0),
+  /** An actor's id, or "camera". */
+  actor: z.string().min(1),
+  seconds: z.number().min(0).default(0),
+  ease: z.enum(['linear', 'in', 'out', 'inout']).default('inout'),
+  /** Go here over `seconds`. A person walks there, facing the way they go. */
+  move: vec3.optional(),
+  /** Turn to this many degrees. */
+  rotate: z.number().optional(),
+  scale: positive.optional(),
+  /** Open a building's or car's door: 0 shut, 1 open. */
+  open: z.number().min(0).max(1).optional(),
+  show: z.boolean().optional(),
+  /** Play an animation: walk, stand or dance for a person, or a clip's name in a model. */
+  clip: z.string().min(1).optional(),
+  /** Clip speed: 0.5 is half speed. A walk matches its move by default. */
+  speed: positive.optional(),
+  /** On a move: false keeps the actor facing the way it already was. */
+  face: z.boolean().optional(),
+  /** For the camera: what it looks at. */
+  target: vec3.optional(),
+  /** For the camera: how much of the world fits, or its lens angle. */
+  size: positive.optional(),
+  fov: positive.optional(),
+})
+// Limits, so a project from someone else can't hang the browser that opens it.
+export const Stage3dActorsSchema = z.array(ActorSchema).max(500)
+export const Stage3dTimelineSchema = z.array(Stage3dActionSchema).max(5000)
+export const Stage3dCameraSchema = z.strictObject({
+  /** Isometric keeps things flat and parallel; perspective is like a real lens. */
+  view: z.enum(['isometric', 'perspective']).default('isometric'),
+  position: vec3.default([21, 21, 25]),
+  target: vec3.default([0, 1, 0]),
+  /** Isometric: how many world units tall the 16:9 picture is. */
+  size: positive.default(15),
+  /** Perspective: the lens angle at 16:9, in degrees. */
+  fov: positive.default(30),
+  /** How much closer to get in 9:16, where keeping the full width leaves subjects small. */
+  tallZoom: positive.default(1),
+})
+export const Stage3dWorldSchema = z.strictObject({
+  light: z.enum(['day', 'night', 'studio']).default('day'),
+  background: hex.default('#9cc488'),
+  /** A vertical fade, top to bottom, instead of the background color. */
+  gradient: z.tuple([hex, hex]).optional(),
+  /** Color of a floor at height 0; leave it out for no floor. */
+  floor: hex.optional(),
+  exposure: positive.default(1),
+  /** How far from the target shadows reach, in world units. */
+  shadowReach: positive.default(24),
+})
+
 const BlockSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('eyebrow'), at, text: z.string() }),
   z.object({ type: z.literal('headline'), at, text: z.string(), accent: z.string().optional() }),
@@ -144,6 +301,14 @@ const BlockSchema = z.discriminatedUnion('type', [
     strokes: DoodleStrokesSchema,
     /** A separate drawing for 9:16: wide art is tiny in a tall frame. */
     tall: DoodleTallSchema.optional(),
+  }),
+  z.object({
+    type: z.literal('stage3d'),
+    at,
+    camera: Stage3dCameraSchema.prefault({}),
+    world: Stage3dWorldSchema.prefault({}),
+    actors: Stage3dActorsSchema,
+    timeline: Stage3dTimelineSchema.default([]),
   }),
 ])
 
@@ -221,6 +386,26 @@ const ThemeSchema = z.object({
   logo: z.string().optional(),
 })
 
+// A rough vertex count for what a project's 3D scenes would build. Each limit above
+// is fine alone, but together they could still crash the tab that opens a shared
+// project, so the total has a budget. Real scenes come nowhere near it.
+const STAGE3D_BUDGET = 5_000_000
+export const LATHE_MAX_SAMPLES = 512
+/** Textures and canvases cost memory too, so they count as this many vertices. */
+const LABEL_COST = 20_000
+const STAGE_COST = 50_000
+function actorCost(a: z.output<typeof ActorSchema>) {
+  if (a.kind === 'lathe') {
+    const label = a.label ? LABEL_COST : 0
+    return Math.min(a.profile.length * 12, LATHE_MAX_SAMPLES) * 129 + label
+  }
+  if (a.kind === 'road') return Math.max(2_000, Math.ceil(a.length / 4) * 24)
+  if (a.kind === 'person') return 10_000
+  if (a.kind === 'building') return 5_000 + (a.label ? LABEL_COST : 0)
+  if (a.kind === 'car') return 5_000
+  return 2_000
+}
+
 export const ProjectSchema = z
   .object({
     version: z.literal(1),
@@ -252,6 +437,17 @@ export const ProjectSchema = z
       }
       seen.add(s.id)
     })
+    const cost = p.scenes
+      .flatMap((s) => (s.kind === 'blocks' ? s.blocks : []))
+      .filter((b) => b.type === 'stage3d')
+      .reduce((total, b) => b.actors.reduce((sum, a) => sum + actorCost(a), total + STAGE_COST), 0)
+    if (cost > STAGE3D_BUDGET) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['scenes'],
+        message: `the 3D scenes are too large to draw: about ${cost} vertices, over the limit of ${STAGE3D_BUDGET}`,
+      })
+    }
   })
   .transform((p) => ({
     ...p,

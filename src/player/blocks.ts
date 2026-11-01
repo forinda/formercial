@@ -3,6 +3,7 @@
 // draws the same frame.
 import type { Block, Format, Theme } from '@/core/project/project'
 import { esc, highlight, terminal } from './highlight'
+import { stage3dLength } from './stage3d/timeline'
 
 export type BlockCtx = {
   theme: Theme
@@ -12,11 +13,16 @@ export type BlockCtx = {
   fileUrl(path: string): string
   /** Hold the first frame until this image is ready; a missing one fails the render. */
   load(path: string, img: HTMLImageElement): void
+  /** Hold the first frame until this work is done; a failure fails the render, under `name`. */
+  wait(name: string, work: Promise<void>): void
+  onDestroy(fn: () => void): void
 }
 type Of<T extends Block['type']> = Extract<Block, { type: T }>
 export interface BlockDef<B extends Block> {
   needs(b: B): number
   mount(root: HTMLElement, b: B, ctx: BlockCtx): (local: number) => void
+  /** Fills the whole scene behind the other blocks, instead of taking a place in the stack. */
+  bleed?: true
 }
 
 const REVEAL = 0.4
@@ -357,6 +363,32 @@ export const BLOCKS: { [T in Block['type']]: BlockDef<Of<T>> } = {
           const { x, y } = tip as { x: number; y: number }
           pen.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)})`)
         }
+      }
+    },
+  },
+  stage3d: {
+    bleed: true,
+    needs: (b) => (b.at ?? 0) + stage3dLength(b),
+    mount(root, b, ctx) {
+      const canvas = document.createElement('canvas')
+      canvas.className = 'stage3d'
+      canvas.width = ctx.width
+      canvas.height = ctx.height
+      root.append(canvas)
+      let paint: ((seconds: number) => void) | undefined
+      // Loaded on demand: 3D is a large library that most projects never use.
+      ctx.wait(
+        'stage3d',
+        import('./stage3d/stage').then(async ({ mountStage }) => {
+          paint = await mountStage(canvas, b, ctx)
+        }),
+      )
+      return (local) => {
+        canvas.style.visibility = local < (b.at ?? 0) ? 'hidden' : 'visible'
+        // Hidden scenes draw too, to stay in step, but a 3D frame costs real GPU time.
+        const scene = (root.getRootNode() as ShadowRoot).host as HTMLElement | undefined
+        if (scene?.style.visibility === 'hidden') return
+        paint?.(Math.max(0, local - (b.at ?? 0)))
       }
     },
   },
