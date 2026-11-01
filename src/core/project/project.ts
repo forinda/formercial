@@ -387,11 +387,18 @@ const ThemeSchema = z.object({
 // project, so the total has a budget. Real scenes come nowhere near it.
 const STAGE3D_BUDGET = 5_000_000
 export const LATHE_MAX_SAMPLES = 512
+/** Textures and canvases cost memory too, so they count as this many vertices. */
+const LABEL_COST = 20_000
+const STAGE_COST = 50_000
 function actorCost(a: z.output<typeof ActorSchema>) {
-  if (a.kind === 'lathe') return Math.min(a.profile.length * 12, LATHE_MAX_SAMPLES) * 129
-  if (a.kind === 'road') return Math.ceil(a.length / 4) * 24
+  if (a.kind === 'lathe') {
+    const label = a.label ? LABEL_COST : 0
+    return Math.min(a.profile.length * 12, LATHE_MAX_SAMPLES) * 129 + label
+  }
+  if (a.kind === 'road') return Math.max(2_000, Math.ceil(a.length / 4) * 24)
   if (a.kind === 'person') return 10_000
-  if (a.kind === 'car' || a.kind === 'building') return 5_000
+  if (a.kind === 'building') return 5_000 + (a.label ? LABEL_COST : 0)
+  if (a.kind === 'car') return 5_000
   return 2_000
 }
 
@@ -428,8 +435,8 @@ export const ProjectSchema = z
     })
     const cost = p.scenes
       .flatMap((s) => (s.kind === 'blocks' ? s.blocks : []))
-      .flatMap((b) => (b.type === 'stage3d' ? b.actors : []))
-      .reduce((total, actor) => total + actorCost(actor), 0)
+      .filter((b) => b.type === 'stage3d')
+      .reduce((total, b) => b.actors.reduce((sum, a) => sum + actorCost(a), total + STAGE_COST), 0)
     if (cost > STAGE3D_BUDGET) {
       ctx.addIssue({
         code: 'custom',

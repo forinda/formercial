@@ -195,11 +195,12 @@ describe('stage3d timeline', () => {
       id: `l${i}`,
       profile: Array.from({ length: 200 }, () => [1, 1]),
     })
-    expect(() => block(Array.from({ length: 75 }, (_, i) => spin(i)))).not.toThrow()
-    expect(() => block(Array.from({ length: 76 }, (_, i) => spin(i)))).toThrow(/too large/)
+    expect(() => block(Array.from({ length: 74 }, (_, i) => spin(i)))).not.toThrow()
+    expect(() => block(Array.from({ length: 75 }, (_, i) => spin(i)))).toThrow(/too large/)
     const people = (n: number) =>
       Array.from({ length: n }, (_, i) => ({ kind: 'person', id: `p${i}` }))
-    expect(() => block(people(500))).not.toThrow()
+    expect(() => block(people(490))).not.toThrow()
+    expect(() => block(people(500))).toThrow(/too large/)
   })
 
   test('refuses a misspelled field, so a mistake is not silently ignored', () => {

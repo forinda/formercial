@@ -478,8 +478,11 @@ export async function mountStage(canvas: HTMLCanvasElement, b: Stage3d, ctx: Blo
     scene.traverse((o) => {
       const m = o as THREE.Mesh
       m.geometry?.dispose()
-      for (const material of [m.material].flat())
-        (material as THREE.Material | undefined)?.dispose()
+      for (const material of [m.material].flat()) {
+        ;(material as THREE.MeshStandardMaterial | undefined)?.map?.dispose()
+        ;(material as THREE.Material | undefined)?.dispose()
+      }
+      ;(o as THREE.DirectionalLight).shadow?.dispose()
     })
     scene.environment?.dispose()
     if (scene.background instanceof THREE.Texture) scene.background.dispose()
