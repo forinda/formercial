@@ -82,6 +82,7 @@ export function createPlayer(
   const errors = new Map<string, Error>()
   const lockedScenes: string[] = []
   const loading: Promise<void>[] = []
+  const cleanups: (() => void)[] = []
   const ctx: BlockCtx = {
     theme: project.theme,
     format,
@@ -94,6 +95,16 @@ export function createPlayer(
           errors.set(path, new Error(`can't load ${path}`))
         }),
       )
+    },
+    wait(name, work) {
+      loading.push(
+        work.catch((err: unknown) => {
+          errors.set(name, err instanceof Error ? err : new Error(String(err)))
+        }),
+      )
+    },
+    onDestroy(fn) {
+      cleanups.push(fn)
     },
   }
   const byId = new Map(project.scenes.map((s) => [s.id, s]))
@@ -132,8 +143,10 @@ export function createPlayer(
               c: BlockCtx,
             ) => (l: number) => void
           )(wrap, block, ctx)
+          // A full-bleed block fills the scene, so it doesn't lift in like the others.
+          const still = 'bleed' in BLOCKS[block.type]
           return (local: number) => {
-            reveal(wrap, local - (block.at ?? 0))
+            if (!still) reveal(wrap, local - (block.at ?? 0))
             paint(local)
           }
         } catch (err) {
@@ -280,6 +293,7 @@ export function createPlayer(
     locked: lockedScenes,
     loaded: () => Promise.all(loading).then(() => {}),
     destroy() {
+      cleanups.forEach((fn) => fn())
       stage.remove()
       style.remove()
     },

@@ -68,7 +68,13 @@ function SceneThumb(props: {
       fileUrl: (path) => fileUrl(props.slug, path),
     })
     player.frame(timeline.total * 0.8)
-    return () => player.destroy()
+    // 3D scenes load on demand: draw once more when they're ready.
+    let live = true
+    void player.loaded().then(() => live && player.frame(timeline.total * 0.8))
+    return () => {
+      live = false
+      player.destroy()
+    }
     // Only what this picture shows: typing in another scene leaves it alone.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scene, clip, format, trusted, project.theme])
@@ -226,7 +232,12 @@ export function Preview(props: {
       trusted: props.trusted,
       fileUrl: (path) => fileUrl(props.slug, path),
     })
-    player.current.frame(Math.min(tRef.current, timeline.total))
+    const opened = player.current
+    opened.frame(Math.min(tRef.current, timeline.total))
+    // 3D scenes load on demand: draw once more when they're ready.
+    void opened.loaded().then(() => {
+      if (player.current === opened) opened.frame(Math.min(tRef.current, timeline.total))
+    })
     return () => player.current?.destroy()
   }, [project, timeline, format, props.trusted, wide])
 

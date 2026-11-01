@@ -28,6 +28,7 @@ const BLOCK_TYPES: Record<Block['type'], true> = {
   icon: true,
   end: true,
   doodle: true,
+  stage3d: true,
 }
 const LANGS = ['ts', 'js', 'py', 'sql', 'json', 'plain']
 
@@ -177,8 +178,11 @@ describe('presets', () => {
     const project = PRESETS.find((p) => p.id === 'showcase')!.project
     const blocks = blocksOf(project)
 
-    test('uses every block type, except icons, which are files a project downloads', () => {
-      const wanted = Object.keys(BLOCK_TYPES).filter((type) => type !== 'icon')
+    test('uses every block type, except icons and 3D', () => {
+      // Icons are files a project downloads, and 3D needs a GPU, which tests don't have.
+      const wanted = Object.keys(BLOCK_TYPES).filter(
+        (type) => type !== 'icon' && type !== 'stage3d',
+      )
       expect(new Set(blocks.map((b) => b.type))).toEqual(new Set(wanted))
     })
 

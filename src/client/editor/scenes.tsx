@@ -31,6 +31,10 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type { z } from 'zod'
 import {
   DoodleStrokesSchema,
+  Stage3dActorsSchema,
+  Stage3dCameraSchema,
+  Stage3dTimelineSchema,
+  Stage3dWorldSchema,
   DoodleTallSchema,
   TRANSITIONS,
   type Block,
@@ -166,6 +170,37 @@ const BLANK: { [T in Block['type']]: Extract<Block, { type: T }> } = {
         fillOpacity: 1,
       },
       { text: 'Your label', x: 300, y: 600, size: 72, tone: 'accent', seconds: 1 },
+    ],
+  },
+  stage3d: {
+    type: 'stage3d',
+    camera: {
+      view: 'isometric',
+      position: [21, 21, 25],
+      target: [0, 1, 0],
+      size: 15,
+      fov: 30,
+      tallZoom: 1,
+    },
+    world: { light: 'day', background: '#9cc488', floor: '#93c07a', exposure: 1, shadowReach: 24 },
+    actors: [
+      {
+        kind: 'person',
+        id: 'amina',
+        position: [-6, 0, 0],
+        rotate: 0,
+        scale: 1.3,
+        hidden: false,
+        shirt: '#2c6fb0',
+        trousers: '#20242e',
+        skin: '#8d5a3b',
+        hair: '#1c1412',
+      },
+      { kind: 'tree', id: 'tree', position: [4, 0, -3], rotate: 0, scale: 1, hidden: false },
+    ],
+    timeline: [
+      { at: 0, actor: 'amina', seconds: 4, ease: 'linear', move: [2, 0, 1] },
+      { at: 4, actor: 'amina', seconds: 0, ease: 'inout', clip: 'dance' },
     ],
   },
   end: {
@@ -598,6 +633,40 @@ function BlockForm({
             {number('at', 'Appears at (s)')}
           </div>
         </>
+      )
+    case 'stage3d':
+      return (
+        <div className="grid gap-2.5">
+          <JsonField
+            id={`${id}-actors`}
+            label="Actors: what's in the scene, with a kind, an id and a position"
+            value={block.actors}
+            schema={Stage3dActorsSchema}
+            onChange={(actors) => set({ actors })}
+          />
+          <JsonField
+            id={`${id}-timeline`}
+            label="Timeline: at, actor, then what happens, like move, clip or open"
+            value={block.timeline}
+            schema={Stage3dTimelineSchema}
+            onChange={(timeline) => set({ timeline })}
+          />
+          <JsonField
+            id={`${id}-camera`}
+            label="Camera: view, position, target, size"
+            value={block.camera}
+            schema={Stage3dCameraSchema}
+            onChange={(camera) => set({ camera })}
+          />
+          <JsonField
+            id={`${id}-world`}
+            label="World: light, background, floor"
+            value={block.world}
+            schema={Stage3dWorldSchema}
+            onChange={(world) => set({ world })}
+          />
+          {number('at', 'Starts at (s)')}
+        </div>
       )
     case 'doodle':
       return (

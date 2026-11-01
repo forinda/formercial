@@ -19,6 +19,7 @@ const TYPES: Record<string, string> = {
   jpeg: 'image/jpeg',
   webp: 'image/webp',
   woff2: 'font/woff2',
+  glb: 'model/gltf-binary',
   txt: 'text/plain; charset=utf-8',
 }
 const typeOf = (path: string) =>
