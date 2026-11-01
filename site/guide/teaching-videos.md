@@ -13,7 +13,7 @@ Plan each video around one concept, with these parts in order:
 | **Try it first** | A small task, before any explanation | Trying first prepares them for the explanation |
 | **Reflect** | "What did you notice?" | Connects the task to what they already know |
 | **The idea** | The explanation, in short sections | The rule makes sense because they've met the problem |
-| **Challenge** | A new problem, in their own context | They apply the idea without your help |
+| **Challenge** | A new problem, in their own context, with a cue to pause | They apply the idea without your help, before they see the answer |
 | **Check** | The answer, or a way to verify it | They can correct mistakes while the problem is still fresh |
 
 The pattern sets the order, not the words. If every video opens with "Why does this matter to you?" and closes with "Here's your challenge", it starts to sound like a template, and viewers tune out. Keep what each part does, but say it differently each time: "So why draw at all?" does the same job, and sounds like a person talking.
@@ -36,7 +36,7 @@ The pattern sets the order, not the words. If every video opens with "Why does t
    pnpm kick formercial voice my-lesson
    ```
 
-4. **Leave real time for pause moments.** A scene lasts at least as long as its voice, or as long as `minSeconds` if that's longer. So on a "try it first" scene, set `minSeconds` to a few seconds more than the clip. The prompt stays on screen, and viewers have a moment to reach the pause button:
+4. **Leave real time for pause moments.** A scene lasts at least as long as its voice, or as long as `minSeconds` if that's longer. So on a "try it first" or challenge scene, ask viewers to pause, and set `minSeconds` to a few seconds more than the clip. Captions end with the voice, so put the prompt in a block to keep it on screen:
 
    ```json
    {
@@ -45,7 +45,7 @@ The pattern sets the order, not the words. If every video opens with "Why does t
      "minSeconds": 20,
      "caption": "Pause the video, and write down your guess.",
      "spoken": "Pause the video, and write down your guess.",
-     "blocks": [{ "type": "doodle", "strokes": [] }]
+     "blocks": [{ "type": "headline", "text": "Write down your guess." }]
    }
    ```
 
@@ -67,6 +67,7 @@ The pattern sets the order, not the words. If every video opens with "Why does t
 - [ ] Viewers try something before you explain it.
 - [ ] New ideas connect to something they already know.
 - [ ] The challenge is a new problem, not a repeat of your example.
+- [ ] Viewers are told to pause before the answer appears.
 - [ ] Viewers can check their answer straight away.
 - [ ] The recurring moments don't reuse the wording of your other videos.
 - [ ] Chapters let experienced viewers skip ahead.

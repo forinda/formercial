@@ -100,6 +100,12 @@ describe('presets', () => {
           expect(ids.indexOf('check')).toBe(ids.indexOf('challenge') + 1)
         })
 
+        test('tells viewers to pause for the challenge, and leaves time to reach it', () => {
+          const scene = project.scenes.find((s) => s.id === 'challenge')!
+          expect(scene.spoken).toMatch(/pause|stop here/i)
+          expect(scene.minSeconds).toBeGreaterThanOrEqual(secondsToSay(scene.spoken) + 5)
+        })
+
         test('holds the try-it-first scene long enough to reach pause', () => {
           const scene = project.scenes.find((s) => s.id === 'try')!
           expect(scene.minSeconds).toBeGreaterThanOrEqual(secondsToSay(scene.spoken) + 5)

@@ -18,8 +18,10 @@ export interface Preset {
 const scene = (id: string, caption: string, spoken: string, blocks: unknown[], extra = {}) => ({
   id,
   kind: 'blocks',
-  // Long enough to say its line, at about 2.5 words a second.
-  minSeconds: Math.max(6, Math.ceil(spoken.trim().split(/\s+/).length / 2.5 + 1)),
+  // Long enough to say its line, at about 2.5 words a second, and to reach pause on a challenge.
+  minSeconds:
+    Math.max(6, Math.ceil(spoken.trim().split(/\s+/).length / 2.5 + 1)) +
+    (id === 'challenge' ? 6 : 0),
   transition: 'fade',
   caption,
   spoken,
@@ -183,8 +185,8 @@ const typescript = parseProject({
     ),
     scene(
       'challenge',
-      'Your turn. Write discount, taking a price and a percent, with types. Then call it with text, and read the error.',
-      'Your turn. Write discount, taking a price and a percent, with types. Then call it with text, and read the error.',
+      'Your turn. Write discount, taking a price and a percent, with types. Then call it with text, and read the error. Pause now, and try it.',
+      'Your turn. Write discount, taking a price and a percent, with types. Then call it with text, and read the error. Pause now, and try it.',
       [
         { type: 'eyebrow', text: 'Your challenge' },
         { type: 'headline', text: 'discount(price, percent)', accent: 'discount' },
@@ -355,8 +357,8 @@ const javascript = parseProject({
     ),
     scene(
       'challenge',
-      'Over to you. Write a shopping cart: a delivery fee of 5, and a total that adds items of 100, 50 and 25. Choose const or let for each.',
-      'Over to you. Write a shopping cart: a delivery fee of 5, and a total that adds items of 100, 50 and 25. Choose const or let for each.',
+      'Over to you. Write a shopping cart: a delivery fee of 5, and a total that adds items of 100, 50 and 25. Choose const or let for each. Hit pause, and write it.',
+      'Over to you. Write a shopping cart: a delivery fee of 5, and a total that adds items of 100, 50 and 25. Choose const or let for each. Hit pause, and write it.',
       [
         { type: 'eyebrow', text: 'Over to you' },
         { type: 'headline', text: 'Which stays? Which changes?', accent: 'changes?' },
@@ -513,7 +515,7 @@ const python = parseProject({
           lang: 'py',
           label: 'before.py',
           source:
-            'amina_balance = 100\nbrian_balance = 50\n\namina_balance = amina_balance - 30\nbrian_balance = brian_balance - 80',
+            'amina_balance = 100\nbrian_balance = 50\n\namina_balance = amina_balance - 30\nbrian_balance = brian_balance - 80\nprint(amina_balance, brian_balance)',
         },
       ],
       { minSeconds: 15, transition: 'slide' },
@@ -725,7 +727,7 @@ const python = parseProject({
     ),
     drawn(
       'challenge',
-      'Now you try. Add a deposit method to Wallet. Then build a wallet for someone you know, and deposit some money.',
+      'Now you try. Add a deposit method to Wallet. Then build a wallet for someone you know, and deposit some money. Stop here, and write the code.',
       [
         { text: 'Now it is yours', x: 60, y: 110, size: 84, tone: 'accent', seconds: 0.6 },
         walletArt(160, 300),

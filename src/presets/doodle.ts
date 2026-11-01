@@ -636,9 +636,9 @@ export const doodleLesson = parseProject({
     ),
     scene(
       'challenge',
-      "Now apply it. A toaster has wires that glow too. Using today's idea, explain why, in one or two sentences.",
-      "Now apply it. A toaster has wires that glow too. Using today's idea, explain why, in one or two sentences.",
-      10,
+      "Now apply it. A toaster has wires that glow too. Using today's idea, explain why, in one or two sentences. Pause here, and write it down.",
+      "Now apply it. A toaster has wires that glow too. Using today's idea, explain why, in one or two sentences. Pause here, and write it down.",
+      18,
       [
         { text: 'Now apply it', x: 500, y: 120, size: 88, tone: 'accent', seconds: 0.6 },
         { d: 'M520 280 H1080 V600 H520 Z M640 280 V230 M960 280 V230', seconds: 0.8 },
