@@ -313,7 +313,7 @@ export const BLOCKS: { [T in Block['type']]: BlockDef<Of<T>> } = {
       const items = art.strokes.map((item) => {
         if ('d' in item) return { item, stroke: mountStroke({ ink, dots }, item) }
         const label = svg('text', {
-          class: 'doodle-label',
+          class: item.mono ? 'doodle-label doodle-mono' : 'doodle-label',
           x: item.x,
           y: item.y,
           'font-size': item.size,

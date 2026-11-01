@@ -120,6 +120,7 @@ export const SCENE_CSS = `
 .icon img { display: block; width: auto; max-width: 100%; object-fit: contain }
 .doodle { display: block; width: 100%; height: auto; overflow: visible }
 .doodle-label { font-family: var(--display); font-weight: 700 }
+.doodle-mono { font-family: var(--mono); font-weight: 500; white-space: pre; font-variant-ligatures: none }
 .block:has(> .end) { flex: 1; display: flex }
 .end { display: flex; flex-direction: column; gap: calc(2 * var(--u)); align-items: center; justify-content: center; flex: 1; min-width: 0; text-align: center }
 .wordmark { font-family: var(--display); font-weight: 800; font-size: calc(8 * var(--u)); line-height: 1; letter-spacing: -0.03em; margin: 0; white-space: nowrap; max-width: 100%; overflow: hidden; padding: .1em .12em }

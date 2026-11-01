@@ -130,6 +130,7 @@ A label:
 | `text`, `x`, `y`        | The words, and where their left end sits. Labels don't wrap: split long ones. |
 | `size`                  | Default `56`                                                                  |
 | `tone`, `seconds`, `at` | As for a line                                                                 |
+| `mono`                  | `true` draws it in the theme's mono font with ligatures off, for code and commands learners must read exactly. Default `false`. |
 
 ## stage3d
 

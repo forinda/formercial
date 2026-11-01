@@ -285,6 +285,18 @@ describe('doodle block', () => {
     expect(root.querySelector('text')!.textContent).toBe('abcd')
   })
 
+  test('only a mono label gets the mono font', () => {
+    const { host } = mount(
+      doodle([
+        { text: 'note', x: 0, y: 0 },
+        { text: 'git status', x: 0, y: 60, mono: true },
+      ]),
+    )
+    const labels = parts(host).querySelectorAll('text')
+    expect(labels[0].classList.contains('doodle-mono')).toBe(false)
+    expect(labels[1].classList.contains('doodle-mono')).toBe(true)
+  })
+
   test('a fill fades in up to its opacity', () => {
     const { host, player } = mount(
       doodle([{ d: 'M0 0 H10', seconds: 2, fill: 'accent', fillOpacity: 0.5 }]),

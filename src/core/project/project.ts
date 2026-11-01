@@ -55,6 +55,8 @@ const DoodleItemSchema = z.union([
     tone: tone.default('fg'),
     at,
     seconds: z.number().min(0).default(0.8),
+    /** Draw in the theme's mono font, for code and commands learners must read exactly. */
+    mono: z.boolean().optional(),
   }),
 ])
 
