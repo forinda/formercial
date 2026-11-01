@@ -118,7 +118,7 @@ describe('mcp tools', () => {
 
   test('an agent can read the history and put a project back', async () => {
     const { call } = await boot()
-    const made = await call('create_project', { name: 'Hist', preset: 'python-basics' })
+    const made = await call('create_project', { name: 'Hist', preset: 'python-objects' })
     const { slug } = made.json
     const read = await call('get_project', { slug })
     await call('update_project', {
@@ -142,10 +142,10 @@ describe('mcp tools', () => {
 
   test('an agent can start from a preset, read it, and change it', async () => {
     const { call } = await boot()
-    const made = await call('create_project', { name: 'Py Ad', preset: 'python-basics' })
+    const made = await call('create_project', { name: 'Py Ad', preset: 'python-objects' })
     expect(made.isError).toBe(false)
     const read = await call('get_project', { slug: made.json.slug })
-    expect(read.json.project.scenes[0].id).toBe('py-intro')
+    expect(read.json.project.scenes[0].id).toBe('hook')
     const saved = await call('update_project', {
       slug: made.json.slug,
       project: { ...read.json.project, name: 'Renamed' },

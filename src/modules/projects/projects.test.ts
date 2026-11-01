@@ -441,17 +441,17 @@ describe('projects api', () => {
     expect(presets.map((p: { id: string }) => p.id)).toEqual([
       'showcase',
       'doodle-light-bulb',
-      'typescript-intro',
-      'javascript-basics',
-      'python-basics',
+      'typescript-types',
+      'javascript-const-let',
+      'python-objects',
     ])
     const res = await http
       .post('/api/v1/projects')
-      .send({ name: 'Py Ad', preset: 'python-basics' })
+      .send({ name: 'Py Ad', preset: 'python-objects' })
       .expect(201)
     const { project } = (await http.get(`/api/v1/projects/${res.body.slug}`)).body
     expect(project.name).toBe('Py Ad')
-    expect(project.scenes[0].id).toBe('py-intro')
+    expect(project.scenes[0].id).toBe('hook')
     await http.post('/api/v1/projects').send({ name: 'X', preset: 'cobol' }).expect(400)
   })
 })

@@ -13,10 +13,10 @@ pnpm kick formercial new "My Product"
 Creates `projects/my-product/project.json` with one starter scene. The folder name comes from the name: lower case, with anything else turned into `-`.
 
 ```bash
-pnpm kick formercial new "Learn Python" --preset python-basics
+pnpm kick formercial new "Learn Python" --preset python-objects
 ```
 
-`--preset` starts from a [preset](./getting-started#make-your-own) instead: `showcase`, `doodle-light-bulb`, `typescript-intro`, `javascript-basics` or `python-basics`.
+`--preset` starts from a [preset](./getting-started#make-your-own) instead: `showcase`, `doodle-light-bulb`, `typescript-types`, `javascript-const-let` or `python-objects`.
 
 ### voice
 
