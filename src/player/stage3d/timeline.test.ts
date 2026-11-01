@@ -1,6 +1,13 @@
 import { describe, expect, test } from 'vitest'
 import { parseProject } from '@/core/project/project'
-import { stage3dLength, stageAt, stageProblems, WALK_STRIDE, type Stage3d } from './timeline'
+import {
+  clipProblem,
+  stage3dLength,
+  stageAt,
+  stageProblems,
+  WALK_STRIDE,
+  type Stage3d,
+} from './timeline'
 
 /** A block through the real schema, so its defaults are the ones a project gets. */
 function block(actors: unknown[], timeline: unknown[] = [], camera: unknown = {}) {
@@ -201,6 +208,20 @@ describe('stage3d timeline', () => {
       Array.from({ length: n }, (_, i) => ({ kind: 'person', id: `p${i}` }))
     expect(() => block(people(490))).not.toThrow()
     expect(() => block(people(500))).toThrow(/too large/)
+  })
+
+  test('keeps the name camera for the camera', () => {
+    expect(() => block([{ kind: 'box', id: 'camera', size: [1, 1, 1] }])).toThrow(/reserved/)
+  })
+
+  test('names a clip that cannot play', () => {
+    const timeline = block([person], [{ at: 0, actor: 'a', clip: 'moonwalk' }]).timeline
+    expect(clipProblem(timeline, 'a', ['walk', 'stand'])).toBe(
+      '"a" has no clip "moonwalk"; it has walk, stand',
+    )
+    expect(clipProblem(timeline, 'a', [])).toBe('"a" has no clip "moonwalk"; it has no animations')
+    expect(clipProblem(timeline, 'b', [])).toBeUndefined()
+    expect(clipProblem(timeline, 'a', ['moonwalk'])).toBeUndefined()
   })
 
   test('refuses a misspelled field, so a mistake is not silently ignored', () => {

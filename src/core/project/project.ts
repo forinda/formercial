@@ -73,7 +73,11 @@ export const DoodleTallSchema = z.strictObject({
 const vec3 = z.tuple([z.number(), z.number(), z.number()])
 const hex = z.string().regex(/^#[0-9a-fA-F]{3,8}$/)
 const actorBase = {
-  id: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9_-]{0,62}$/),
+  id: z
+    .string()
+    .regex(/^[A-Za-z0-9][A-Za-z0-9_-]{0,62}$/)
+    // The timeline uses this name for the camera itself.
+    .refine((id) => id !== 'camera', '"camera" is reserved for the camera'),
   position: vec3.default([0, 0, 0]),
   /** Degrees around the vertical axis. */
   rotate: z.number().default(0),

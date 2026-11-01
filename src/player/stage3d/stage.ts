@@ -8,7 +8,7 @@ import { LATHE_MAX_SAMPLES } from '@/core/project/project'
 import type { BlockCtx } from '../blocks'
 import { modelMayLoad } from './model-url'
 import { CLIPS, makePerson } from './person'
-import { stageAt, stageProblems, type ActorState, type Stage3d } from './timeline'
+import { clipProblem, stageAt, stageProblems, type ActorState, type Stage3d } from './timeline'
 
 type Actor = Stage3d['actors'][number]
 type Built = { root: THREE.Object3D; update?(s: ActorState): void; mixer?: Animator }
@@ -303,7 +303,6 @@ class Animator {
       this.actions.set(clip.name, action)
     }
   }
-  has = (name: string) => this.actions.has(name)
   names = () => [...this.actions.keys()]
   pose(clip: ActorState['clip']) {
     for (const [name, action] of this.actions) {
@@ -437,6 +436,25 @@ function lightWorld(
   }
 }
 
+/** Frees what a scene holds on the GPU. Disposing a material leaves its textures, so those go too. */
+export function disposeScene(scene: THREE.Scene) {
+  scene.traverse((o) => {
+    const m = o as THREE.SkinnedMesh
+    m.geometry?.dispose()
+    m.skeleton?.dispose()
+    for (const material of [m.material].flat()) {
+      if (!material) continue
+      for (const value of Object.values(material)) {
+        if (value instanceof THREE.Texture) value.dispose()
+      }
+      material.dispose()
+    }
+    ;(o as THREE.DirectionalLight).shadow?.dispose()
+  })
+  scene.environment?.dispose()
+  if (scene.background instanceof THREE.Texture) scene.background.dispose()
+}
+
 /** Builds the scene, and returns what draws it at a time in seconds. */
 export async function mountStage(canvas: HTMLCanvasElement, b: Stage3d, ctx: BlockCtx) {
   const problems = stageProblems(b)
@@ -450,22 +468,21 @@ export async function mountStage(canvas: HTMLCanvasElement, b: Stage3d, ctx: Blo
   const gl = renderer()
   const scene = new THREE.Scene()
   lightWorld(scene, b.world, new THREE.Vector3(...b.camera.target), gl)
-  const built = await Promise.all(
+  // Wait for all of them, so a failed model doesn't leave the others to load unowned.
+  const pieces = await Promise.allSettled(
     b.actors.map(async (a) => {
       const piece = await buildActor(a, ctx)
       scene.add(piece.root)
       return { actor: a, ...piece }
     }),
   )
+  ctx.onDestroy(() => disposeScene(scene))
+  const failed = pieces.find((p) => p.status === 'rejected')
+  if (failed) throw failed.reason
+  const built = pieces.flatMap((p) => (p.status === 'fulfilled' ? [p.value] : []))
   for (const { actor, mixer } of built) {
-    if (!mixer) continue
-    for (const action of b.timeline) {
-      if (action.actor === actor.id && action.clip && !mixer.has(action.clip)) {
-        throw new Error(
-          `3D scene: "${actor.id}" has no clip "${action.clip}"; it has ${mixer.names().join(', ')}`,
-        )
-      }
-    }
+    const problem = clipProblem(b.timeline, actor.id, mixer?.names() ?? [])
+    if (problem) throw new Error(`3D scene: ${problem}`)
   }
   const aspect = ctx.width / ctx.height
   const camera: THREE.OrthographicCamera | THREE.PerspectiveCamera =
@@ -473,20 +490,6 @@ export async function mountStage(canvas: HTMLCanvasElement, b: Stage3d, ctx: Blo
   camera.near = 0.1
   camera.far = 400
   const copy = canvas.getContext('2d')!
-
-  ctx.onDestroy(() => {
-    scene.traverse((o) => {
-      const m = o as THREE.Mesh
-      m.geometry?.dispose()
-      for (const material of [m.material].flat()) {
-        ;(material as THREE.MeshStandardMaterial | undefined)?.map?.dispose()
-        ;(material as THREE.Material | undefined)?.dispose()
-      }
-      ;(o as THREE.DirectionalLight).shadow?.dispose()
-    })
-    scene.environment?.dispose()
-    if (scene.background instanceof THREE.Texture) scene.background.dispose()
-  })
 
   return (seconds: number) => {
     const state = stageAt(b, seconds)

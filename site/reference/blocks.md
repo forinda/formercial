@@ -141,7 +141,7 @@ A 3D scene as data: actors, a timeline, a camera and a world. It fills the whole
 | `timeline` | array | `[]` | What happens: `at`, `actor`, then `move`, `clip`, `open` and so on |
 | `camera` | object | isometric | `view`, `position`, `target`, `size`, `fov`, `tallZoom` |
 | `world` | object | day | `light`, `background`, `gradient`, `floor`, `exposure`, `shadowReach` |
-| `at` | number | `0` | Seconds into the scene that its timeline starts |
+| `at` | number | `0` | Seconds into the scene that it appears and its timeline starts |
 
 ## end
 

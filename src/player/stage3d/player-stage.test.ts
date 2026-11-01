@@ -67,3 +67,23 @@ describe('stage3d in the player', () => {
     player.destroy()
   })
 })
+
+describe('stage3d appearing at a time', () => {
+  test('the canvas is hidden until `at`, and again when seeking back', () => {
+    const late = structuredClone(project)
+    const scene = late.scenes[0]
+    if (scene.kind !== 'blocks') throw new Error('not blocks')
+    scene.blocks[0].at = 2
+    const host = document.createElement('div')
+    const player = createPlayer(host, late, resolveTimeline(late, {}, sceneNeeds), '16:9')
+    const canvas = () =>
+      host.querySelector('[data-scene="s"]')!.shadowRoot!.querySelector<HTMLElement>('canvas')!
+    player.frame(1)
+    expect(canvas().style.visibility).toBe('hidden')
+    player.frame(3)
+    expect(canvas().style.visibility).toBe('visible')
+    player.frame(1)
+    expect(canvas().style.visibility).toBe('hidden')
+    player.destroy()
+  })
+})

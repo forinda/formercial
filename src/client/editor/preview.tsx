@@ -235,10 +235,14 @@ export function Preview(props: {
     const opened = player.current
     opened.frame(Math.min(tRef.current, timeline.total))
     // 3D scenes load on demand: draw once more when they're ready.
+    let live = true
     void opened.loaded().then(() => {
-      if (player.current === opened) opened.frame(Math.min(tRef.current, timeline.total))
+      if (live) opened.frame(Math.min(tRef.current, timeline.total))
     })
-    return () => player.current?.destroy()
+    return () => {
+      live = false
+      player.current?.destroy()
+    }
   }, [project, timeline, format, props.trusted, wide])
 
   function sceneAt(time: number) {

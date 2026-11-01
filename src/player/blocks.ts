@@ -384,6 +384,7 @@ export const BLOCKS: { [T in Block['type']]: BlockDef<Of<T>> } = {
         }),
       )
       return (local) => {
+        canvas.style.visibility = local < (b.at ?? 0) ? 'hidden' : 'visible'
         // Hidden scenes draw too, to stay in step, but a 3D frame costs real GPU time.
         const scene = (root.getRootNode() as ShadowRoot).host as HTMLElement | undefined
         if (scene?.style.visibility === 'hidden') return

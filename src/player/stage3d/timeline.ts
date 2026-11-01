@@ -85,6 +85,19 @@ export function stageProblems(b: Pick<Stage3d, 'actors' | 'timeline'>): string[]
   return problems
 }
 
+/** A clip that can't play would otherwise do nothing, with no sign of why. */
+export function clipProblem(
+  timeline: Stage3d['timeline'],
+  actor: string,
+  clips: string[],
+): string | undefined {
+  const missing = timeline.find((a) => a.actor === actor && a.clip && !clips.includes(a.clip))
+  if (!missing) return undefined
+  return clips.length
+    ? `"${actor}" has no clip "${missing.clip}"; it has ${clips.join(', ')}`
+    : `"${actor}" has no clip "${missing.clip}"; it has no animations`
+}
+
 export function stageAt(b: Pick<Stage3d, 'actors' | 'timeline' | 'camera'>, t: number): StageState {
   const actions = ordered(b.timeline)
   const actors = new Map<string, ActorState>()

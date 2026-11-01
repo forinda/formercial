@@ -83,6 +83,7 @@ export function createPlayer(
   const lockedScenes: string[] = []
   const loading: Promise<void>[] = []
   const cleanups: (() => void)[] = []
+  let destroyed = false
   const ctx: BlockCtx = {
     theme: project.theme,
     format,
@@ -104,7 +105,9 @@ export function createPlayer(
       )
     },
     onDestroy(fn) {
-      cleanups.push(fn)
+      // A block still loading when the player closes finishes after this has run.
+      if (destroyed) fn()
+      else cleanups.push(fn)
     },
   }
   const byId = new Map(project.scenes.map((s) => [s.id, s]))
@@ -293,7 +296,8 @@ export function createPlayer(
     locked: lockedScenes,
     loaded: () => Promise.all(loading).then(() => {}),
     destroy() {
-      cleanups.forEach((fn) => fn())
+      destroyed = true
+      cleanups.splice(0).forEach((fn) => fn())
       stage.remove()
       style.remove()
     },
