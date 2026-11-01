@@ -189,6 +189,19 @@ describe('stage3d timeline', () => {
     expect(() => block([spin])).toThrow()
   })
 
+  test('limits the total a project asks for, across all its parts', () => {
+    const spin = (i: number) => ({
+      kind: 'lathe',
+      id: `l${i}`,
+      profile: Array.from({ length: 200 }, () => [1, 1]),
+    })
+    expect(() => block(Array.from({ length: 75 }, (_, i) => spin(i)))).not.toThrow()
+    expect(() => block(Array.from({ length: 76 }, (_, i) => spin(i)))).toThrow(/too large/)
+    const people = (n: number) =>
+      Array.from({ length: n }, (_, i) => ({ kind: 'person', id: `p${i}` }))
+    expect(() => block(people(500))).not.toThrow()
+  })
+
   test('refuses a misspelled field, so a mistake is not silently ignored', () => {
     expect(() => block([{ kind: 'box', id: 'b', size: [1, 1, 1], colour: '#fff' }])).toThrow()
     expect(() => block([person], [{ at: 0, actor: 'a', mvoe: [1, 0, 0] }])).toThrow()

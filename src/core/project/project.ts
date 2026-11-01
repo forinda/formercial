@@ -382,6 +382,19 @@ const ThemeSchema = z.object({
   logo: z.string().optional(),
 })
 
+// A rough vertex count for what a project's 3D scenes would build. Each limit above
+// is fine alone, but together they could still crash the tab that opens a shared
+// project, so the total has a budget. Real scenes come nowhere near it.
+const STAGE3D_BUDGET = 5_000_000
+export const LATHE_MAX_SAMPLES = 512
+function actorCost(a: z.output<typeof ActorSchema>) {
+  if (a.kind === 'lathe') return Math.min(a.profile.length * 12, LATHE_MAX_SAMPLES) * 129
+  if (a.kind === 'road') return Math.ceil(a.length / 4) * 24
+  if (a.kind === 'person') return 10_000
+  if (a.kind === 'car' || a.kind === 'building') return 5_000
+  return 2_000
+}
+
 export const ProjectSchema = z
   .object({
     version: z.literal(1),
@@ -413,6 +426,17 @@ export const ProjectSchema = z
       }
       seen.add(s.id)
     })
+    const cost = p.scenes
+      .flatMap((s) => (s.kind === 'blocks' ? s.blocks : []))
+      .flatMap((b) => (b.type === 'stage3d' ? b.actors : []))
+      .reduce((total, actor) => total + actorCost(actor), 0)
+    if (cost > STAGE3D_BUDGET) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['scenes'],
+        message: `the 3D scenes are too large to draw: about ${cost} vertices, over the limit of ${STAGE3D_BUDGET}`,
+      })
+    }
   })
   .transform((p) => ({
     ...p,

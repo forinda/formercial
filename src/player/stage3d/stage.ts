@@ -4,6 +4,7 @@
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { LATHE_MAX_SAMPLES } from '@/core/project/project'
 import type { BlockCtx } from '../blocks'
 import { modelMayLoad } from './model-url'
 import { CLIPS, makePerson } from './person'
@@ -246,7 +247,7 @@ function buildLathe(a: Extract<Actor, { kind: 'lathe' }>, font: string, body: st
     0.12,
   )
   const points = curve
-    .getPoints(a.profile.length * 12)
+    .getPoints(Math.min(a.profile.length * 12, LATHE_MAX_SAMPLES))
     .map((p) => new THREE.Vector2(Math.max(0, p.x), p.y))
   mesh(root, new THREE.LatheGeometry(points, 128), surface(a))
   const l = a.label
