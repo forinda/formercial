@@ -116,10 +116,10 @@ export function editorView(source: string, rows: number, cps: number, since: num
   for (let i = 0; i < source.length; i++) if (source[i] === '\n') starts.push(i + 1)
   const before = source.slice(0, typed)
   const line = before.split('\n').length - 1
-  // Each line past the last row moves the view up one row, as the caret reaches it.
+  // Each line past the last row moves the view up one row, done by the time the caret reaches it.
   let scroll = 0
   for (let k = rows; k < starts.length; k++) {
-    const r = clamp((since - starts[k] / cps) / SCROLL_SECONDS)
+    const r = clamp((since - starts[k] / cps + SCROLL_SECONDS) / SCROLL_SECONDS)
     scroll += 1 - (1 - r) ** 3
   }
   return {

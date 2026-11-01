@@ -171,13 +171,13 @@ The closing card.
 
 ## How long blocks take
 
-| Block              | Needs                                               |
-| ------------------ | --------------------------------------------------- |
-| code, terminal     | `at` + characters ÷ `cps`                           |
-| tree               | `at` + 0.5s per line + 0.4s                         |
-| cards, chips, icon | `at` + 0.3s per item + 0.4s                         |
-| end                | `at` + 2.8s                                         |
-| doodle             | the latest time any item ends, across both drawings |
-| others             | `at` + 0.4s                                         |
+| Block                  | Needs                                               |
+| ---------------------- | --------------------------------------------------- |
+| code, editor, terminal | `at` + characters ÷ `cps`                           |
+| tree                   | `at` + 0.5s per line + 0.4s                         |
+| cards, chips, icon     | `at` + 0.3s per item + 0.4s                         |
+| end                    | `at` + 2.8s                                         |
+| doodle                 | the latest time any item ends, across both drawings |
+| others                 | `at` + 0.4s                                         |
 
 The scene gets at least the slowest block's time plus one second.

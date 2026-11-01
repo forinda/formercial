@@ -147,6 +147,30 @@ export function SceneActions(props: {
 
 const LANGS = ['ts', 'js', 'py', 'c', 'sql', 'json', 'plain']
 
+/** Lines in view: saves only a whole number in range, so a half-typed "2" of "20" isn't rejected. */
+function RowsField(props: { id: string; value: number; onChange: (rows: number) => void }) {
+  const [draft, setDraft] = useState(String(props.value))
+  useEffect(() => setDraft(String(props.value)), [props.value])
+  return (
+    <Field id={props.id} label="Lines in view">
+      <Input
+        id={props.id}
+        type="number"
+        min={3}
+        max={60}
+        step={1}
+        value={draft}
+        onChange={(e) => {
+          setDraft(e.target.value)
+          const rows = Number(e.target.value)
+          if (Number.isInteger(rows) && rows >= 3 && rows <= 60) props.onChange(rows)
+        }}
+        onBlur={() => setDraft(String(props.value))}
+      />
+    </Field>
+  )
+}
+
 const BLANK: { [T in Block['type']]: Extract<Block, { type: T }> } = {
   eyebrow: { type: 'eyebrow', text: 'Eyebrow' },
   headline: { type: 'headline', text: 'Headline', accent: '' },
@@ -480,7 +504,7 @@ function BlockForm({
       )}
     </Field>
   )
-  const number = (key: 'at' | 'cps' | 'until' | 'rows', label: string) => (
+  const number = (key: 'at' | 'cps' | 'until', label: string) => (
     <Field id={`${id}-${key}`} label={label}>
       <Input
         id={`${id}-${key}`}
@@ -564,7 +588,7 @@ function BlockForm({
           </Field>
           {text('source', 'Code', true)}
           <div className="flex gap-2">
-            {number('rows', 'Lines in view')}
+            <RowsField id={`${id}-rows`} value={block.rows} onChange={(rows) => set({ rows })} />
             {number('at', 'Starts at (s)')}
             {number('cps', 'Characters / s')}
           </div>

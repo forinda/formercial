@@ -452,6 +452,10 @@ describe('editor block', () => {
     expect(end.scroll).toBe(end.lines - 3)
   })
 
+  test('has room for a new line by the time the caret reaches it', () => {
+    expect(editorView(source, 3, 1, 6)).toMatchObject({ line: 3, scroll: 1 })
+  })
+
   test('reports the line and column of the caret', () => {
     expect(editorView(source, 3, 1, 3)).toMatchObject({ typed: 3, line: 1, col: 1 })
   })
