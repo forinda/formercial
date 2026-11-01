@@ -9,9 +9,15 @@ export const TWO_TALL_LINES = 84
  * Breaks after a sentence when the piece is long enough, otherwise at the limit.
  */
 export function captionChunks(text: string, seconds: number, maxChars = ONE_LINE) {
+  const words = text.trim().split(/\s+/)
+  const whole = words.join(' ')
+  if (whole.length <= maxChars) return [{ text: whole, start: 0, end: seconds }]
+
+  // A word too long for a piece, like a URL, breaks where it must.
+  const fitted = words.flatMap((w) => w.match(new RegExp(`.{1,${maxChars}}`, 'g')) ?? [w])
   const pieces: string[] = []
   let piece = ''
-  for (const word of text.trim().split(/\s+/)) {
+  for (const word of fitted) {
     const next = piece ? `${piece} ${word}` : word
     if (piece && next.length > maxChars) {
       pieces.push(piece)
