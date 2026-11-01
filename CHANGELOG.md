@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.4.0 (2026-11-01)
+
+[Full changelog](https://github.com/forinda/formercial/compare/v0.3.0...v0.4.0)
+
+### 🚀 Features
+
+- **captions:** show long captions in short timed pieces [`84c8acf`](https://github.com/forinda/formercial/commit/84c8acf45c049d5757d4dd9e6d773df108e067de)
+
+### 🐛 Bug Fixes
+
+- **editor:** make the code larger [`4ec3627`](https://github.com/forinda/formercial/commit/4ec3627bbf4352cf5a11c5d8c63d2ede65ed94f8)
+- **captions:** address review findings [`ff471c3`](https://github.com/forinda/formercial/commit/ff471c3927e363b10fb3f242ca4ea624d41fcadf)
+
 ## v0.3.0 (2026-11-01)
 
 [Full changelog](https://github.com/forinda/formercial/compare/v0.2.3...v0.3.0)
