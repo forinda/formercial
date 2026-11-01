@@ -2,7 +2,7 @@
 import { describe, expect, test } from 'vitest'
 import { parseProject, starterProject, type Project } from '@/core/project/project'
 import { resolveTimeline, type Clip } from '@/core/project/timeline'
-import { doodleTimes } from './blocks'
+import { doodleTimes, editorView } from './blocks'
 import { createPlayer, sceneNeeds } from './player'
 
 const project = (scenes: unknown[]): Project => parseProject({ ...starterProject('T'), scenes })
@@ -285,6 +285,18 @@ describe('doodle block', () => {
     expect(root.querySelector('text')!.textContent).toBe('abcd')
   })
 
+  test('only a mono label gets the mono font', () => {
+    const { host } = mount(
+      doodle([
+        { text: 'note', x: 0, y: 0 },
+        { text: 'git status', x: 0, y: 60, mono: true },
+      ]),
+    )
+    const labels = parts(host).querySelectorAll('text')
+    expect(labels[0].classList.contains('doodle-mono')).toBe(false)
+    expect(labels[1].classList.contains('doodle-mono')).toBe(true)
+  })
+
   test('a fill fades in up to its opacity', () => {
     const { host, player } = mount(
       doodle([{ d: 'M0 0 H10', seconds: 2, fill: 'accent', fillOpacity: 0.5 }]),
@@ -424,5 +436,27 @@ describe('transitions', () => {
     b.player.frame(9)
     b.player.frame(at)
     expect(snapshot(a.host)).toBe(snapshot(b.host))
+  })
+})
+
+describe('editor block', () => {
+  const source = ['a', 'b', 'c', 'd', 'e'].join('\n')
+
+  test('stays still until typing passes the last row', () => {
+    expect(editorView(source, 3, 1, 5).scroll).toBe(0)
+  })
+
+  test('scrolls one row per line past the view, and ends with the last line shown', () => {
+    expect(editorView(source, 3, 1, 7).scroll).toBe(1)
+    const end = editorView(source, 3, 1, 100)
+    expect(end.scroll).toBe(end.lines - 3)
+  })
+
+  test('has room for a new line by the time the caret reaches it', () => {
+    expect(editorView(source, 3, 1, 6)).toMatchObject({ line: 3, scroll: 1 })
+  })
+
+  test('reports the line and column of the caret', () => {
+    expect(editorView(source, 3, 1, 3)).toMatchObject({ typed: 3, line: 1, col: 1 })
   })
 })

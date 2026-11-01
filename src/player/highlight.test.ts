@@ -2,6 +2,13 @@ import { describe, expect, test } from 'vitest'
 import { highlight } from './highlight'
 
 describe('highlight', () => {
+  test('c: keywords, strings and block comments', () => {
+    const html = highlight('c', '/* note */\nint main(void) { return 0; }')
+    expect(html).toContain('<span class="c">/* note */</span>')
+    expect(html).toContain('<span class="k">int</span>')
+    expect(html).toContain('<span class="f">main</span>')
+  })
+
   test('python: keywords, strings and # comments', () => {
     const html = highlight('py', 'for key in person:  # every key\n    print("hi")')
     expect(html).toContain('<span class="k">for</span>')

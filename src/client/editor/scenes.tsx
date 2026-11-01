@@ -145,11 +145,38 @@ export function SceneActions(props: {
   )
 }
 
+const LANGS = ['ts', 'js', 'py', 'c', 'sql', 'json', 'plain']
+
+/** Lines in view: saves only a whole number in range, so a half-typed "2" of "20" isn't rejected. */
+function RowsField(props: { id: string; value: number; onChange: (rows: number) => void }) {
+  const [draft, setDraft] = useState(String(props.value))
+  useEffect(() => setDraft(String(props.value)), [props.value])
+  return (
+    <Field id={props.id} label="Lines in view">
+      <Input
+        id={props.id}
+        type="number"
+        min={3}
+        max={60}
+        step={1}
+        value={draft}
+        onChange={(e) => {
+          setDraft(e.target.value)
+          const rows = Number(e.target.value)
+          if (Number.isInteger(rows) && rows >= 3 && rows <= 60) props.onChange(rows)
+        }}
+        onBlur={() => setDraft(String(props.value))}
+      />
+    </Field>
+  )
+}
+
 const BLANK: { [T in Block['type']]: Extract<Block, { type: T }> } = {
   eyebrow: { type: 'eyebrow', text: 'Eyebrow' },
   headline: { type: 'headline', text: 'Headline', accent: '' },
   text: { type: 'text', text: 'Some text.' },
   code: { type: 'code', lang: 'ts', label: 'file.ts', source: 'const hello = "world"' },
+  editor: { type: 'editor', file: 'main.py', lang: 'py', source: 'print("hello")', rows: 14 },
   terminal: { type: 'terminal', label: 'terminal', source: '$ kick dev' },
   tree: { type: 'tree', lines: ['src/', '└ index.ts'] },
   stamp: { type: 'stamp', text: 'Shipped', tone: 'good' },
@@ -532,13 +559,36 @@ function BlockForm({
               value={block.lang}
               onChange={(e) => set({ lang: e.target.value })}
             >
-              {['ts', 'js', 'py', 'sql', 'json', 'plain'].map((l) => (
+              {LANGS.map((l) => (
                 <option key={l}>{l}</option>
               ))}
             </Select>
           </Field>
           {text('source', 'Code', true)}
           <div className="flex gap-2">
+            {number('at', 'Starts at (s)')}
+            {number('cps', 'Characters / s')}
+          </div>
+        </>
+      )
+    case 'editor':
+      return (
+        <>
+          {text('file', 'File name')}
+          <Field id={`${id}-lang`} label="Language">
+            <Select
+              id={`${id}-lang`}
+              value={block.lang}
+              onChange={(e) => set({ lang: e.target.value })}
+            >
+              {LANGS.map((l) => (
+                <option key={l}>{l}</option>
+              ))}
+            </Select>
+          </Field>
+          {text('source', 'Code', true)}
+          <div className="flex gap-2">
+            <RowsField id={`${id}-rows`} value={block.rows} onChange={(rows) => set({ rows })} />
             {number('at', 'Starts at (s)')}
             {number('cps', 'Characters / s')}
           </div>

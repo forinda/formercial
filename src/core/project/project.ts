@@ -55,6 +55,8 @@ const DoodleItemSchema = z.union([
     tone: tone.default('fg'),
     at,
     seconds: z.number().min(0).default(0.8),
+    /** Draw in the theme's mono font, for code and commands learners must read exactly. */
+    mono: z.boolean().optional(),
   }),
 ])
 
@@ -234,9 +236,20 @@ const BlockSchema = z.discriminatedUnion('type', [
     type: z.literal('code'),
     at,
     label: z.string().optional(),
-    lang: z.enum(['ts', 'js', 'py', 'sql', 'json', 'plain']).default('ts'),
+    lang: z.enum(['ts', 'js', 'py', 'c', 'sql', 'json', 'plain']).default('ts'),
     source: z.string(),
     cps: z.number().positive().optional(),
+  }),
+  z.object({
+    type: z.literal('editor'),
+    at,
+    /** The name on the tab. */
+    file: z.string().default('untitled'),
+    lang: z.enum(['ts', 'js', 'py', 'c', 'sql', 'json', 'plain']).default('py'),
+    source: z.string(),
+    cps: z.number().positive().optional(),
+    /** Lines in view. Longer code scrolls as it's typed. */
+    rows: z.number().int().min(3).max(60).default(14),
   }),
   z.object({
     type: z.literal('terminal'),

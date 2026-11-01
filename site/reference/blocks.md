@@ -36,11 +36,25 @@ Code that types itself.
 | Field    | Default  |                                                                           |
 | -------- | -------- | ------------------------------------------------------------------------- |
 | `source` | required | Newlines and indentation are kept.                                        |
-| `lang`   | `"ts"`   | `"ts"`, `"js"`, `"py"`, `"sql"`, `"json"` or `"plain"`, for highlighting. |
+| `lang`   | `"ts"`   | `"ts"`, `"js"`, `"py"`, `"c"`, `"sql"`, `"json"` or `"plain"`, for highlighting. |
 | `label`  | none     | A small title, like a file name.                                          |
 | `cps`    | `34`     | Characters typed per second.                                              |
 
 The text shrinks to fit the longest line. Ligatures are off, so `=>` reads as written.
+
+## editor
+
+Code that types itself in a VS Code style window, with line numbers, the current line marked and a status bar. Code longer than the window scrolls as it's typed.
+
+| Field    | Default      |                                                                                  |
+| -------- | ------------ | -------------------------------------------------------------------------------- |
+| `source` | required     | Newlines and indentation are kept.                                               |
+| `file`   | `"untitled"` | The name on the tab.                                                             |
+| `lang`   | `"py"`       | `"ts"`, `"js"`, `"py"`, `"c"`, `"sql"`, `"json"` or `"plain"`, for highlighting. |
+| `rows`   | `14`         | Lines in view, `3` to `60`.                                                      |
+| `cps`    | `34`         | Characters typed per second.                                                     |
+
+The text shrinks to fit the longest line. Ligatures are off, so `>=` reads as written.
 
 ## terminal
 
@@ -130,6 +144,7 @@ A label:
 | `text`, `x`, `y`        | The words, and where their left end sits. Labels don't wrap: split long ones. |
 | `size`                  | Default `56`                                                                  |
 | `tone`, `seconds`, `at` | As for a line                                                                 |
+| `mono`                  | `true` draws it in the theme's mono font with ligatures off, for code and commands learners must read exactly. Default `false`. |
 
 ## stage3d
 
@@ -156,13 +171,13 @@ The closing card.
 
 ## How long blocks take
 
-| Block              | Needs                                               |
-| ------------------ | --------------------------------------------------- |
-| code, terminal     | `at` + characters ÷ `cps`                           |
-| tree               | `at` + 0.5s per line + 0.4s                         |
-| cards, chips, icon | `at` + 0.3s per item + 0.4s                         |
-| end                | `at` + 2.8s                                         |
-| doodle             | the latest time any item ends, across both drawings |
-| others             | `at` + 0.4s                                         |
+| Block                  | Needs                                               |
+| ---------------------- | --------------------------------------------------- |
+| code, editor, terminal | `at` + characters ÷ `cps`                           |
+| tree                   | `at` + 0.5s per line + 0.4s                         |
+| cards, chips, icon     | `at` + 0.3s per item + 0.4s                         |
+| end                    | `at` + 2.8s                                         |
+| doodle                 | the latest time any item ends, across both drawings |
+| others                 | `at` + 0.4s                                         |
 
 The scene gets at least the slowest block's time plus one second.

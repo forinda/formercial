@@ -98,6 +98,39 @@ function typer(
 const typing = (b: { at?: number; source: string; cps?: number }) =>
   (b.at ?? 0) + b.source.length / (b.cps ?? DEFAULT_CPS)
 
+const SCROLL_SECONDS = 0.22
+const LANG_NAMES = {
+  ts: 'TypeScript',
+  js: 'JavaScript',
+  py: 'Python',
+  c: 'C',
+  sql: 'SQL',
+  json: 'JSON',
+  plain: 'Plain Text',
+}
+
+/** What an editor shows at a time: a pure function of it, so any frame can be drawn first. */
+export function editorView(source: string, rows: number, cps: number, since: number) {
+  const typed = Math.max(0, Math.min(source.length, Math.floor(since * cps)))
+  const starts = [0]
+  for (let i = 0; i < source.length; i++) if (source[i] === '\n') starts.push(i + 1)
+  const before = source.slice(0, typed)
+  const line = before.split('\n').length - 1
+  // Each line past the last row moves the view up one row, done by the time the caret reaches it.
+  let scroll = 0
+  for (let k = rows; k < starts.length; k++) {
+    const r = clamp((since - starts[k] / cps + SCROLL_SECONDS) / SCROLL_SECONDS)
+    scroll += 1 - (1 - r) ** 3
+  }
+  return {
+    typed,
+    line,
+    col: typed - starts[line],
+    scroll: Math.round(scroll * 1000) / 1000,
+    lines: starts.length,
+  }
+}
+
 const SVG = 'http://www.w3.org/2000/svg'
 const svg = (tag: string, attrs: Record<string, string | number> = {}) => {
   const e = document.createElementNS(SVG, tag)
@@ -186,6 +219,66 @@ export const BLOCKS: { [T in Block['type']]: BlockDef<Of<T>> } = {
         (s) => highlight(b.lang, s),
         'code',
       )(root, b.at ?? 0),
+  },
+  editor: {
+    needs: typing,
+    mount(root, b) {
+      const at = b.at ?? 0
+      const cps = b.cps ?? DEFAULT_CPS
+      const box = el('div', 'editor')
+      const tabs = el('div', 'ed-tabs')
+      tabs.append(el('span', 'ed-tab', esc(b.file)))
+      const view = el('div', 'ed-view')
+      view.style.height = `calc(${b.rows} * var(--ed-line))`
+      const scroller = el('div', 'ed-scroller')
+      const current = el('div', 'ed-current')
+      const gutter = el('pre', 'ed-gutter')
+      const code = el('pre', 'ed-code')
+      const typed = el('span', 'typed')
+      const caret = el('span', 'ed-caret')
+      code.append(typed, caret)
+      scroller.append(current, gutter, code)
+      const thumb = el('div', 'ed-thumb')
+      view.append(scroller, thumb)
+      const position = el('span', '')
+      const status = el('div', 'ed-status')
+      status.append(position, el('span', '', `Spaces: 4 &nbsp; UTF-8 &nbsp; ${LANG_NAMES[b.lang]}`))
+      box.append(tabs, view, status)
+      root.append(box)
+
+      const total = b.source.split('\n').length
+      const numbers = (n: number) => Array.from({ length: n }, (_, i) => i + 1).join('\n')
+      gutter.style.minWidth = `${String(total).length + 1}ch`
+      // The font scales this, so rows, numbers and scrolling stay in step.
+      const fit = fitOnce(view)
+      let shown = -1
+      let shownLine = -1
+      return (local) => {
+        if (!fit.done) {
+          typed.innerHTML = highlight(b.lang, b.source)
+          fit()
+          shown = -1
+        }
+        const v = editorView(b.source, b.rows, cps, local - at)
+        if (v.typed !== shown) {
+          typed.innerHTML = highlight(b.lang, b.source.slice(0, v.typed))
+          position.textContent = `Ln ${v.line + 1}, Col ${v.col + 1}`
+          shown = v.typed
+        }
+        if (v.line !== shownLine) {
+          gutter.textContent = numbers(v.line + 1)
+          current.style.top = `calc(${v.line} * var(--ed-line))`
+          shownLine = v.line
+        }
+        scroller.style.transform = `translateY(calc(${-v.scroll} * var(--ed-line)))`
+        const hidden = Math.max(0, total - b.rows)
+        thumb.hidden = !hidden
+        thumb.style.height = `${(b.rows / total) * 100}%`
+        thumb.style.top = `${(v.scroll / (hidden || 1)) * (100 - (b.rows / total) * 100)}%`
+        // Solid while typing, then a steady blink.
+        caret.hidden = local < at || (v.typed >= b.source.length && Math.floor(local * 2) % 2 === 1)
+      }
+    },
   },
   terminal: {
     needs: typing,
@@ -313,7 +406,7 @@ export const BLOCKS: { [T in Block['type']]: BlockDef<Of<T>> } = {
       const items = art.strokes.map((item) => {
         if ('d' in item) return { item, stroke: mountStroke({ ink, dots }, item) }
         const label = svg('text', {
-          class: 'doodle-label',
+          class: item.mono ? 'doodle-label doodle-mono' : 'doodle-label',
           x: item.x,
           y: item.y,
           'font-size': item.size,
