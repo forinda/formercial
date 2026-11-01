@@ -1,6 +1,7 @@
 // Draws a project at any time t. The editor's preview and the render page both
 // use this, so what you watch is what renders. Every frame follows from t:
 // no CSS transitions, timers or clocks.
+import { TWO_TALL_LINES, captionChunks } from '@/core/media/caption-chunks'
 import { fontFaceCss } from '@/core/assets/fonts'
 import { FORMATS, type Format, type Project, type Scene } from '@/core/project/project'
 import type { Timeline, TimelineScene } from '@/core/project/timeline'
@@ -284,9 +285,15 @@ export function createPlayer(
 
   function drawCaption(at: TimelineScene, local: number) {
     const text = byId.get(at.id)!.caption
-    const on = showCaptions && !!text.trim() && local < (at.clip ? at.clip.seconds : at.length)
+    const seconds = at.clip ? at.clip.seconds : at.length
+    const on = showCaptions && !!text.trim() && local < seconds
     caption.hidden = !on
-    const html = on ? `<span>${esc(text)}</span>` : ''
+    const piece = on
+      ? captionChunks(text, seconds, format === '9:16' ? TWO_TALL_LINES : undefined).find(
+          (c) => local < c.end,
+        )
+      : undefined
+    const html = piece ? `<span>${esc(piece.text)}</span>` : ''
     if (caption.innerHTML !== html) caption.innerHTML = html
   }
 
