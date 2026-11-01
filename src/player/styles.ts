@@ -100,6 +100,21 @@ export const SCENE_CSS = `
 .text { font-size: calc(1.8 * var(--u)); color: var(--muted); margin: 0; max-width: 70ch }
 .code, .term, .tree { font-family: var(--mono); font-size: calc(1.3 * var(--u)); line-height: 1.55; background: var(--box); border: 1px solid var(--line); border-radius: 4px; padding: calc(1.6 * var(--u)) calc(2 * var(--u)); margin: 0; white-space: pre; overflow: hidden; font-variant-ligatures: none }
 .label { display: block; font-size: calc(1.05 * var(--u)); color: var(--muted); letter-spacing: .08em; text-transform: uppercase; margin-bottom: calc(.8 * var(--u)) }
+.editor { --ed-line: 1.55em; font-variant-ligatures: none; font-family: var(--mono); font-size: calc(1.5 * var(--u)); background: #1e1e1e; color: #d4d4d4; border-radius: 10px; overflow: hidden; box-shadow: 0 calc(.8 * var(--u)) calc(2.4 * var(--u)) rgb(0 0 0 / .3) }
+.ed-tabs { background: #252526; display: flex; font-size: .8em }
+.ed-tab { background: #1e1e1e; color: #fff; padding: .7em 1.6em; border-top: 2px solid #007acc }
+.ed-view { --ed-line: 1.55em; position: relative; overflow: hidden }
+.ed-scroller { display: flex; position: relative; line-height: var(--ed-line) }
+.ed-current { position: absolute; left: 0; right: 0; height: var(--ed-line); background: #2a2d2e; outline: 1px solid #333 }
+.ed-gutter, .ed-code { position: relative; margin: 0; font: inherit; line-height: inherit; white-space: pre }
+.ed-gutter { color: #858585; text-align: right; padding: 0 1.2em 0 .8em; flex: none }
+.ed-code { flex: 1 }
+.ed-caret { display: inline-block; width: 2px; height: 1.2em; background: #aeafad; vertical-align: -0.25em }
+.ed-caret[hidden] { visibility: hidden }
+.ed-thumb { position: absolute; right: 0; width: .7em; background: rgb(121 121 121 / .4) }
+.ed-thumb[hidden] { display: none }
+.ed-status { display: flex; justify-content: space-between; background: #007acc; color: #fff; font-size: .7em; padding: .3em 1em }
+.editor .k { color: #569cd6 } .editor .s { color: #ce9178 } .editor .c { color: #6a9955; font-style: normal } .editor .n { color: #b5cea8 } .editor .f { color: #dcdcaa }
 .caret[hidden] { display: none }
 .caret { display: inline-block; width: .6em; height: 1.1em; background: var(--accent); vertical-align: -0.2em }
 .k { color: var(--keyword) } .s { color: var(--good) } .c { color: var(--muted); font-style: italic } .n { color: var(--accent) } .f { color: var(--call) }

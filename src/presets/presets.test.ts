@@ -20,6 +20,7 @@ const BLOCK_TYPES: Record<Block['type'], true> = {
   headline: true,
   text: true,
   code: true,
+  editor: true,
   terminal: true,
   tree: true,
   stamp: true,

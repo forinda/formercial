@@ -871,6 +871,24 @@ const showcase = parseProject({
       { minSeconds: 3, transition: 'cut' },
     ),
     scene(
+      'code-editor',
+      'Or a full editor, that scrolls for longer code.',
+      'Or a full editor, that scrolls for longer code.',
+      [
+        {
+          type: 'editor',
+          at: 0.2,
+          cps: 60,
+          lang: 'c',
+          file: 'count.c',
+          rows: 5,
+          source:
+            '#include <stdio.h>\n\nint main(void)\n{\n    for (int i = 0; i < 3; i++) {\n        printf("%d\\n", i);\n    }\n    return 0;\n}',
+        },
+      ],
+      { minSeconds: 5, transition: 'cut' },
+    ),
+    scene(
       'code-sql',
       'And SQL.',
       'And S Q L.',

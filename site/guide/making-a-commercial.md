@@ -45,6 +45,7 @@ Blocks stack from top to bottom. Each has an **Appears at** time in seconds into
 | headline | The main line; **Accent words** are drawn in the accent color |
 | text | A sentence or two |
 | code | Code that types itself, highlighted for TypeScript, JavaScript, Python, SQL or JSON |
+| editor | Code in a VS Code style window with line numbers. Longer code scrolls as it's typed; **Lines in view** sets the height |
 | terminal | Commands: lines starting `$ ` get a prompt, `✗` fails, `✓` succeeds |
 | tree | A file tree; end a folder with `/` |
 | stamp | A big rotated word (**good** or **bad**), with an optional **Gone at** |

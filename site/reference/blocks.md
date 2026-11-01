@@ -36,11 +36,25 @@ Code that types itself.
 | Field    | Default  |                                                                           |
 | -------- | -------- | ------------------------------------------------------------------------- |
 | `source` | required | Newlines and indentation are kept.                                        |
-| `lang`   | `"ts"`   | `"ts"`, `"js"`, `"py"`, `"sql"`, `"json"` or `"plain"`, for highlighting. |
+| `lang`   | `"ts"`   | `"ts"`, `"js"`, `"py"`, `"c"`, `"sql"`, `"json"` or `"plain"`, for highlighting. |
 | `label`  | none     | A small title, like a file name.                                          |
 | `cps`    | `34`     | Characters typed per second.                                              |
 
 The text shrinks to fit the longest line. Ligatures are off, so `=>` reads as written.
+
+## editor
+
+Code that types itself in a VS Code style window, with line numbers, the current line marked and a status bar. Code longer than the window scrolls as it's typed.
+
+| Field    | Default      |                                                                                  |
+| -------- | ------------ | -------------------------------------------------------------------------------- |
+| `source` | required     | Newlines and indentation are kept.                                               |
+| `file`   | `"untitled"` | The name on the tab.                                                             |
+| `lang`   | `"py"`       | `"ts"`, `"js"`, `"py"`, `"c"`, `"sql"`, `"json"` or `"plain"`, for highlighting. |
+| `rows`   | `14`         | Lines in view, `3` to `60`.                                                      |
+| `cps`    | `34`         | Characters typed per second.                                                     |
+
+The text shrinks to fit the longest line. Ligatures are off, so `>=` reads as written.
 
 ## terminal
 

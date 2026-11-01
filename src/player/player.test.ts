@@ -2,7 +2,7 @@
 import { describe, expect, test } from 'vitest'
 import { parseProject, starterProject, type Project } from '@/core/project/project'
 import { resolveTimeline, type Clip } from '@/core/project/timeline'
-import { doodleTimes } from './blocks'
+import { doodleTimes, editorView } from './blocks'
 import { createPlayer, sceneNeeds } from './player'
 
 const project = (scenes: unknown[]): Project => parseProject({ ...starterProject('T'), scenes })
@@ -436,5 +436,23 @@ describe('transitions', () => {
     b.player.frame(9)
     b.player.frame(at)
     expect(snapshot(a.host)).toBe(snapshot(b.host))
+  })
+})
+
+describe('editor block', () => {
+  const source = ['a', 'b', 'c', 'd', 'e'].join('\n')
+
+  test('stays still until typing passes the last row', () => {
+    expect(editorView(source, 3, 1, 5).scroll).toBe(0)
+  })
+
+  test('scrolls one row per line past the view, and ends with the last line shown', () => {
+    expect(editorView(source, 3, 1, 7).scroll).toBe(1)
+    const end = editorView(source, 3, 1, 100)
+    expect(end.scroll).toBe(end.lines - 3)
+  })
+
+  test('reports the line and column of the caret', () => {
+    expect(editorView(source, 3, 1, 3)).toMatchObject({ typed: 3, line: 1, col: 1 })
   })
 })
