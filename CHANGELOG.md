@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.2.3 (2026-11-01)
+
+[Full changelog](https://github.com/forinda/formercial/compare/v0.2.2...v0.2.3)
+
+### ⚠ Breaking Changes
+
+- **presets:** make the language presets focused lessons [`bb6c443`](https://github.com/forinda/formercial/commit/bb6c443b8974b53d1384b0bfd422ab8bcc44a273)
+
+### 🐛 Bug Fixes
+
+- **presets:** leave time to try each challenge [`8bf4961`](https://github.com/forinda/formercial/commit/8bf4961a0e51b4d964e5c4eb231545d0e03e4ae4)
+
+### 📝 Documentation
+
+- add a guide to making teaching videos [`597e437`](https://github.com/forinda/formercial/commit/597e43718aff910a0e39ffc014023edd7ef0149a)
+
 ## v0.2.2 (2026-10-31)
 
 [Full changelog](https://github.com/forinda/formercial/compare/v0.2.1...v0.2.2)
