@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.3.0 (2026-11-01)
+
+[Full changelog](https://github.com/forinda/formercial/compare/v0.2.3...v0.3.0)
+
+### 🚀 Features
+
+- **blocks:** add an editor block that scrolls longer code [`872808b`](https://github.com/forinda/formercial/commit/872808bd895f87227ec39fd8df0cbad81739733c)
+- **doodle:** let a label use the mono font [`46600ca`](https://github.com/forinda/formercial/commit/46600cad79539c5b15e24b54998a8dc7f5a089d8)
+- **blocks:** add a stage3d block for 3D scenes written as data [`32d44de`](https://github.com/forinda/formercial/commit/32d44de7f507f11cdcd3b2b7170d7ed8f164c66a)
+
+### 🐛 Bug Fixes
+
+- **editor:** address review findings [`8d42770`](https://github.com/forinda/formercial/commit/8d42770425a7727a7d87e2611624336b602d582e)
+- **stage3d:** address review findings [`c4917d9`](https://github.com/forinda/formercial/commit/c4917d9412a83f0c4421a2aff3a4ba4223e0554f)
+- **stage3d:** release GPU memory when a scene closes [`189c978`](https://github.com/forinda/formercial/commit/189c978539f156804a03c1d2ffc0c5b89c3b1603)
+- **stage3d:** give a project's 3D scenes a total budget [`ba34032`](https://github.com/forinda/formercial/commit/ba34032c9b75b830dfec0a32dd88a0d77f9ba1b7)
+- **stage3d:** keep shared models and scenes within limits [`67de5a0`](https://github.com/forinda/formercial/commit/67de5a07512533ee51faa133913424e1bcc1bc25)
+
+### 📝 Documentation
+
+- add a guide to 3D scenes [`520f7f5`](https://github.com/forinda/formercial/commit/520f7f5fdbcaa51676a9c2e9a5ed6155343c0e37)
+
 ## v0.2.3 (2026-11-01)
 
 [Full changelog](https://github.com/forinda/formercial/compare/v0.2.2...v0.2.3)
