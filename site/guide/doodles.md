@@ -6,7 +6,7 @@ A doodle is a drawing that draws itself, with a pen following each line. It suit
 pnpm kick formercial new "How a bulb works" --preset doodle-light-bulb
 ```
 
-Or choose **Doodle lesson: how a light bulb works** on the projects page. It's a complete lesson of about two minutes on current, resistance and why a filament glows. Delete scenes or reword them to make it yours.
+Or choose **Doodle lesson: why a light bulb glows** on the projects page. It's a complete lesson on one idea, following the [lesson pattern](./teaching-videos). Reword its scenes to make it yours.
 
 Creating it downloads its fonts into the project, as with every preset. See [Make your own](./getting-started#make-your-own).
 
@@ -46,3 +46,4 @@ On the drawing board, switch to **Tall (9:16)** to draw it. **Start from the wid
 - **One idea per scene.** It's easy to cut or reorder scenes that each make one point.
 - **Time it to the voice.** Generate the voice first, then set `at` on a stroke so it appears as the word is spoken.
 - **Keep the same artwork moving.** The template's scenes use short `seconds` to redraw the last scene's picture quickly, then draw only what's new.
+- **Planning a lesson?** [Making teaching videos](./teaching-videos) covers how to structure one so that it sticks.

@@ -40,9 +40,9 @@ describe('PagesController', () => {
     expect(res.body.props.presets.map((p: { id: string }) => p.id)).toEqual([
       'showcase',
       'doodle-light-bulb',
-      'typescript-intro',
-      'javascript-basics',
-      'python-basics',
+      'typescript-types',
+      'javascript-const-let',
+      'python-objects',
     ])
   })
 

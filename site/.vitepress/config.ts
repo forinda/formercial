@@ -29,6 +29,7 @@ export default defineConfig({
           { text: 'Making a commercial', link: '/guide/making-a-commercial' },
           { text: 'Voice', link: '/guide/voice' },
           { text: 'Doodle videos', link: '/guide/doodles' },
+          { text: 'Teaching videos', link: '/guide/teaching-videos' },
           { text: 'Custom scenes', link: '/guide/custom-scenes' },
           { text: 'Rendering', link: '/guide/rendering' },
           { text: 'History', link: '/guide/history' },

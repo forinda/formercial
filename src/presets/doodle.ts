@@ -1,10 +1,10 @@
-// A whiteboard-style lesson: how resistance works, and why that makes a light
-// bulb glow. Every drawing is plain data in doodle blocks, so a teacher can
+// A whiteboard-style lesson on one idea: resistance turns current into heat, and
+// that makes a light bulb glow. Every drawing is plain data in doodle blocks, so a teacher can
 // reword it, redraw it or delete scenes, with no code to trust.
 import { parseProject } from '@/core/project/project'
 
 /** Labels don't wrap, so one too long for its drawing is drawn smaller. Kalam runs about 0.5 of its size per character. */
-const fit = (strokes: unknown[], width: number) =>
+export const fit = (strokes: unknown[], width: number) =>
   (strokes as { text?: string; x?: number; size?: number }[]).map((s) =>
     s.text
       ? {
@@ -160,7 +160,7 @@ export const doodleLesson = parseProject({
   },
   scenes: [
     scene(
-      'question',
+      'hook',
       'Flip a switch and a bulb lights up. But why does it glow at all?',
       'Flip a switch and a bulb lights up. But why does it glow at all?',
       7,
@@ -180,9 +180,68 @@ export const doodleLesson = parseProject({
       ],
     ),
     scene(
+      'why',
+      'The same idea explains kettles, toasters and heaters. Once you see it, a lot of everyday electricity makes sense.',
+      'The same idea explains kettles, toasters and heaters. Once you see it, a lot of everyday electricity makes sense.',
+      10,
+      [
+        { text: 'You see this every day', x: 300, y: 130, size: 84, tone: 'accent', seconds: 0.9 },
+        { d: 'M180 300 H460 V560 H180 Z', seconds: 0.6 },
+        { text: 'kettle', x: 240, y: 640, size: 60, seconds: 0.4 },
+        { d: 'M660 340 H940 V560 H660 Z M720 340 V300 M880 340 V300', seconds: 0.6 },
+        { text: 'toaster', x: 700, y: 640, size: 60, seconds: 0.4 },
+        {
+          d: 'M1140 300 H1420 V560 H1140 Z M1200 300 V560 M1280 300 V560 M1360 300 V560',
+          seconds: 0.6,
+        },
+        { text: 'heater', x: 1200, y: 640, size: 60, seconds: 0.4 },
+      ],
+      [
+        { text: 'You see this', x: 170, y: 170, size: 90, tone: 'accent', seconds: 0.8 },
+        { text: 'every day', x: 230, y: 280, size: 90, tone: 'accent', seconds: 0.4 },
+        { d: 'M300 380 H600 V620 H300 Z', seconds: 0.5 },
+        { text: 'kettle', x: 340, y: 700, size: 70, seconds: 0.3 },
+        { d: 'M300 780 H600 V980 H300 Z M360 780 V740 M540 780 V740', seconds: 0.5 },
+        { text: 'toaster', x: 330, y: 1060, size: 70, seconds: 0.3 },
+        { text: 'and heaters', x: 250, y: 1220, size: 80, seconds: 0.4 },
+      ],
+    ),
+    scene(
+      'try',
+      'Grab a pen. Pause, and sketch how you would connect a battery, wires and a bulb, so that the bulb lights.',
+      'Grab a pen. Pause, and sketch how you would connect a battery, wires and a bulb, so that the bulb lights.',
+      14,
+      [
+        { text: 'Grab a pen', x: 60, y: 130, size: 92, tone: 'accent', seconds: 0.6 },
+        ...battery,
+        ...bulb,
+        { text: 'How do you connect them?', x: 400, y: 400, size: 68, tone: 'good', seconds: 0.9 },
+      ],
+      [
+        { text: 'Grab a pen', x: 230, y: 75, size: 90, tone: 'accent', seconds: 0.6 },
+        ...tBulb,
+        ...tBattery,
+        { text: 'How do you', x: 230, y: 620, size: 90, tone: 'good', seconds: 0.5 },
+        { text: 'connect them?', x: 170, y: 730, size: 90, tone: 'good', seconds: 0.5 },
+      ],
+      { transition: 'slide' },
+    ),
+    scene(
+      'reflect',
+      'Did your wires make one unbroken path, from the battery, through the bulb, and back again? Check your sketch.',
+      'Did your wires make one unbroken path, from the battery, through the bulb, and back again? Check your sketch.',
+      9,
+      [
+        ...circuit.map((s) => ({ ...s, seconds: 0.2 })),
+        { ...wireBack, seconds: 0.5 },
+        switchClosed,
+      ],
+      [...quick(tCircuit), { ...tWireBack, seconds: 0.5 }, tSwitchClosed],
+    ),
+    scene(
       'loop',
-      'Electricity needs a complete loop: a battery, wires and the bulb.',
-      'Electricity needs a complete loop: a battery, wires, and the bulb.',
+      'That matters, because electricity needs a complete loop.',
+      'That matters, because electricity needs a complete loop.',
       8,
       [
         ...circuit,
@@ -460,50 +519,6 @@ export const doodleLesson = parseProject({
       { transition: 'slide' },
     ),
     scene(
-      'ohm',
-      'Current is voltage divided by resistance. Double the resistance, and half the current flows.',
-      'Current is voltage divided by resistance. Double the resistance, and half the current flows.',
-      10,
-      [
-        { text: 'current = voltage ÷ resistance', x: 210, y: 170, size: 104, seconds: 1.8 },
-        { d: 'M210 200 H1390', tone: 'accent', seconds: 0.6 },
-        {
-          text: '12 volts ÷ 3 ohms = 4 amps',
-          x: 390,
-          y: 370,
-          size: 76,
-          tone: 'good',
-          seconds: 1.3,
-        },
-        { text: '12 volts ÷ 6 ohms = 2 amps', x: 390, y: 510, size: 76, tone: 'bad', seconds: 1.3 },
-        {
-          text: 'more resistance, less current',
-          x: 460,
-          y: 650,
-          size: 62,
-          tone: 'muted',
-          seconds: 1,
-        },
-      ],
-      [
-        { text: 'current =', x: 240, y: 230, size: 120, seconds: 0.7 },
-        { text: 'voltage ÷ resistance', x: 40, y: 360, size: 96, seconds: 1.2 },
-        { d: 'M40 400 H860', tone: 'accent', seconds: 0.5 },
-        { text: '12 volts ÷ 3 ohms', x: 110, y: 600, size: 90, tone: 'good', seconds: 0.8 },
-        { text: '= 4 amps', x: 290, y: 700, size: 90, tone: 'good', seconds: 0.4 },
-        { text: '12 volts ÷ 6 ohms', x: 110, y: 900, size: 90, tone: 'bad', seconds: 0.8 },
-        { text: '= 2 amps', x: 290, y: 1000, size: 90, tone: 'bad', seconds: 0.4 },
-        {
-          text: 'more resistance, less current',
-          x: 90,
-          y: 1190,
-          size: 66,
-          tone: 'muted',
-          seconds: 1,
-        },
-      ],
-    ),
-    scene(
       'filament',
       'A bulb has one very thin, coiled wire called a filament, with far more resistance than the wires feeding it.',
       'A bulb has one very thin, coiled wire called a filament, with far more resistance than the wires feeding it.',
@@ -585,61 +600,6 @@ export const doodleLesson = parseProject({
       ],
     ),
     scene(
-      'waste',
-      'An old bulb is really a tiny heater. About 90 percent of its energy becomes heat, and only about 10 percent becomes light.',
-      'An old bulb is really a tiny heater. About ninety percent of its energy becomes heat, and only about ten percent becomes light.',
-      10,
-      [
-        {
-          d: 'M200 260 H1200 V420 H200 Z',
-          tone: 'bad',
-          seconds: 1.4,
-          fill: 'bad',
-          fillOpacity: 0.25,
-        },
-        { text: 'heat: about 90%', x: 460, y: 360, size: 80, tone: 'bad', seconds: 1 },
-        {
-          d: 'M1200 260 H1400 V420 H1200 Z',
-          tone: 'accent',
-          seconds: 0.6,
-          fill: 'accent',
-          fillOpacity: 0.5,
-        },
-        { text: 'light: 10%', x: 1190, y: 220, size: 62, tone: 'accent', seconds: 0.7 },
-        {
-          text: 'LEDs make light without a hot wire, so they waste far less.',
-          x: 200,
-          y: 560,
-          size: 54,
-          tone: 'muted',
-          at: 5,
-          seconds: 1.6,
-        },
-      ],
-      [
-        { text: 'heat: about 90%', x: 170, y: 290, size: 100, tone: 'bad', seconds: 0.8 },
-        {
-          d: 'M100 340 H730 V560 H100 Z',
-          tone: 'bad',
-          seconds: 1.2,
-          fill: 'bad',
-          fillOpacity: 0.25,
-        },
-        {
-          d: 'M730 340 H800 V560 H730 Z',
-          tone: 'accent',
-          seconds: 0.5,
-          fill: 'accent',
-          fillOpacity: 0.5,
-        },
-        { text: 'light: 10%', x: 450, y: 660, size: 90, tone: 'accent', seconds: 0.7 },
-        { text: 'LEDs make light', x: 170, y: 930, size: 88, tone: 'muted', at: 5, seconds: 0.7 },
-        { text: 'without a hot wire,', x: 130, y: 1030, size: 88, tone: 'muted', seconds: 0.7 },
-        { text: 'so they waste far less.', x: 40, y: 1130, size: 88, tone: 'muted', seconds: 0.8 },
-      ],
-      { transition: 'slide' },
-    ),
-    scene(
       'recap',
       'Voltage pushes the current. Resistance turns it into heat. Enough heat in a thin wire makes light.',
       'Voltage pushes the current. Resistance turns it into heat. Enough heat in a thin wire makes light.',
@@ -674,13 +634,83 @@ export const doodleLesson = parseProject({
         { text: 'heat makes light', x: 170, y: 900, size: 72, tone: 'accent', seconds: 0.7 },
       ],
     ),
+    scene(
+      'challenge',
+      "Now apply it. A toaster has wires that glow too. Using today's idea, explain why, in one or two sentences. Pause here, and write it down.",
+      "Now apply it. A toaster has wires that glow too. Using today's idea, explain why, in one or two sentences. Pause here, and write it down.",
+      18,
+      [
+        { text: 'Now apply it', x: 500, y: 120, size: 88, tone: 'accent', seconds: 0.6 },
+        { d: 'M520 280 H1080 V600 H520 Z M640 280 V230 M960 280 V230', seconds: 0.8 },
+        {
+          d: 'M580 350 C640 300 700 400 760 350 S880 300 1020 350',
+          tone: 'bad',
+          width: 5,
+          seconds: 0.7,
+        },
+        {
+          d: 'M580 460 C640 410 700 510 760 460 S880 410 1020 460',
+          tone: 'bad',
+          width: 5,
+          seconds: 0.7,
+        },
+        { text: 'Why do they glow?', x: 500, y: 680, size: 72, tone: 'good', seconds: 0.7 },
+      ],
+      [
+        { text: 'Now apply it', x: 170, y: 170, size: 100, tone: 'accent', seconds: 0.6 },
+        { d: 'M150 400 H750 V800 H150 Z M280 400 V340 M620 400 V340', seconds: 0.8 },
+        {
+          d: 'M210 490 C280 430 350 550 420 490 S560 430 690 490',
+          tone: 'bad',
+          width: 5,
+          seconds: 0.7,
+        },
+        {
+          d: 'M210 640 C280 580 350 700 420 640 S560 580 690 640',
+          tone: 'bad',
+          width: 5,
+          seconds: 0.7,
+        },
+        { text: 'Why do they glow?', x: 90, y: 980, size: 88, tone: 'good', seconds: 0.7 },
+      ],
+      { transition: 'slide' },
+    ),
+    scene(
+      'check',
+      'One good answer goes like this. Current meets resistance in the wire, the bumps make heat, and enough heat makes it glow.',
+      'One good answer goes like this. Current meets resistance in the wire, the bumps make heat, and enough heat makes it glow.',
+      10,
+      [
+        { text: 'One good answer', x: 480, y: 120, size: 88, tone: 'accent', seconds: 0.6 },
+        { text: 'current meets resistance', x: 330, y: 300, size: 76, tone: 'good', seconds: 0.9 },
+        { text: 'the bumps make heat', x: 400, y: 430, size: 76, tone: 'bad', seconds: 0.8 },
+        {
+          text: 'enough heat makes it glow',
+          x: 300,
+          y: 560,
+          size: 76,
+          tone: 'accent',
+          seconds: 0.9,
+        },
+      ],
+      [
+        { text: 'One good answer', x: 70, y: 170, size: 100, tone: 'accent', seconds: 0.6 },
+        { text: 'current meets', x: 150, y: 400, size: 90, tone: 'good', seconds: 0.5 },
+        { text: 'resistance', x: 220, y: 510, size: 90, tone: 'good', seconds: 0.4 },
+        { text: 'the bumps', x: 240, y: 700, size: 90, tone: 'bad', seconds: 0.4 },
+        { text: 'make heat', x: 240, y: 810, size: 90, tone: 'bad', seconds: 0.4 },
+        { text: 'enough heat', x: 200, y: 1000, size: 90, tone: 'accent', seconds: 0.4 },
+        { text: 'makes it glow', x: 170, y: 1110, size: 90, tone: 'accent', seconds: 0.5 },
+      ],
+      { transition: 'cut' },
+    ),
     {
       id: 'end',
       kind: 'blocks',
       minSeconds: 6,
       transition: 'fade',
-      caption: 'Now you know why a bulb glows.',
-      spoken: 'And now you know why a bulb glows.',
+      caption: 'Now you know why a bulb glows, and a toaster too.',
+      spoken: 'And now you know why a bulb glows, and a toaster too.',
       blocks: [
         {
           type: 'end',

@@ -10,7 +10,11 @@ import { PRESETS, fromPreset, storePresetFonts } from './index'
 const blocksOf = (project: Project) =>
   project.scenes.flatMap((s) => (s.kind === 'blocks' ? s.blocks : []))
 
-// A Record, so adding a block type won't compile until the presets are checked for it.
+// The stages of a lesson, in teaching order: see site/guide/teaching-videos.md.
+const LESSON_STAGES = ['hook', 'why', 'try', 'reflect', 'challenge', 'check']
+const secondsToSay = (spoken: string) => spoken.trim().split(/\s+/).length / 2.5
+
+// A Record, so adding a block type won't compile until the showcase is checked for it.
 const BLOCK_TYPES: Record<Block['type'], true> = {
   eyebrow: true,
   headline: true,
@@ -28,13 +32,13 @@ const BLOCK_TYPES: Record<Block['type'], true> = {
 const LANGS = ['ts', 'js', 'py', 'sql', 'json', 'plain']
 
 describe('presets', () => {
-  test('ships the showcase, the doodle lesson and the three language tours', () => {
+  test('ships the showcase and the four lessons', () => {
     expect(PRESETS.map((p) => p.id)).toEqual([
       'showcase',
       'doodle-light-bulb',
-      'typescript-intro',
-      'javascript-basics',
-      'python-basics',
+      'typescript-types',
+      'javascript-const-let',
+      'python-objects',
     ])
   })
 
@@ -46,16 +50,6 @@ describe('presets', () => {
         const used = new Set(project.scenes.map((s) => s.transition))
         for (const t of ['fade', 'cut', 'slide'] as const) expect(used.has(t), t).toBe(true)
       })
-
-      if (preset.id !== 'doodle-light-bulb') {
-        test('uses every block type', () => {
-          const wanted = Object.keys(BLOCK_TYPES).filter(
-            // Icons are files a project downloads; a preset ships none.
-            (t) => t !== 'icon' && (t !== 'doodle' || preset.id === 'showcase'),
-          )
-          expect(new Set(blocksOf(project).map((b) => b.type))).toEqual(new Set(wanted))
-        })
-      }
 
       test('has enough scenes to choose from, in about a minute or more', () => {
         expect(project.scenes.length).toBeGreaterThanOrEqual(10)
@@ -94,6 +88,28 @@ describe('presets', () => {
         test('renders as-is, with no custom code to trust', () => {
           expect(project.scenes.every((s) => s.kind === 'blocks')).toBe(true)
         })
+
+        test('follows the lesson stages, in order', () => {
+          const ids = project.scenes.map((s) => s.id)
+          expect(ids.filter((id) => LESSON_STAGES.includes(id))).toEqual(LESSON_STAGES)
+          expect(ids[0]).toBe('hook')
+        })
+
+        test('gives its answer straight after the challenge', () => {
+          const ids = project.scenes.map((s) => s.id)
+          expect(ids.indexOf('check')).toBe(ids.indexOf('challenge') + 1)
+        })
+
+        test('tells viewers to pause for the challenge, and leaves time to reach it', () => {
+          const scene = project.scenes.find((s) => s.id === 'challenge')!
+          expect(scene.spoken).toMatch(/pause|stop here/i)
+          expect(scene.minSeconds).toBeGreaterThanOrEqual(secondsToSay(scene.spoken) + 5)
+        })
+
+        test('holds the try-it-first scene long enough to reach pause', () => {
+          const scene = project.scenes.find((s) => s.id === 'try')!
+          expect(scene.minSeconds).toBeGreaterThanOrEqual(secondsToSay(scene.spoken) + 5)
+        })
       }
     })
   }
@@ -130,9 +146,41 @@ describe('presets', () => {
     })
   })
 
+  describe('python-objects', () => {
+    const blocks = blocksOf(PRESETS.find((p) => p.id === 'python-objects')!.project)
+
+    test('draws the ideas and shows the implementation in real code', () => {
+      const types = blocks.map((b) => b.type)
+      expect(types.filter((t) => t === 'doodle').length).toBeGreaterThanOrEqual(5)
+      expect(types.filter((t) => t === 'code').length).toBeGreaterThanOrEqual(4)
+    })
+
+    test('every drawing has a tall version, and every label fits', () => {
+      for (const b of blocks) {
+        if (b.type !== 'doodle') continue
+        expect(b.tall?.strokes.length).toBeGreaterThan(0)
+        for (const [strokes, width] of [
+          [b.strokes, 1600],
+          [b.tall!.strokes, 900],
+        ] as const) {
+          for (const s of strokes) {
+            if ('text' in s) {
+              expect(s.x + s.text.length * s.size * 0.5, s.text).toBeLessThanOrEqual(width)
+            }
+          }
+        }
+      }
+    })
+  })
+
   describe('showcase', () => {
     const project = PRESETS.find((p) => p.id === 'showcase')!.project
     const blocks = blocksOf(project)
+
+    test('uses every block type, except icons, which are files a project downloads', () => {
+      const wanted = Object.keys(BLOCK_TYPES).filter((type) => type !== 'icon')
+      expect(new Set(blocks.map((b) => b.type))).toEqual(new Set(wanted))
+    })
 
     test('shows every transition', () => {
       expect(new Set(project.scenes.map((s) => s.transition))).toEqual(new Set(TRANSITIONS))
@@ -185,12 +233,12 @@ describe('presets', () => {
     }
 
     test('no network costs the fonts, not the project, and stops after one try', async () => {
-      const ws = await start('python-basics')
+      const ws = await start('python-objects')
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
       const offline = vi.fn(async () => {
         throw new TypeError('fetch failed')
       }) as unknown as typeof fetch
-      await expect(storePresetFonts(ws, 'a', 'python-basics', offline)).resolves.toBeUndefined()
+      await expect(storePresetFonts(ws, 'a', 'python-objects', offline)).resolves.toBeUndefined()
       expect((await ws.read('a')).project.theme.fonts.files).toBeUndefined()
       expect(warn).toHaveBeenCalledTimes(1)
       warn.mockRestore()
@@ -198,21 +246,21 @@ describe('presets', () => {
   })
 
   test('fromPreset names the new project and keeps the preset untouched', () => {
-    const p = fromPreset('python-basics', 'My Python Ad')
+    const p = fromPreset('python-objects', 'My Python Ad')
     expect(p.name).toBe('My Python Ad')
-    expect(PRESETS.find((x) => x.id === 'python-basics')!.project.name).not.toBe('My Python Ad')
+    expect(PRESETS.find((x) => x.id === 'python-objects')!.project.name).not.toBe('My Python Ad')
   })
 
   test('fromPreset refuses an unknown preset and lists the real ones', () => {
     expect(() => fromPreset('cobol', 'x')).toThrow(
-      /showcase, doodle-light-bulb, typescript-intro, javascript-basics, python-basics/,
+      /showcase, doodle-light-bulb, typescript-types, javascript-const-let, python-objects/,
     )
   })
 
   test('fromPreset can use another voice', () => {
-    expect(fromPreset('python-basics', 'x', 'en-GB-SoniaNeural').voice.tts).toBe(
+    expect(fromPreset('python-objects', 'x', 'en-GB-SoniaNeural').voice.tts).toBe(
       'en-GB-SoniaNeural',
     )
-    expect(fromPreset('python-basics', 'x').voice.tts).toBe('en-US-AvaNeural')
+    expect(fromPreset('python-objects', 'x').voice.tts).toBe('en-US-AvaNeural')
   })
 })

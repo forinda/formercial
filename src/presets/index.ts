@@ -1,10 +1,10 @@
-// Ready-made commercials to start a project from. Each shows off what a project
-// can do, so you can keep what suits you and delete the rest. Every code sample
+// Ready-made projects to start from: the showcase tours every feature, and each
+// lesson teaches one thing, ready to reword for your own topic. Every code sample
 // and its output is real, so a preset can be rendered as-is.
 import { storeGoogleFont } from '@/core/assets/fonts'
 import { parseProject, type Project } from '@/core/project/project'
 import type { Workspace } from '@/core/storage/workspace'
-import { doodleLesson } from './doodle'
+import { doodleLesson, fit } from './doodle'
 
 export interface Preset {
   id: string
@@ -18,7 +18,10 @@ export interface Preset {
 const scene = (id: string, caption: string, spoken: string, blocks: unknown[], extra = {}) => ({
   id,
   kind: 'blocks',
-  minSeconds: 6,
+  // Long enough to say its line, at about 2.5 words a second, and to reach pause on a challenge.
+  minSeconds:
+    Math.max(6, Math.ceil(spoken.trim().split(/\s+/).length / 2.5 + 1)) +
+    (id === 'challenge' ? 6 : 0),
   transition: 'fade',
   caption,
   spoken,
@@ -34,9 +37,12 @@ const base = {
 }
 const fonts = { display: 'Unbounded', body: 'IBM Plex Sans', mono: 'JetBrains Mono' }
 
+// A lesson teaches one thing, in the same order: a real problem, why it matters,
+// something to try, what that showed, the idea, a challenge and its answer.
+// The stage scenes keep these ids, so it's clear what to replace.
 const typescript = parseProject({
   ...base,
-  name: 'TypeScript in a minute',
+  name: 'TypeScript types: catch a bug before it runs',
   theme: {
     colors: {
       bg: '#0b1a2e',
@@ -52,156 +58,174 @@ const typescript = parseProject({
   },
   scenes: [
     scene(
-      'ts-intro',
-      'TypeScript is JavaScript, with types.',
-      'TypeScript is JavaScript, with types.',
+      'hook',
+      'A price of 100 plus 5 comes out as 1005. No crash and no warning, just a wrong bill.',
+      'A price of 100 plus 5 comes out as 1005. No crash and no warning, just a wrong bill.',
       [
-        { type: 'eyebrow', text: 'TypeScript in a minute' },
-        { type: 'headline', text: 'JavaScript, with types.', accent: 'with types.' },
+        { type: 'eyebrow', text: 'TypeScript types' },
+        { type: 'headline', text: '100 + 5 = 1005?', accent: '1005?' },
       ],
     ),
     scene(
-      'ts-annotate',
-      'Give a value a type, and it keeps that type.',
-      'Give a value a type, and it keeps that type.',
+      'why',
+      'Bugs like this can reach your customers. Types catch them while you write, before anything runs.',
+      'Bugs like this can reach your customers. Types catch them while you write, before anything runs.',
       [
-        { type: 'eyebrow', text: 'Types' },
+        { type: 'eyebrow', text: 'The real cost' },
+        { type: 'headline', text: 'Find the bug before your customer does.', accent: 'before' },
+      ],
+    ),
+    scene(
+      'try',
+      'Before we explain anything, pause, read this code, and write down what you think it prints.',
+      'Before we explain anything, pause, read this code, and write down what you think it prints.',
+      [
+        { type: 'eyebrow', text: 'Read this first' },
         {
           type: 'code',
-          at: 0.6,
-          cps: 30,
+          at: 0.4,
+          cps: 40,
           lang: 'ts',
-          label: 'user.ts',
-          source: "let name: string = 'Ada'\nlet age: number = 36",
+          label: 'fee.js',
+          source: 'function addFee(price) {\n  return price + 5\n}\n\nconsole.log(addFee("100"))',
+        },
+      ],
+      { minSeconds: 13, transition: 'slide' },
+    ),
+    scene(
+      'reflect',
+      'It prints 1005. The quotes make the price text, so plus joins instead of adding.',
+      'It prints 1005. The quotes make the price text, so plus joins instead of adding.',
+      [
+        { type: 'terminal', at: 0.3, cps: 40, label: 'terminal', source: '$ node fee.js\n1005' },
+        { type: 'stamp', at: 2, until: 5, text: 'Wrong, and no error', tone: 'bad' },
+      ],
+      { transition: 'cut' },
+    ),
+    scene(
+      'annotate',
+      'A type says what a value must be. Here, price must be a number.',
+      'A type says what a value must be. Here, price must be a number.',
+      [
+        { type: 'eyebrow', text: 'The idea' },
+        {
+          type: 'code',
+          at: 0.4,
+          cps: 40,
+          lang: 'ts',
+          label: 'fee.ts',
+          source: 'function addFee(price: number): number {\n  return price + 5\n}',
         },
       ],
     ),
     scene(
-      'ts-error',
-      'Mistakes show up before the code ever runs.',
-      'Mistakes show up before the code ever runs.',
+      'caught',
+      'Now the same mistake stops the compiler, before the code ever runs.',
+      'Now the same mistake stops the compiler, before the code ever runs.',
       [
         {
           type: 'code',
-          at: 0.4,
-          cps: 30,
+          at: 0.3,
+          cps: 40,
           lang: 'ts',
-          label: 'user.ts',
-          source: "age = 'thirty-six'",
+          label: 'fee.ts',
+          source: 'console.log(addFee("100"))',
         },
         {
           type: 'terminal',
           at: 1.6,
           cps: 60,
           label: 'terminal',
-          source: "$ npx tsc\n✗ error TS2322: Type 'string' is not assignable to type 'number'.",
+          source:
+            "$ npx tsc fee.ts\n✗ fee.ts(4,20): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.",
         },
       ],
       { transition: 'cut' },
     ),
     scene(
-      'ts-interface',
-      'Describe your data once, and use it everywhere.',
-      'Describe your data once, and use it everywhere.',
+      'fix',
+      'Pass a real number, and it compiles and gives the right answer.',
+      'Pass a real number, and it compiles and gives the right answer.',
       [
-        { type: 'eyebrow', text: 'Interfaces' },
         {
           type: 'code',
-          at: 0.5,
-          cps: 45,
+          at: 0.3,
+          cps: 40,
           lang: 'ts',
-          label: 'greet.ts',
-          source:
-            'interface User {\n  name: string\n  age: number\n}\n\nfunction greet(user: User): string {\n  return `Hello, ${user.name}`\n}',
+          label: 'fee.ts',
+          source: 'console.log(addFee(100))',
         },
-      ],
-    ),
-    scene(
-      'ts-why',
-      'Your editor knows your code, so it can help you write it.',
-      'Your editor knows your code, so it can help you write it.',
-      [
-        { type: 'headline', text: 'Your editor reads along.', accent: 'reads along.' },
-        {
-          type: 'text',
-          at: 0.8,
-          text: 'Autocomplete, safe renames and instant errors all come from the types you already wrote.',
-        },
-      ],
-      { transition: 'slide' },
-    ),
-    scene(
-      'ts-setup',
-      'A project needs one more file: tsconfig.json.',
-      'A project needs one more file: t s config dot json.',
-      [
-        { type: 'eyebrow', text: 'Setup' },
-        {
-          type: 'tree',
-          at: 0.5,
-          lines: ['my-app/', '├ src/', '│ └ user.ts', '├ tsconfig.json', '└ package.json'],
-        },
-      ],
-    ),
-    scene(
-      'ts-fix',
-      'Fix the mistake, and the compiler goes quiet.',
-      'Fix the mistake, and the compiler goes quiet.',
-      [
-        { type: 'code', at: 0.3, cps: 30, lang: 'ts', label: 'user.ts', source: 'age = 37' },
         {
           type: 'terminal',
-          at: 1.2,
-          cps: 60,
+          at: 1.4,
+          cps: 50,
           label: 'terminal',
-          source: "$ npx tsc && echo '✓ compiled'\n✓ compiled",
+          source: '$ npx tsc fee.ts && node fee.js\n105',
         },
-        { type: 'stamp', at: 3.2, text: 'No errors', tone: 'good' },
+        { type: 'stamp', at: 3.4, text: 'Right answer', tone: 'good' },
       ],
-      { transition: 'cut' },
     ),
     scene(
-      'ts-parts',
-      'Three things to reach for first.',
-      'Three things to reach for first.',
+      'rule',
+      'Put types on what a function takes and returns. The compiler checks every call for you.',
+      'Put types on what a function takes and returns. The compiler checks every call for you.',
       [
-        { type: 'eyebrow', text: 'Next' },
+        { type: 'eyebrow', text: 'The rule' },
         {
           type: 'cards',
           at: 0.4,
           items: [
-            { title: 'Unions', sub: 'string | number' },
-            { title: 'Generics', sub: 'Array<User>' },
-            { title: 'Narrowing', sub: "typeof x === 'string'" },
+            { title: 'price: number', sub: 'what it takes' },
+            { title: '): number', sub: 'what it returns' },
+            { title: 'npx tsc', sub: 'checks every call' },
           ],
         },
       ],
       { transition: 'slide' },
     ),
     scene(
-      'ts-works-with',
-      'It runs wherever JavaScript does.',
-      'It runs wherever JavaScript does.',
+      'challenge',
+      'Your turn. Write discount, taking a price and a percent, with types. Then call it with text, and read the error. Pause now, and try it.',
+      'Your turn. Write discount, taking a price and a percent, with types. Then call it with text, and read the error. Pause now, and try it.',
       [
-        { type: 'headline', text: 'Runs wherever JavaScript does.' },
-        {
-          type: 'chips',
-          at: 0.8,
-          label: 'Works with',
-          items: ['Node.js', 'Deno', 'Bun', 'React', 'Vue'],
-        },
+        { type: 'eyebrow', text: 'Your challenge' },
+        { type: 'headline', text: 'discount(price, percent)', accent: 'discount' },
       ],
     ),
     scene(
-      'ts-end',
+      'check',
+      'Check yourself. Calling it with 200 and 10 should give 180. Text for the percent should be refused.',
+      'Check yourself. Calling it with 200 and 10 should give 180. Text for the percent should be refused.',
+      [
+        {
+          type: 'code',
+          at: 0.3,
+          cps: 60,
+          lang: 'ts',
+          label: 'off.ts',
+          source:
+            'function discount(price: number, percent: number): number {\n  return price - (price * percent) / 100\n}\n\nconsole.log(discount(200, 10))',
+        },
+        {
+          type: 'terminal',
+          at: 3,
+          cps: 50,
+          label: 'terminal',
+          source: '$ npx tsc off.ts && node off.js\n180',
+        },
+      ],
+      { transition: 'cut' },
+    ),
+    scene(
+      'end',
       'Add TypeScript to your project: npm install -D typescript.',
-      'Try it today. Add TypeScript to your project with npm.',
+      'Now add TypeScript to a project of your own, with npm.',
       [
         {
           type: 'end',
           at: 0.3,
-          wordmark: 'TypeScript',
-          tagline: 'JavaScript that scales.',
+          wordmark: 'TypeScript types',
+          tagline: 'Catch the bug before it runs.',
           command: 'npm install -D typescript',
           url: 'typescriptlang.org',
         },
@@ -212,7 +236,7 @@ const typescript = parseProject({
 
 const javascript = parseProject({
   ...base,
-  name: 'JavaScript variables and console.log',
+  name: 'JavaScript: const or let?',
   theme: {
     colors: {
       bg: '#161512',
@@ -228,154 +252,147 @@ const javascript = parseProject({
   },
   scenes: [
     scene(
-      'js-intro',
-      "Two things you'll use in every JavaScript program.",
-      "Two things you'll use in every JavaScript program.",
+      'hook',
+      'Halfway through a program, a discount rate gets overwritten. Every price after it is wrong.',
+      'Halfway through a program, a discount rate gets overwritten. Every price after it is wrong.',
       [
-        { type: 'eyebrow', text: 'JavaScript in a minute' },
-        { type: 'headline', text: 'Variables and console.log', accent: 'console.log' },
+        { type: 'eyebrow', text: 'const or let?' },
+        { type: 'headline', text: 'Who changed that value?', accent: 'changed' },
       ],
     ),
     scene(
-      'js-variables',
-      'const for values that stay, let for values that change.',
-      'Use const for values that stay, and let for values that change.',
+      'why',
+      'Unexpected changes are slow to track down. Choosing the right keyword makes this mistake fail loudly.',
+      'Unexpected changes are slow to track down. Choosing the right keyword makes this mistake fail loudly.',
       [
-        { type: 'eyebrow', text: 'Variables' },
-        {
-          type: 'code',
-          at: 0.5,
-          cps: 30,
-          lang: 'js',
-          label: 'hello.js',
-          source: "const name = 'Ada'\nlet count = 1\ncount = count + 1",
-        },
+        { type: 'eyebrow', text: 'Why bother?' },
+        { type: 'headline', text: 'Make the mistake fail loudly.', accent: 'loudly.' },
       ],
     ),
     scene(
-      'js-log',
-      'console.log prints whatever you give it.',
-      'console dot log prints whatever you give it.',
+      'try',
+      'Have a guess. Pause, read this code, and write down what you think happens.',
+      'Have a guess. Pause, read this code, and write down what you think happens.',
       [
-        {
-          type: 'code',
-          at: 0.4,
-          cps: 40,
-          lang: 'js',
-          label: 'hello.js',
-          source: "console.log('Hello,', name)\nconsole.log('count is', count)",
-        },
-        {
-          type: 'terminal',
-          at: 2.4,
-          cps: 40,
-          label: 'terminal',
-          source: '$ node hello.js\nHello, Ada\ncount is 2',
-        },
-      ],
-    ),
-    scene(
-      'js-const',
-      'Try to change a const, and JavaScript stops you.',
-      'Try to change a const, and JavaScript stops you.',
-      [
+        { type: 'eyebrow', text: 'Make a guess' },
         {
           type: 'code',
           at: 0.4,
           cps: 30,
           lang: 'js',
-          label: 'oops.js',
-          source: "const name = 'Ada'\nname = 'Grace'",
+          label: 'rate.js',
+          source: 'const rate = 0.1\nrate = 0.5\nconsole.log(rate)',
         },
+      ],
+      { minSeconds: 12, transition: 'slide' },
+    ),
+    scene(
+      'reflect',
+      'It stops with an error, and it never prints a thing. JavaScript protected that value.',
+      'It stops with an error, and it never prints a thing. JavaScript protected that value.',
+      [
         {
           type: 'terminal',
-          at: 2,
+          at: 0.3,
           cps: 50,
           label: 'terminal',
-          source: '$ node oops.js\n✗ TypeError: Assignment to constant variable.',
+          source: '$ node rate.js\n✗ TypeError: Assignment to constant variable.',
         },
+        { type: 'stamp', at: 2.2, until: 5, text: 'Stopped', tone: 'bad' },
       ],
       { transition: 'cut' },
     ),
     scene(
-      'js-fix',
-      'Need to change it? Use let instead.',
-      'Need to change it? Use let instead.',
+      'const',
+      'const means this name always points to this value. Use it for values that stay.',
+      'Const means this name always points to this value. Use it for values that stay.',
+      [
+        { type: 'eyebrow', text: 'The idea: const' },
+        {
+          type: 'code',
+          at: 0.4,
+          cps: 40,
+          lang: 'js',
+          label: 'price.js',
+          source: 'const rate = 0.1\nconst price = 200 - 200 * rate\nconsole.log(price)',
+        },
+        { type: 'terminal', at: 3.2, cps: 40, label: 'terminal', source: '$ node price.js\n180' },
+      ],
+    ),
+    scene(
+      'let',
+      'let is for values that are meant to change, like a running total.',
+      'Let is for values that are meant to change, like a running total.',
+      [
+        { type: 'eyebrow', text: 'The idea: let' },
+        {
+          type: 'code',
+          at: 0.4,
+          cps: 40,
+          lang: 'js',
+          label: 'total.js',
+          source: 'let total = 0\ntotal = total + 200\ntotal = total + 50\nconsole.log(total)',
+        },
+        { type: 'terminal', at: 3.2, cps: 40, label: 'terminal', source: '$ node total.js\n250' },
+        { type: 'stamp', at: 4.6, text: 'Allowed', tone: 'good' },
+      ],
+      { transition: 'cut' },
+    ),
+    scene(
+      'rule',
+      'Start with const. Switch to let only when a value really has to change.',
+      'Start with const. Switch to let only when a value really has to change.',
+      [
+        { type: 'eyebrow', text: 'The rule' },
+        {
+          type: 'cards',
+          at: 0.4,
+          items: [
+            { title: 'const', sub: 'start here' },
+            { title: 'let', sub: 'only if it must change' },
+          ],
+        },
+      ],
+      { transition: 'slide' },
+    ),
+    scene(
+      'challenge',
+      'Over to you. Write a shopping cart: a delivery fee of 5, and a total that adds items of 100, 50 and 25. Choose const or let for each. Hit pause, and write it.',
+      'Over to you. Write a shopping cart: a delivery fee of 5, and a total that adds items of 100, 50 and 25. Choose const or let for each. Hit pause, and write it.',
+      [
+        { type: 'eyebrow', text: 'Over to you' },
+        { type: 'headline', text: 'Which stays? Which changes?', accent: 'changes?' },
+      ],
+    ),
+    scene(
+      'check',
+      'Compare yours. The fee stays, so it is const. The total grows, so it is let. You should get 180.',
+      'Compare yours. The fee stays, so it is const. The total grows, so it is let. You should get 180.',
       [
         {
           type: 'code',
           at: 0.3,
-          cps: 30,
+          cps: 60,
           lang: 'js',
-          label: 'fixed.js',
-          source: "let name = 'Ada'\nname = 'Grace'\nconsole.log(name)",
+          label: 'cart.js',
+          source:
+            'const fee = 5\nlet total = 0\ntotal = total + 100\ntotal = total + 50\ntotal = total + 25\nconsole.log(total + fee)',
         },
-        { type: 'terminal', at: 2.2, cps: 40, label: 'terminal', source: '$ node fixed.js\nGrace' },
-        { type: 'stamp', at: 3.6, text: 'Fixed', tone: 'good' },
+        { type: 'terminal', at: 3, cps: 40, label: 'terminal', source: '$ node cart.js\n180' },
       ],
       { transition: 'cut' },
     ),
     scene(
-      'js-why',
-      'Reach for const first. It tells readers the value stays put.',
-      'Reach for const first. It tells readers the value stays put.',
-      [
-        { type: 'headline', text: 'Start with const.', accent: 'const.' },
-        {
-          type: 'text',
-          at: 0.8,
-          text: 'Most values never change. Switch to let only when one really has to.',
-        },
-      ],
-      { transition: 'slide' },
-    ),
-    scene('js-log-more', 'console has more than log.', 'Console has more than log.', [
-      { type: 'eyebrow', text: 'The console' },
-      {
-        type: 'cards',
-        at: 0.4,
-        items: [
-          { title: 'console.log', sub: 'anything at all' },
-          { title: 'console.table', sub: 'arrays as a table' },
-          { title: 'console.error', sub: 'goes to stderr' },
-        ],
-      },
-    ]),
-    scene(
-      'js-files',
-      'One file is all you need to start.',
-      'One file is all you need to start.',
-      [
-        { type: 'eyebrow', text: 'Your first project' },
-        { type: 'tree', at: 0.5, lines: ['my-app/', '├ hello.js', '└ fixed.js'] },
-      ],
-      { transition: 'slide' },
-    ),
-    scene(
-      'js-runs-in',
-      'The same language runs in all of these.',
-      'The same language runs in all of these.',
-      [
-        { type: 'headline', text: 'One language, many places.' },
-        {
-          type: 'chips',
-          at: 0.8,
-          label: 'Runs in',
-          items: ['Browsers', 'Node.js', 'Deno', 'Bun'],
-        },
-      ],
-    ),
-    scene(
-      'js-end',
-      'Write it in a file, and run it with node.',
-      'Write it in a file, and run it with node.',
+      'end',
+      'Start with const. Reach for let when a value has to change.',
+      'Start with const. Reach for let when a value has to change.',
       [
         {
           type: 'end',
           at: 0.3,
-          wordmark: 'JavaScript',
-          tagline: 'Variables in, answers out.',
-          command: 'node hello.js',
+          wordmark: 'const or let',
+          tagline: 'Start with const.',
+          command: 'node cart.js',
           url: 'developer.mozilla.org',
         },
       ],
@@ -383,190 +400,386 @@ const javascript = parseProject({
   ],
 })
 
+// Plain-language ideas are drawn, and the implementation is real code.
+const drawn = (id: string, line: string, strokes: unknown[], tall: unknown[], extra = {}) =>
+  scene(
+    id,
+    line,
+    line,
+    [{ type: 'doodle', strokes: fit(strokes, 1600), tall: { strokes: fit(tall, 900) } }],
+    extra,
+  )
+const walletArt = (x: number, y: number, tone = 'fg') => ({
+  d: `M${x} ${y} h200 v120 h-200 Z M${x + 140} ${y + 42} h60 v36 h-60 Z`,
+  tone,
+  seconds: 0.5,
+})
+const houseArt = (x: number, y: number, tone = 'fg') => ({
+  d: `M${x} ${y + 80} L${x + 80} ${y} L${x + 160} ${y + 80} M${x + 24} ${y + 80} V${y + 190} H${x + 136} V${y + 80}`,
+  tone,
+  seconds: 0.4,
+})
+const phoneArt = (x: number, y: number) => ({
+  d: `M${x} ${y} h170 v320 h-170 Z M${x + 65} ${y + 295} h40`,
+  seconds: 0.6,
+})
+
 const python = parseProject({
   ...base,
-  name: 'Python hello world and dictionaries',
+  name: 'Python objects: build a wallet',
   theme: {
     colors: {
-      bg: '#0f1e2e',
-      panel: '#152a40',
-      line: '#2b4a6b',
-      fg: '#f2f5f9',
-      muted: '#9fb1c6',
-      accent: '#ffd43b',
-      good: '#7fd1b9',
-      bad: '#ff8a80',
+      bg: '#fbf8ef',
+      panel: '#fdfbf4',
+      line: '#d9d3c2',
+      fg: '#24303b',
+      muted: '#6b7480',
+      accent: '#c97a00',
+      good: '#1f8a70',
+      bad: '#cf3f50',
     },
-    fonts,
+    // Handwriting for the drawings, and a plain monospace for the code.
+    fonts: { display: 'Kalam', body: 'Patrick Hand', mono: 'JetBrains Mono' },
   },
   scenes: [
-    scene('py-intro', 'Hello, world. Then dictionaries.', 'Hello, world. Then, dictionaries.', [
-      { type: 'eyebrow', text: 'Python in a minute' },
-      { type: 'headline', text: 'Hello, world. Then dictionaries.', accent: 'dictionaries.' },
-    ]),
-    scene(
-      'py-hello',
-      'One line prints your first message.',
-      'One line prints your first message.',
+    drawn(
+      'hook',
+      'Every wallet in your app needs a balance and the same rules. Copy that code for each person, and one day a balance goes below zero.',
       [
+        { text: 'One wallet is easy.', x: 60, y: 120, size: 84, seconds: 0.8 },
+        walletArt(100, 180),
+        {
+          text: 'A thousand copies of the rules?',
+          x: 60,
+          y: 420,
+          size: 72,
+          tone: 'bad',
+          at: 3,
+          seconds: 1,
+        },
+        walletArt(100, 470, 'muted'),
+        walletArt(340, 470, 'muted'),
+        walletArt(580, 470, 'muted'),
+        walletArt(820, 470, 'bad'),
+        { text: '-30', x: 1090, y: 560, size: 110, tone: 'bad', at: 7, seconds: 0.5 },
+      ],
+      [
+        { text: 'One wallet', x: 220, y: 130, size: 100, seconds: 0.6 },
+        { text: 'is easy.', x: 280, y: 240, size: 100, seconds: 0.5 },
+        walletArt(350, 300),
+        { text: 'A thousand copies', x: 90, y: 620, size: 84, tone: 'bad', at: 3, seconds: 0.7 },
+        { text: 'of the rules?', x: 180, y: 720, size: 84, tone: 'bad', seconds: 0.5 },
+        walletArt(120, 800, 'muted'),
+        walletArt(350, 800, 'muted'),
+        walletArt(580, 800, 'muted'),
+        walletArt(350, 980, 'bad'),
+        { text: '-30', x: 370, y: 1240, size: 130, tone: 'bad', at: 7, seconds: 0.5 },
+      ],
+    ),
+    drawn(
+      'why',
+      "Today's goal: design one wallet, then build as many as you need. This is how programs stay organised as they grow.",
+      [
+        { text: 'What you will build', x: 60, y: 110, size: 72, tone: 'accent', seconds: 0.7 },
+        { d: 'M120 220 h300 v340 h-300 Z M160 290 h220 M160 360 h220 M160 430 h140', seconds: 0.8 },
+        { text: 'one design', x: 130, y: 640, size: 60, tone: 'accent', seconds: 0.5 },
+        { d: 'M470 390 H690 M650 350 L690 390 L650 430', seconds: 0.5 },
+        walletArt(760, 200),
+        walletArt(1040, 200),
+        walletArt(760, 400),
+        walletArt(1040, 400),
+        { text: 'as many as you need', x: 760, y: 640, size: 60, tone: 'good', seconds: 0.7 },
+      ],
+      [
+        { text: 'What you will build', x: 70, y: 130, size: 80, tone: 'accent', seconds: 0.7 },
+        { d: 'M300 210 h300 v300 h-300 Z M340 270 h220 M340 340 h220 M340 410 h140', seconds: 0.8 },
+        { text: 'one design', x: 290, y: 590, size: 76, tone: 'accent', seconds: 0.5 },
+        { d: 'M450 630 V740 M410 700 L450 740 L490 700', seconds: 0.4 },
+        walletArt(180, 790),
+        walletArt(520, 790),
+        walletArt(180, 970),
+        walletArt(520, 970),
+        { text: 'as many as you need', x: 80, y: 1220, size: 76, tone: 'good', seconds: 0.7 },
+      ],
+    ),
+    scene(
+      'try',
+      'See the problem for yourself. Pause, add a third person, and stop any balance going below zero. How many places must you change?',
+      'See the problem for yourself. Pause, add a third person, and stop any balance going below zero. How many places must you change?',
+      [
+        { type: 'eyebrow', text: 'See the problem' },
         {
           type: 'code',
-          at: 0.5,
-          cps: 30,
-          lang: 'py',
-          label: 'hello.py',
-          source: 'print("Hello, world!")',
-        },
-        {
-          type: 'terminal',
-          at: 2,
-          cps: 40,
-          label: 'terminal',
-          source: '$ python3 hello.py\nHello, world!',
-        },
-      ],
-    ),
-    scene('py-dict', 'A dictionary maps keys to values.', 'A dictionary maps keys to values.', [
-      {
-        type: 'code',
-        at: 0.4,
-        cps: 40,
-        lang: 'py',
-        label: 'person.py',
-        source: 'person = {"name": "Ada", "age": 36}\nprint(person["name"])',
-      },
-      { type: 'terminal', at: 2.4, cps: 40, label: 'terminal', source: '$ python3 person.py\nAda' },
-    ]),
-    scene(
-      'py-loop',
-      'Add keys any time, then loop over them in order.',
-      'Add keys any time, then loop over them in order.',
-      [
-        {
-          type: 'code',
-          at: 0.3,
-          cps: 50,
-          lang: 'py',
-          label: 'person.py',
-          source:
-            'person["language"] = "Python"\nfor key, value in person.items():\n    print(key, value)',
-        },
-        {
-          type: 'terminal',
-          at: 2.6,
-          cps: 60,
-          label: 'output',
-          source: 'name Ada\nage 36\nlanguage Python',
-        },
-      ],
-      { transition: 'cut' },
-    ),
-    scene(
-      'py-missing',
-      'Ask for a key that is not there, and Python says so.',
-      'Ask for a key that is not there, and Python says so.',
-      [
-        {
-          type: 'code',
-          at: 0.3,
-          cps: 40,
-          lang: 'py',
-          label: 'person.py',
-          source: 'print(person["city"])',
-        },
-        {
-          type: 'terminal',
-          at: 1.6,
-          cps: 60,
-          label: 'terminal',
-          source: "$ python3 person.py\n✗ KeyError: 'city'",
-        },
-        { type: 'stamp', at: 3, until: 5, text: 'No such key', tone: 'bad' },
-      ],
-      { transition: 'cut' },
-    ),
-    scene(
-      'py-get',
-      'Use get to supply a default instead.',
-      'Use get to supply a default instead.',
-      [
-        {
-          type: 'code',
-          at: 0.3,
-          cps: 40,
-          lang: 'py',
-          label: 'person.py',
-          source: 'print(person.get("city", "unknown"))',
-        },
-        {
-          type: 'terminal',
-          at: 1.8,
-          cps: 60,
-          label: 'terminal',
-          source: '$ python3 person.py\nunknown',
-        },
-        { type: 'stamp', at: 3.4, text: 'Handled', tone: 'good' },
-      ],
-    ),
-    scene(
-      'py-why',
-      'Python code reads almost like plain English.',
-      'Python code reads almost like plain English.',
-      [
-        { type: 'headline', text: 'Reads like plain English.', accent: 'plain English.' },
-        {
-          type: 'text',
-          at: 0.8,
-          text: 'No braces and no semicolons. Indentation shows the structure, so it always matches.',
-        },
-      ],
-      { transition: 'slide' },
-    ),
-    scene(
-      'py-collections',
-      'Dictionaries have three close relatives.',
-      'Dictionaries have three close relatives.',
-      [
-        { type: 'eyebrow', text: 'Built in' },
-        {
-          type: 'cards',
           at: 0.4,
-          items: [
-            { title: 'list', sub: '[1, 2, 3]' },
-            { title: 'tuple', sub: '(1, 2, 3)' },
-            { title: 'set', sub: '{1, 2, 3}' },
-          ],
+          cps: 40,
+          lang: 'py',
+          label: 'before.py',
+          source:
+            'amina_balance = 100\nbrian_balance = 50\n\namina_balance = amina_balance - 30\nbrian_balance = brian_balance - 80\nprint(amina_balance, brian_balance)',
         },
       ],
+      { minSeconds: 15, transition: 'slide' },
     ),
     scene(
-      'py-files',
-      'Start with one file, and split it up as it grows.',
-      'Start with one file, and split it up as it grows.',
+      'reflect',
+      'Every person needs their own variable and their own copy of the rule. Miss one copy, and the bug comes back.',
+      'Every person needs their own variable and their own copy of the rule. Miss one copy, and the bug comes back.',
       [
-        { type: 'eyebrow', text: 'Your first project' },
-        { type: 'tree', at: 0.5, lines: ['my-app/', '├ hello.py', '└ person.py'] },
         {
-          type: 'chips',
-          at: 2,
-          label: 'Runs on',
-          items: ['Linux', 'macOS', 'Windows'],
+          type: 'terminal',
+          at: 0.3,
+          cps: 40,
+          label: 'terminal',
+          source: '$ python3 before.py\n70 -30',
         },
+        { type: 'stamp', at: 2, until: 6, text: 'Below zero', tone: 'bad' },
+      ],
+      { transition: 'cut' },
+    ),
+    drawn(
+      'object',
+      'Think of an object as a thing that knows things and can do things. Your phone knows its battery level, and it can make a call.',
+      [
+        { text: 'An object', x: 60, y: 110, size: 88, tone: 'accent', seconds: 0.6 },
+        { text: 'knows things, does things', x: 480, y: 110, size: 64, seconds: 0.9 },
+        phoneArt(180, 220),
+        { d: 'M500 330 H380', tone: 'good', at: 5, seconds: 0.3 },
+        { text: 'knows: battery level', x: 520, y: 350, size: 70, tone: 'good', seconds: 0.8 },
+        { d: 'M500 490 H380', tone: 'accent', at: 7, seconds: 0.3 },
+        { text: 'can do: make a call', x: 520, y: 510, size: 70, tone: 'accent', seconds: 0.8 },
+      ],
+      [
+        { text: 'An object', x: 240, y: 130, size: 110, tone: 'accent', seconds: 0.6 },
+        { text: 'knows things,', x: 180, y: 250, size: 84, seconds: 0.5 },
+        { text: 'does things', x: 220, y: 350, size: 84, seconds: 0.5 },
+        phoneArt(365, 420),
+        { text: 'knows:', x: 340, y: 860, size: 80, tone: 'good', at: 5, seconds: 0.3 },
+        { text: 'battery level', x: 200, y: 960, size: 84, tone: 'good', seconds: 0.5 },
+        { text: 'can do:', x: 320, y: 1110, size: 80, tone: 'accent', at: 7, seconds: 0.3 },
+        { text: 'make a call', x: 240, y: 1210, size: 84, tone: 'accent', seconds: 0.5 },
+      ],
+    ),
+    drawn(
+      'wallet-object',
+      'A wallet is the same. It knows its owner and its balance, and it can take money out, following its own rules.',
+      [
+        {
+          text: 'A wallet is an object too',
+          x: 60,
+          y: 110,
+          size: 80,
+          tone: 'accent',
+          seconds: 0.8,
+        },
+        walletArt(160, 300),
+        { d: 'M520 280 H380', tone: 'good', at: 2, seconds: 0.3 },
+        { text: 'knows: owner, balance', x: 540, y: 300, size: 70, tone: 'good', seconds: 0.8 },
+        { d: 'M520 470 H380', tone: 'accent', at: 4.5, seconds: 0.3 },
+        { text: 'can do: withdraw', x: 540, y: 490, size: 70, tone: 'accent', seconds: 0.7 },
+        { text: 'by its own rules', x: 540, y: 590, size: 60, tone: 'muted', seconds: 0.6 },
+      ],
+      [
+        { text: 'A wallet is', x: 210, y: 130, size: 100, tone: 'accent', seconds: 0.5 },
+        { text: 'an object too', x: 170, y: 240, size: 100, tone: 'accent', seconds: 0.5 },
+        walletArt(350, 330),
+        { text: 'knows:', x: 340, y: 620, size: 80, tone: 'good', at: 2, seconds: 0.3 },
+        { text: 'owner, balance', x: 170, y: 720, size: 84, tone: 'good', seconds: 0.5 },
+        { text: 'can do:', x: 320, y: 900, size: 80, tone: 'accent', at: 4.5, seconds: 0.3 },
+        { text: 'withdraw', x: 280, y: 1000, size: 84, tone: 'accent', seconds: 0.4 },
+        { text: 'by its own rules', x: 170, y: 1110, size: 76, tone: 'muted', seconds: 0.5 },
+      ],
+      { transition: 'cut' },
+    ),
+    drawn(
+      'class',
+      'A class is the plan, and an object is one thing built from it. One house plan can build a whole street.',
+      [
+        {
+          d: 'M100 170 h320 v340 h-320 Z M180 370 L260 290 L340 370 M200 370 V460 H320 V370',
+          tone: 'accent',
+          seconds: 1,
+        },
+        { text: 'class: the plan', x: 80, y: 610, size: 66, tone: 'accent', seconds: 0.6 },
+        { d: 'M470 340 H640 M600 300 L640 340 L600 380', at: 2.8, seconds: 0.4 },
+        houseArt(700, 240),
+        houseArt(920, 240),
+        houseArt(1140, 240),
+        { d: 'M680 430 H1340', tone: 'muted', seconds: 0.3 },
+        { text: 'objects: the houses', x: 720, y: 610, size: 66, tone: 'good', seconds: 0.6 },
+      ],
+      [
+        {
+          d: 'M290 90 h320 v340 h-320 Z M370 290 L450 210 L530 290 M390 290 V380 H510 V290',
+          tone: 'accent',
+          seconds: 1,
+        },
+        { text: 'class: the plan', x: 170, y: 530, size: 84, tone: 'accent', seconds: 0.6 },
+        { d: 'M450 570 V690 M410 650 L450 690 L490 650', at: 2.8, seconds: 0.4 },
+        houseArt(130, 740),
+        houseArt(370, 740),
+        houseArt(610, 740),
+        { d: 'M100 930 H800', tone: 'muted', seconds: 0.3 },
+        { text: 'objects: the houses', x: 110, y: 1080, size: 84, tone: 'good', seconds: 0.6 },
       ],
       { transition: 'slide' },
     ),
     scene(
-      'py-end',
-      'Save it as hello.py, and run it with python3.',
-      'Save it as hello dot p-y, and run it with python three.',
+      'build',
+      'Here is the plan in code. __init__ runs whenever a new wallet is built, and self means this wallet.',
+      'Here is the plan in code. The init method runs whenever a new wallet is built, and self means this wallet.',
+      [
+        {
+          type: 'code',
+          at: 0.3,
+          cps: 60,
+          lang: 'py',
+          label: 'wallet.py',
+          source:
+            'class Wallet:\n    def __init__(self, owner, balance):\n        self.owner = owner\n        self.balance = balance\n\namina = Wallet("Amina", 100)\nprint(amina.owner, amina.balance)',
+        },
+        {
+          type: 'terminal',
+          at: 4,
+          cps: 40,
+          label: 'terminal',
+          source: '$ python3 wallet.py\nAmina 100',
+        },
+      ],
+    ),
+    scene(
+      'method',
+      'What a wallet can do goes in a method: a function inside the class. The rule now lives in one place.',
+      'What a wallet can do goes in a method: a function inside the class. The rule now lives in one place.',
+      [
+        {
+          type: 'code',
+          at: 0.3,
+          cps: 60,
+          lang: 'py',
+          label: 'wallet.py',
+          source:
+            '    def withdraw(self, amount):\n        if amount > self.balance:\n            print("Not enough money")\n            return\n        self.balance = self.balance - amount',
+        },
+      ],
+      { transition: 'cut' },
+    ),
+    scene(
+      'many',
+      'Build two wallets from one plan. Each keeps its own balance, and both follow the same rule.',
+      'Build two wallets from one plan. Each keeps its own balance, and both follow the same rule.',
+      [
+        {
+          type: 'code',
+          at: 0.3,
+          cps: 60,
+          lang: 'py',
+          label: 'wallet.py',
+          source:
+            'amina = Wallet("Amina", 100)\nbrian = Wallet("Brian", 50)\n\namina.withdraw(30)\nbrian.withdraw(80)\nprint(amina.balance, brian.balance)',
+        },
+        {
+          type: 'terminal',
+          at: 3.6,
+          cps: 40,
+          label: 'terminal',
+          source: '$ python3 wallet.py\nNot enough money\n70 50',
+        },
+        { type: 'stamp', at: 5.4, text: 'Goal reached', tone: 'good' },
+      ],
+    ),
+    drawn(
+      'rule',
+      'Put what a thing knows and what it can do into a class. Fix a rule once, and every object gets the fix.',
+      [
+        { text: 'The rule', x: 60, y: 110, size: 84, tone: 'accent', seconds: 0.5 },
+        { d: 'M520 170 h560 v230 h-560 Z', tone: 'accent', seconds: 0.7 },
+        { text: 'class Wallet', x: 620, y: 240, size: 64, tone: 'accent', seconds: 0.5 },
+        { text: 'knows + can do', x: 580, y: 340, size: 66, seconds: 0.6 },
+        {
+          d: 'M640 410 L320 500 M800 410 V500 M960 410 L1280 500',
+          tone: 'good',
+          at: 4,
+          seconds: 0.6,
+        },
+        walletArt(220, 510),
+        walletArt(700, 510),
+        walletArt(1180, 510),
+        { text: 'fix once, all get it', x: 560, y: 690, size: 60, tone: 'good', seconds: 0.6 },
+      ],
+      [
+        { text: 'The rule', x: 270, y: 130, size: 100, tone: 'accent', seconds: 0.5 },
+        { d: 'M170 200 h560 v240 h-560 Z', tone: 'accent', seconds: 0.7 },
+        { text: 'class Wallet', x: 260, y: 290, size: 70, tone: 'accent', seconds: 0.5 },
+        { text: 'knows + can do', x: 230, y: 390, size: 70, seconds: 0.6 },
+        {
+          d: 'M300 450 L190 590 M450 450 V590 M600 450 L710 590',
+          tone: 'good',
+          at: 4,
+          seconds: 0.6,
+        },
+        walletArt(90, 600),
+        walletArt(350, 760),
+        walletArt(610, 600),
+        { text: 'fix once,', x: 300, y: 1040, size: 90, tone: 'good', seconds: 0.4 },
+        { text: 'all get it', x: 290, y: 1150, size: 90, tone: 'good', seconds: 0.4 },
+      ],
+      { transition: 'slide' },
+    ),
+    drawn(
+      'challenge',
+      'Now you try. Add a deposit method to Wallet. Then build a wallet for someone you know, and deposit some money. Stop here, and write the code.',
+      [
+        { text: 'Now it is yours', x: 60, y: 110, size: 84, tone: 'accent', seconds: 0.6 },
+        walletArt(160, 300),
+        { d: 'M520 360 H400 M440 320 L400 360 L440 400', tone: 'good', at: 2, seconds: 0.5 },
+        { text: 'add: deposit', x: 560, y: 380, size: 90, tone: 'good', seconds: 0.6 },
+        { text: 'build one for someone you know', x: 160, y: 590, size: 70, at: 5, seconds: 1 },
+      ],
+      [
+        { text: 'Now it is yours', x: 110, y: 150, size: 100, tone: 'accent', seconds: 0.6 },
+        walletArt(350, 280),
+        { d: 'M450 560 V440 M410 480 L450 440 L490 480', tone: 'good', at: 2, seconds: 0.5 },
+        { text: 'add: deposit', x: 170, y: 680, size: 100, tone: 'good', seconds: 0.6 },
+        { text: 'build one for', x: 200, y: 900, size: 84, at: 5, seconds: 0.5 },
+        { text: 'someone you know', x: 110, y: 1010, size: 84, seconds: 0.6 },
+      ],
+    ),
+    scene(
+      'check',
+      'How did you do? Your names can differ, but 10 plus a deposit of 25 should leave a balance of 35.',
+      'How did you do? Your names can differ, but 10 plus a deposit of 25 should leave a balance of 35.',
+      [
+        {
+          type: 'code',
+          at: 0.3,
+          cps: 60,
+          lang: 'py',
+          label: 'wallet.py',
+          source:
+            '    def deposit(self, amount):\n        self.balance = self.balance + amount\n\ncarol = Wallet("Carol", 10)\ncarol.deposit(25)\nprint(carol.owner, carol.balance)',
+        },
+        {
+          type: 'terminal',
+          at: 3.6,
+          cps: 40,
+          label: 'terminal',
+          source: '$ python3 wallet.py\nCarol 35',
+        },
+      ],
+      { transition: 'cut' },
+    ),
+    scene(
+      'end',
+      'An object knows things and can do things.',
+      'An object knows things and can do things. Now go and build your own.',
       [
         {
           type: 'end',
           at: 0.3,
-          wordmark: 'Python',
-          tagline: 'Readable from the first line.',
-          command: 'python3 hello.py',
-          url: 'python.org',
+          wordmark: 'Python objects',
+          tagline: 'Knows things. Does things.',
+          command: 'python3 wallet.py',
+          url: 'docs.python.org',
         },
       ],
     ),
@@ -915,29 +1128,29 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'doodle-light-bulb',
-    title: 'Doodle lesson: how a light bulb works',
-    description: 'A whiteboard explainer on current, resistance and why a filament glows',
+    title: 'Doodle lesson: why a light bulb glows',
+    description: 'A hand-drawn lesson that follows one idea: resistance turns current into heat',
     lang: 'none',
     project: doodleLesson,
   },
   {
-    id: 'typescript-intro',
-    title: 'Intro to TypeScript',
-    description: 'Types, a caught mistake and its fix, interfaces, tooling',
+    id: 'typescript-types',
+    title: 'Lesson: TypeScript types',
+    description: 'Catch a real bug before the code runs, with a challenge and its answer',
     lang: 'ts',
     project: typescript,
   },
   {
-    id: 'javascript-basics',
-    title: 'JavaScript: variables and console.log',
-    description: 'const and let, printing, changing a const and fixing it',
+    id: 'javascript-const-let',
+    title: 'Lesson: JavaScript const or let',
+    description: 'When a value should stay and when it can change, with a challenge and its answer',
     lang: 'js',
     project: javascript,
   },
   {
-    id: 'python-basics',
-    title: 'Python: hello world and dictionaries',
-    description: 'print, a dictionary, looping, a missing key and how to handle it',
+    id: 'python-objects',
+    title: 'Lesson: Python objects',
+    description: 'What an object is, drawn in plain words, then a wallet class in real code',
     lang: 'py',
     project: python,
   },
