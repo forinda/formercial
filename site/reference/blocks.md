@@ -131,6 +131,18 @@ A label:
 | `size`                  | Default `56`                                                                  |
 | `tone`, `seconds`, `at` | As for a line                                                                 |
 
+## stage3d
+
+A 3D scene as data: actors, a timeline, a camera and a world. It fills the whole scene, behind any other blocks, and lasts until its last timeline entry ends. See [3D scenes](../guide/3d-scenes).
+
+| Field | Type | Default | |
+|---|---|---|---|
+| `actors` | array | required | What's in the scene, each with a `kind` and an `id` |
+| `timeline` | array | `[]` | What happens: `at`, `actor`, then `move`, `clip`, `open` and so on |
+| `camera` | object | isometric | `view`, `position`, `target`, `size`, `fov`, `tallZoom` |
+| `world` | object | day | `light`, `background`, `gradient`, `floor`, `exposure`, `shadowReach` |
+| `at` | number | `0` | Seconds into the scene that its timeline starts |
+
 ## end
 
 The closing card.
