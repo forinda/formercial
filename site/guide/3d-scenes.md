@@ -109,13 +109,13 @@ Other shapes keep the width of the 16:9 picture, so nothing is cut off the sides
 
 ## Real models
 
-Upload a `.glb` to `media/`, and use it as a `model` actor. Models with their own animations can play them with `clip`.
+Upload a `.glb` to `media/`, and use it as a `model` actor. It has to be self-contained: with its textures embedded, not in separate files. Models with their own animations can play them with `clip`.
 
 Check a model's licence before you publish. Some, like Mixamo's, can be used in your videos, but community answers say the raw files can't be shared, so don't commit them to a public repository.
 
 ## Good to know
 
-- **It's plain data.** A `stage3d` block runs no project code, so unlike a [custom scene](./custom-scenes) there's nothing to trust.
+- **It's plain data.** A `stage3d` block runs no project code, so unlike a [custom scene](./custom-scenes) there's nothing to trust. A `.glb` can only load itself and what's embedded in it, so a shared model can't make your machine contact anything else.
 - **Renders need WebGL.** That's normally your GPU. A render fails with a message if it can't start, or if a model can't load.
 - **Every frame comes from the time alone,** so the same moment always draws the same picture, in preview and in the render.
 - **The look is stylised.** For photoreal shots, render in a tool like Blender. Formercial doesn't have a video block yet to bring that footage in.

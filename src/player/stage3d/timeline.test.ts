@@ -180,6 +180,15 @@ describe('stage3d timeline', () => {
     expect(() => block([{ kind: 'model', id: 'm', path: 'media/car.exe' }])).toThrow()
   })
 
+  test('limits what a shared project can ask for', () => {
+    expect(() => block([{ kind: 'road', id: 'r', length: 1e9 }])).toThrow()
+    expect(() => block([{ kind: 'road', id: 'r', length: 1000 }])).not.toThrow()
+    const box = (i: number) => ({ kind: 'box', id: `b${i}`, size: [1, 1, 1] })
+    expect(() => block(Array.from({ length: 501 }, (_, i) => box(i)))).toThrow()
+    const spin = { kind: 'lathe', id: 'l', profile: Array.from({ length: 201 }, () => [1, 1]) }
+    expect(() => block([spin])).toThrow()
+  })
+
   test('refuses a misspelled field, so a mistake is not silently ignored', () => {
     expect(() => block([{ kind: 'box', id: 'b', size: [1, 1, 1], colour: '#fff' }])).toThrow()
     expect(() => block([person], [{ at: 0, actor: 'a', mvoe: [1, 0, 0] }])).toThrow()

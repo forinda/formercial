@@ -118,7 +118,10 @@ const ActorSchema = z.discriminatedUnion('kind', [
     ...surface,
     kind: z.literal('lathe'),
     /** [radius, height] points, spun around the vertical axis: bottles, cans, vases. */
-    profile: z.array(z.tuple([z.number().min(0), z.number()])).min(2),
+    profile: z
+      .array(z.tuple([z.number().min(0), z.number()]))
+      .min(2)
+      .max(200),
     /** A printed label that wraps around it. */
     label: z
       .strictObject({
@@ -134,8 +137,8 @@ const ActorSchema = z.discriminatedUnion('kind', [
   z.strictObject({
     ...actorBase,
     kind: z.literal('road'),
-    length: positive.default(90),
-    width: positive.default(6),
+    length: positive.max(1000).default(90),
+    width: positive.max(1000).default(6),
   }),
   z.strictObject({
     ...actorBase,
@@ -158,7 +161,7 @@ const ActorSchema = z.discriminatedUnion('kind', [
   z.strictObject({
     ...actorBase,
     kind: z.literal('model'),
-    /** A .glb file in the project, with any animation clips it holds. */
+    /** A self-contained .glb file in the project, with any animation clips it holds. */
     path: z
       .string()
       .regex(/^media\/[\w./-]+\.glb$/)
@@ -192,8 +195,9 @@ const Stage3dActionSchema = z.strictObject({
   size: positive.optional(),
   fov: positive.optional(),
 })
-export const Stage3dActorsSchema = z.array(ActorSchema)
-export const Stage3dTimelineSchema = z.array(Stage3dActionSchema)
+// Limits, so a project from someone else can't hang the browser that opens it.
+export const Stage3dActorsSchema = z.array(ActorSchema).max(500)
+export const Stage3dTimelineSchema = z.array(Stage3dActionSchema).max(5000)
 export const Stage3dCameraSchema = z.strictObject({
   /** Isometric keeps things flat and parallel; perspective is like a real lens. */
   view: z.enum(['isometric', 'perspective']).default('isometric'),

@@ -5,6 +5,7 @@ import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import type { BlockCtx } from '../blocks'
+import { modelMayLoad } from './model-url'
 import { CLIPS, makePerson } from './person'
 import { stageAt, stageProblems, type ActorState, type Stage3d } from './timeline'
 
@@ -325,8 +326,14 @@ function buildPerson(a: Extract<Actor, { kind: 'person' }>): Built {
 }
 
 async function buildModel(a: Extract<Actor, { kind: 'model' }>, ctx: BlockCtx): Promise<Built> {
-  const gltf = await new GLTFLoader().loadAsync(ctx.fileUrl(a.path)).catch(() => {
-    throw new Error(`can't load ${a.path}`)
+  const manager = new THREE.LoadingManager()
+  const own = ctx.fileUrl(a.path)
+  manager.setURLModifier((url) => {
+    if (!modelMayLoad(url, own, location.href)) throw new Error('points outside the file')
+    return url
+  })
+  const gltf = await new GLTFLoader(manager).loadAsync(own).catch(() => {
+    throw new Error(`can't load ${a.path}: it's missing, damaged, or uses files outside itself`)
   })
   gltf.scene.traverse((o) => {
     if ((o as THREE.Mesh).isMesh) o.castShadow = o.receiveShadow = true
