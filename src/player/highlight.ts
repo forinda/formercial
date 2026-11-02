@@ -1,6 +1,6 @@
 // Small syntax colouring for typed code: comments, strings, keywords, numbers,
 // calls. Good enough for an ad, not a parser.
-export type Lang = 'ts' | 'js' | 'py' | 'c' | 'sql' | 'json' | 'plain'
+export type Lang = 'ts' | 'js' | 'py' | 'c' | 'java' | 'sql' | 'json' | 'plain'
 
 export const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -19,6 +19,11 @@ const LANGS: Record<Exclude<Lang, 'plain'>, { keywords: string; comment: string 
   c: {
     keywords:
       'include|define|int|char|float|double|void|long|short|unsigned|const|struct|typedef|sizeof|return|if|else|for|while|do|switch|case|break|continue',
+    comment: '\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?(?:\\*\\/|$)',
+  },
+  java: {
+    keywords:
+      'package|import|class|interface|enum|record|extends|implements|public|private|protected|static|final|abstract|void|int|long|double|float|boolean|char|byte|short|var|new|return|if|else|for|while|do|switch|case|default|break|continue|try|catch|finally|throw|throws|this|super|null|true|false|instanceof',
     comment: '\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?(?:\\*\\/|$)',
   },
   sql: {

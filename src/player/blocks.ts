@@ -264,6 +264,7 @@ const LANG_NAMES = {
   js: 'JavaScript',
   py: 'Python',
   c: 'C',
+  java: 'Java',
   sql: 'SQL',
   json: 'JSON',
   plain: 'Plain Text',
@@ -373,13 +374,98 @@ export function runView(b: RunBlock, time: number) {
   }
 }
 
+type ReviseBlock = Of<'revise'>
+
+/** Lines of `next` that aren't in a longest common run of lines with `prev`: what a step changed. */
+export function changedLines(prev: string[], next: string[]): number[] {
+  const n = prev.length
+  const m = next.length
+  // ponytail: O(n*m) table, fine for code that fits on screen.
+  const len = Array.from({ length: n + 1 }, () => Array.from({ length: m + 1 }, () => 0))
+  for (let i = n - 1; i >= 0; i--) {
+    for (let j = m - 1; j >= 0; j--) {
+      len[i][j] =
+        prev[i] === next[j] ? len[i + 1][j + 1] + 1 : Math.max(len[i + 1][j], len[i][j + 1])
+    }
+  }
+  const kept = new Set<number>()
+  for (let i = 0, j = 0; i < n && j < m;) {
+    if (prev[i] === next[j]) {
+      kept.add(j)
+      i++
+      j++
+    } else if (len[i + 1][j] >= len[i][j + 1]) i++
+    else j++
+  }
+  return next.flatMap((_, j) => (kept.has(j) ? [] : [j]))
+}
+
+// Each step's changed lines depend only on the block, so they're worked out once, not per frame.
+const reviseDiffs = new WeakMap<ReviseBlock, { lines: string[][]; changed: number[][] }>()
+function diffsOf(b: ReviseBlock) {
+  let d = reviseDiffs.get(b)
+  if (!d) {
+    const lines = b.steps.map((step) => step.source.split('\n'))
+    d = { lines, changed: lines.map((l, i) => (i ? changedLines(lines[i - 1], l) : [])) }
+    reviseDiffs.set(b, d)
+  }
+  return d
+}
+
+/** What a revise block shows at a time: a pure function of it. */
+export function reviseView(b: ReviseBlock, time: number) {
+  const times = stepTimes(b)
+  let k = 0
+  times.forEach((t, i) => {
+    if (time >= t.start) k = i
+  })
+  const { start, end } = times[k]
+  const p = time < start ? 0 : end > start ? clamp((time - start) / (end - start)) : 1
+  const { lines, changed: diffs } = diffsOf(b)
+  const changed = diffs[k]
+  let chapter = 0
+  const chapterOf = b.steps.map((step) => (chapter = step.chapter ?? chapter))
+  const card = b.steps
+    .slice(0, k + 1)
+    .reduce<ReviseBlock['steps'][number]['card']>((last, step) => step.card ?? last, undefined)
+  const fills = b.chapters.map((_, c) => {
+    const mine = chapterOf.flatMap((x, i) => (x === c ? [i] : []))
+    const done = mine.reduce((sum, i) => sum + (i < k ? 1 : i === k ? p : 0), 0)
+    return Math.round((done / Math.max(1, mine.length)) * 1000) / 1000
+  })
+  // Keep the line that matters in view: the ringed one, else the first changed one.
+  const focus = (i: number) => {
+    const step = b.steps[i]
+    const first = diffs[i][0]
+    const line = step.ring?.line ?? (first === undefined ? 1 : first + 1)
+    return Math.max(0, Math.min(lines[i].length - b.rows, line - 1 - Math.floor(b.rows / 2)))
+  }
+  const from = k ? focus(k - 1) : focus(0)
+  const scroll = from + (focus(k) - from) * ease((time - start) / SCROLL_SECONDS)
+  const ring = b.steps[k].ring
+  return {
+    step: k,
+    p: Math.round(p * 1000) / 1000,
+    changed,
+    chapter: chapterOf[k],
+    card,
+    cardIsNew: !!b.steps[k].card,
+    fills,
+    scroll: Math.round(scroll * 1000) / 1000,
+    ring: ring ? { ...ring, col: lines[k][ring.line - 1].indexOf(ring.text) } : null,
+  }
+}
+
 /** Frames a run block's stack shows before it counts the rest. */
 const RUN_FRAMES = 4
 
 /** A loose hand-drawn loop around a w by h box, open where the pen lifts. */
 export function ringPath(w: number, h: number) {
   const pts = [10, 24, 6, 6, 90, 2, 95, 18, 99, 34, 18, 40, 6, 26, 2, 16, 22, 8, 38, 7]
-  const at = pts.map((v, i) => Math.round((i % 2 ? (v * h) / 40 : (v * w) / 100) * 10) / 10)
+  // Curves fall short of their control points, so x is spread 12% to reach the box's ends.
+  const at = pts.map(
+    (v, i) => Math.round((i % 2 ? (v * h) / 40 : ((50 + (v - 50) * 1.12) * w) / 100) * 10) / 10,
+  )
   const pair = (i: number) => `${at[i]} ${at[i + 1]}`
   return `M${pair(0)} C${pair(2)} ${pair(4)} ${pair(6)} C${pair(8)} ${pair(10)} ${pair(12)} C${pair(14)} ${pair(16)} ${pair(18)}`
 }
@@ -449,6 +535,38 @@ function mountStroke(
     : []
   parts.dots.append(...dots)
   return { path, fill, dots, flow }
+}
+
+/**
+ * A hand-drawn ring over mono code, inside `text`. Mono text makes a column 1ch,
+ * measured once per draw from a probe; offsetWidth, not the on-screen box, so a
+ * transition's scale doesn't move it.
+ */
+function codeRing(text: HTMLElement) {
+  const ring = svg('svg', { class: 'run-ring' })
+  const loop = svg('path', { pathLength: 1, 'stroke-dasharray': '1 1' })
+  ring.append(loop)
+  const probe = el('span', 'arr-probe', '0000000000')
+  text.append(ring, probe)
+  /** Line from 1, column from 0; hidden when `at` is null. */
+  const draw = (at: { line: number; col: number; length: number; p: number } | null) => {
+    ring.style.visibility = at ? 'visible' : 'hidden'
+    if (!at) return
+    const ch = probe.offsetWidth / 10
+    const row = parseFloat(getComputedStyle(text).lineHeight)
+    const w = Math.round((at.length + 1.6) * ch)
+    const h = Math.round(row * 1.35)
+    ring.setAttribute('width', String(w))
+    ring.setAttribute('height', String(h))
+    ring.setAttribute('viewBox', `0 0 ${w} ${h}`)
+    ring.style.left = `${Math.round((at.col - 0.8) * ch)}px`
+    ring.style.top = `${Math.round((at.line - 1) * row - row * 0.18)}px`
+    loop.setAttribute('d', ringPath(w, h))
+    loop.setAttribute('stroke-dashoffset', String(Math.round((1 - at.p) * 1000) / 1000))
+  }
+  /** Put the ring back after `text`'s contents are replaced. */
+  draw.attach = () => text.append(ring, probe)
+  return draw
 }
 
 export const BLOCKS: { [T in Block['type']]: BlockDef<Of<T>> } = {
@@ -595,12 +713,7 @@ export const BLOCKS: { [T in Block['type']]: BlockDef<Of<T>> } = {
       )
       gutter.style.minWidth = `${String(lines).length + 1}ch`
       const text = el('pre', 'ed-code', highlight(b.lang, b.source))
-      const ring = svg('svg', { class: 'run-ring' })
-      const loop = svg('path', { pathLength: 1, 'stroke-dasharray': '1 1' })
-      ring.append(loop)
-      // Ten zeros measure a column of the mono font, whatever size the stage is.
-      const probe = el('span', 'arr-probe', '0000000000')
-      text.append(ring, probe)
+      const drawRing = codeRing(text)
       scroller.append(current, gutter, text)
       view.append(scroller)
       const position = el('span', '')
@@ -664,23 +777,12 @@ export const BLOCKS: { [T in Block['type']]: BlockDef<Of<T>> } = {
         current.style.top = `calc(${v.line - 1} * var(--ed-line))`
         scroller.style.transform = `translateY(calc(${-v.scroll} * var(--ed-line)))`
         position.textContent = v.line ? `Ln ${v.line}` : ''
-        // Mono text, so a column is 1ch: no measuring.
         const col = v.ring ? sourceLines[v.ring.line - 1].indexOf(v.ring.text) : -1
-        ring.style.visibility = v.ring && col >= 0 ? 'visible' : 'hidden'
-        if (v.ring && col >= 0) {
-          // offsetWidth, not the on-screen box: a transition's scale mustn't move the ring.
-          const ch = probe.offsetWidth / 10
-          const row = parseFloat(getComputedStyle(text).lineHeight)
-          const w = Math.round((v.ring.text.length + 1.6) * ch)
-          const h = Math.round(row * 1.35)
-          ring.setAttribute('width', String(w))
-          ring.setAttribute('height', String(h))
-          ring.setAttribute('viewBox', `0 0 ${w} ${h}`)
-          ring.style.left = `${Math.round((col - 0.8) * ch)}px`
-          ring.style.top = `${Math.round((v.ring.line - 1) * row - row * 0.18)}px`
-          loop.setAttribute('d', ringPath(w, h))
-          loop.setAttribute('stroke-dashoffset', String(Math.round((1 - v.ring.p) * 1000) / 1000))
-        }
+        drawRing(
+          v.ring && col >= 0
+            ? { line: v.ring.line, col, length: v.ring.text.length, p: v.ring.p }
+            : null,
+        )
         // Deep recursion: the top frames, and a count of the rest.
         const hidden = Math.max(0, v.frames.length - RUN_FRAMES)
         put(
@@ -718,6 +820,103 @@ export const BLOCKS: { [T in Block['type']]: BlockDef<Of<T>> } = {
           part.classList.toggle('dim', !!v.focus && !v.focus.includes(part.dataset.part!))
         }
         note.textContent = v.note
+      }
+    },
+  },
+  revise: {
+    needs: (b) => Math.max(b.at ?? 0, ...stepTimes(b).map((t) => t.end)),
+    mount(root, b) {
+      const box = el('div', 'rev')
+      const code = el('div', 'editor rev-code')
+      const tabs = el('div', 'ed-tabs')
+      const count = el('span', 'rev-count')
+      tabs.append(el('span', 'ed-tab', esc(b.file)), count)
+      const view = el('div', 'ed-view')
+      view.style.height = `calc(${b.rows} * var(--ed-line))`
+      const scroller = el('div', 'ed-scroller')
+      const gutter = el('pre', 'ed-gutter')
+      const layers = el('div', 'rev-layers')
+      const before = el('pre', 'ed-code rev-before')
+      const after = el('pre', 'ed-code')
+      layers.append(after, before)
+      const drawRing = codeRing(after)
+      scroller.append(gutter, layers)
+      view.append(scroller)
+      code.append(tabs, view)
+      const card = el('div', 'rev-card')
+      const chapters = el('div', 'rev-chapters')
+      const bars = b.chapters.map((name) => {
+        const ch = el('div', 'rev-ch')
+        const fill = el('i', '')
+        const bar = el('b', '')
+        bar.append(fill)
+        ch.append(el('span', '', esc(name)), bar)
+        chapters.append(ch)
+        return { ch, fill }
+      })
+      box.append(code, card)
+      if (bars.length) box.append(chapters)
+      root.append(box)
+
+      const html = (source: string, changed: number[] = []) =>
+        source
+          .split('\n')
+          .map(
+            (line, i) =>
+              `<div class="rev-line${changed.includes(i) ? ' chg' : ''}">${highlight(b.lang, line) || ' '}</div>`,
+          )
+          .join('')
+      const steps = b.steps.length
+      const pad = (n: number) => String(n).padStart(2, '0')
+      // Sized once against the widest version, so the font holds still across steps.
+      const widest = b.steps.reduce(
+        (w, step) => Math.max(w, ...step.source.split('\n').map((l) => l.length)),
+        0,
+      )
+      const fit = fitOnce(view)
+      let shown = -1
+      return (local) => {
+        if (!fit.done) {
+          after.innerHTML = html('0'.repeat(widest))
+          drawRing.attach()
+          fit()
+          shown = -1
+        }
+        const v = reviseView(b, local)
+        if (v.step !== shown) {
+          const source = b.steps[v.step].source
+          const lines = source.split('\n').length
+          after.innerHTML = html(source, v.changed)
+          drawRing.attach()
+          before.innerHTML = v.step ? html(b.steps[v.step - 1].source) : ''
+          gutter.textContent = Array.from({ length: lines }, (_, i) => i + 1).join('\n')
+          gutter.style.minWidth = `${String(lines).length + 1}ch`
+          count.textContent = `${lines} lines`
+          const c = v.card
+          card.innerHTML = c
+            ? `<div class="rev-head"><span>STEP ${pad(v.step + 1)} / ${pad(steps)}</span>${c.tag ? `<em>${esc(c.tag)}</em>` : ''}</div><h3>${esc(c.title)}</h3>${c.text ? `<p>${esc(c.text)}</p>` : ''}`
+            : ''
+          shown = v.step
+        }
+        const fade = ease(v.p / 0.6)
+        after.style.opacity = String(v.step ? fade : v.p > 0 ? fade : 0)
+        before.style.opacity = String(v.step ? 1 - fade : 0)
+        card.style.opacity = String(v.cardIsNew ? fade : 1)
+        scroller.style.transform = `translateY(calc(${-v.scroll} * var(--ed-line)))`
+        drawRing(
+          v.ring && v.ring.col >= 0
+            ? {
+                line: v.ring.line,
+                col: v.ring.col,
+                length: v.ring.text.length,
+                p: clamp((v.p - 0.4) / 0.6),
+              }
+            : null,
+        )
+        bars.forEach(({ ch, fill }, i) => {
+          fill.style.width = `${v.fills[i] * 100}%`
+          ch.classList.toggle('on', i === v.chapter)
+        })
       }
     },
   },

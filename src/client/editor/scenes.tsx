@@ -34,6 +34,8 @@ import {
   ArrayValuesSchema,
   StackStepsSchema,
   RunStepsSchema,
+  ReviseStepsSchema,
+  ReviseChaptersSchema,
   DoodleStrokesSchema,
   Stage3dActorsSchema,
   Stage3dCameraSchema,
@@ -149,7 +151,7 @@ export function SceneActions(props: {
   )
 }
 
-const LANGS = ['ts', 'js', 'py', 'c', 'sql', 'json', 'plain']
+const LANGS = ['ts', 'js', 'py', 'c', 'java', 'sql', 'json', 'plain']
 
 /** Lines in view: saves only a whole number in range, so a half-typed "2" of "20" isn't rejected. */
 function RowsField(props: { id: string; value: number; onChange: (rows: number) => void }) {
@@ -186,6 +188,17 @@ const BLANK: { [T in Block['type']]: Extract<Block, { type: T }> } = {
     count: true,
     values: [3, 1, 2],
     steps: [{ do: 'swap', a: 0, b: 1, seconds: 0.6 }],
+  },
+  revise: {
+    type: 'revise',
+    file: 'main.ts',
+    lang: 'ts',
+    rows: 18,
+    chapters: [],
+    steps: [
+      { source: 'let total = 0', card: { title: 'Before' }, seconds: 0.8 },
+      { source: 'const total = 0', card: { title: 'It never changes' }, seconds: 0.8 },
+    ],
   },
   run: {
     type: 'run',
@@ -619,6 +632,41 @@ function BlockForm({
             <RowsField id={`${id}-rows`} value={block.rows} onChange={(rows) => set({ rows })} />
             {number('at', 'Starts at (s)')}
             {number('cps', 'Characters / s')}
+          </div>
+        </>
+      )
+    case 'revise':
+      return (
+        <>
+          {text('file', 'File name')}
+          <Field id={`${id}-lang`} label="Language">
+            <Select
+              id={`${id}-lang`}
+              value={block.lang}
+              onChange={(e) => set({ lang: e.target.value })}
+            >
+              {LANGS.map((l) => (
+                <option key={l}>{l}</option>
+              ))}
+            </Select>
+          </Field>
+          <JsonField
+            id={`${id}-chapters`}
+            label='Chapters, as JSON, like ["Problem", "Refactor"]'
+            value={block.chapters}
+            schema={ReviseChaptersSchema}
+            onChange={(chapters) => set({ chapters })}
+          />
+          <JsonField
+            id={`${id}-revise`}
+            label="Steps, as JSON: each has the whole file as source"
+            value={block.steps}
+            schema={ReviseStepsSchema}
+            onChange={(steps) => set({ steps })}
+          />
+          <div className="flex gap-2">
+            <RowsField id={`${id}-rows`} value={block.rows} onChange={(rows) => set({ rows })} />
+            {number('at', 'Starts at (s)')}
           </div>
         </>
       )

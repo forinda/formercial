@@ -148,6 +148,25 @@ export const SCENE_CSS = `
 .run-ring { position: absolute; overflow: visible; pointer-events: none }
 .run-ring path { fill: none; stroke: #f2a33a; stroke-width: calc(.3 * var(--u)); stroke-linecap: round }
 .run .stk-frame em { min-width: 0; margin-right: auto }
+.rev { display: grid; grid-template-columns: 1.7fr 1fr; gap: calc(2.4 * var(--u)); align-items: start }
+.rev-code { min-width: 0 }
+.rev .ed-tabs { align-items: center }
+.rev-count { margin-left: auto; padding: 0 1.2em; color: #858585 }
+.rev-layers { position: relative; flex: 1 }
+.rev-before { position: absolute; inset: 0 }
+.rev-line { min-height: var(--ed-line) }
+.rev-line.chg { background: rgb(229 83 75 / .13); box-shadow: inset .25em 0 0 #e5534b }
+.rev-card { display: grid; gap: calc(1.2 * var(--u)); align-content: start }
+.rev-head { display: flex; justify-content: space-between; align-items: center; gap: 1em; font-family: var(--mono); font-size: calc(1.5 * var(--u)); letter-spacing: .08em; color: var(--muted) }
+.rev-head em { font-style: normal; color: var(--accent); border: calc(.15 * var(--u)) solid var(--accent); border-radius: 999px; padding: .2em .9em; letter-spacing: 0 }
+.rev-card h3 { margin: 0; font-family: var(--display); font-size: calc(3.4 * var(--u)); line-height: 1.15; color: var(--fg) }
+.rev-card p { margin: 0; font-size: calc(2 * var(--u)); line-height: 1.45; color: var(--muted) }
+.rev-chapters { grid-column: 1 / -1; display: flex; gap: calc(1.6 * var(--u)) }
+.rev-ch { flex: 1; display: grid; gap: calc(.6 * var(--u)) }
+.rev-ch span { font-family: var(--mono); font-size: calc(1.4 * var(--u)); letter-spacing: .08em; text-transform: uppercase; color: var(--muted) }
+.rev-ch.on span { color: var(--accent) }
+.rev-ch b { display: block; height: calc(.35 * var(--u)); background: var(--line); border-radius: 99px; overflow: hidden }
+.rev-ch i { display: block; height: 100%; background: var(--accent) }
 .arr-note { font-family: var(--display); font-size: calc(2.8 * var(--u)); text-align: center; min-height: 1.4em; color: var(--fg) }
 .arr-count { font-family: var(--mono); font-size: calc(2.4 * var(--u)); text-align: center; color: var(--muted); margin-top: calc(.8 * var(--u)) }
 .caret[hidden] { display: none }
@@ -182,6 +201,9 @@ export const SCENE_CSS = `
 :host([data-format="9:16"]) .scene { padding-top: calc(8 * var(--u)); justify-content: center }
 :host([data-format="9:16"]) .cards { grid-template-columns: 1fr }
 :host([data-format="9:16"]) .run { grid-template-columns: 1fr }
+:host([data-format="9:16"]) .rev { grid-template-columns: 1fr }
+:host([data-format="9:16"]) .rev .editor { font-size: calc(1.45 * var(--u)) }
+:host([data-format="9:16"]) .rev-card h3 { font-size: calc(3 * var(--u)) }
 :host([data-format="9:16"]) .run-side { grid-template-columns: 1fr 1fr; align-items: start }
 :host([data-format="9:16"]) .run .stk-pile { min-height: 0 }
 :host([data-format="9:16"]) .run-panel[data-part="array"] { grid-column: 1 / -1 }
