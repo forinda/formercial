@@ -3,7 +3,7 @@ import { describe, expect, test } from 'vitest'
 import { parseProject, starterProject, type Project } from '@/core/project/project'
 import { resolveTimeline, type Clip } from '@/core/project/timeline'
 import { ArrayStepsSchema, StackStepsSchema } from '@/core/project/project'
-import { arrayView, doodleTimes, editorView, stackView } from './blocks'
+import { arrayTextScale, arrayView, doodleTimes, editorView, stackView } from './blocks'
 import { createPlayer, sceneNeeds } from './player'
 
 const project = (scenes: unknown[]): Project => parseProject({ ...starterProject('T'), scenes })
@@ -496,6 +496,12 @@ describe('array block', () => {
     expect(arrayView(b, 1).items[1].y).toBe(1)
     expect(xs(b, 3)).toEqual([1, 0, 2])
     expect(arrayView(b, 3).items[1].y).toBe(0)
+  })
+
+  test('measured text shrinks to fit a narrow cell, and never grows', () => {
+    expect(arrayTextScale(200, 96)).toBe(1)
+    expect(arrayTextScale(100, 180)).toBe(0.5)
+    expect(arrayTextScale(100, 0)).toBe(1)
   })
 
   test('a step past the row does nothing, and returns at once', () => {

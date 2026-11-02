@@ -116,8 +116,9 @@ export const SCENE_CSS = `
 .ed-status { display: flex; justify-content: space-between; background: #007acc; color: #fff; font-size: .7em; padding: .3em 1em }
 .editor .k { color: #569cd6 } .editor .s { color: #ce9178 } .editor .c { color: #6a9955; font-style: normal } .editor .n { color: #b5cea8 } .editor .f { color: #dcdcaa }
 .array { --arr-rise: calc(9.5 * var(--u)); padding-top: var(--arr-rise) }
-.arr-row { position: relative; height: calc(8 * var(--u)); margin-bottom: var(--arr-rise) }
-.arr-cell { position: absolute; top: 0; width: calc(100% / var(--n) - .8 * var(--u)); height: 100%; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-variant-ligatures: none; font-size: calc(4.2 * var(--u)); background: var(--box); border: calc(.25 * var(--u)) solid var(--line); border-radius: 6px; color: var(--fg) }
+.arr-row { position: relative; font-size: calc(4.2 * var(--u)); height: calc(8 * var(--u)); margin-bottom: var(--arr-rise) }
+.arr-cell { position: absolute; top: 0; width: calc(100% / var(--n) - .8 * var(--u)); height: 100%; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-variant-ligatures: none; background: var(--box); border: calc(.25 * var(--u)) solid var(--line); border-radius: 6px; color: var(--fg) }
+.arr-probe { position: absolute; visibility: hidden; white-space: pre }
 .arr-cell.on { border-color: var(--accent); color: var(--accent); z-index: 1 }
 .arr-cell.done { border-color: var(--good); color: var(--good) }
 .arr-cell.dim { opacity: .25 }

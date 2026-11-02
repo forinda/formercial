@@ -100,6 +100,13 @@ const typing = (b: { at?: number; source: string; cps?: number }) =>
 
 type ArrayBlock = Of<'array'>
 
+const ARRAY_TEXT = 4.2
+/** How much to scale text measured at `widest` so it fits a cell's inner width, with a margin. Never grows. */
+export function arrayTextScale(inner: number, widest: number) {
+  if (!(widest > 0) || !(inner > 0)) return 1
+  return Math.round(Math.min(1, (inner * 0.9) / widest) * 1000) / 1000
+}
+
 /** When each step of an array block starts and ends: in order, unless one says otherwise. */
 export function arrayTimes(b: ArrayBlock): { start: number; end: number }[] {
   let clock = b.at ?? 0
@@ -489,7 +496,25 @@ export const BLOCKS: { [T in Block['type']]: BlockDef<Of<T>> } = {
       box.append(row, note)
       if (counts) box.append(count)
       root.append(box)
+      let fitted = false
       return (local) => {
+        // Once it has a size and its fonts: measure the widest value in the
+        // theme's font, and shrink the text if it wouldn't fit inside a cell.
+        if (!fitted && cells[0].clientWidth && document.fonts?.status !== 'loading') {
+          fitted = true
+          const probe = el('span', 'arr-probe')
+          cells[0].append(probe)
+          let widest = 0
+          for (const value of b.values) {
+            probe.textContent = String(value)
+            widest = Math.max(widest, probe.getBoundingClientRect().width)
+          }
+          probe.remove()
+          const style = getComputedStyle(cells[0])
+          const inner =
+            cells[0].clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)
+          row.style.fontSize = `calc(${ARRAY_TEXT} * var(--u) * ${arrayTextScale(inner, widest)})`
+        }
         const view = arrayView(b, local)
         view.items.forEach((it, i) => {
           cells[i].style.left = `calc(${it.x} * 100% / var(--n))`
