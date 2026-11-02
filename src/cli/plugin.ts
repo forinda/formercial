@@ -11,11 +11,19 @@ import { diskStorage } from '@forinda/kickjs-storage/disk'
 import { FORMATS, slugFrom, starterProject, type Format } from '@/core/project/project'
 import { createRegistry, driverReport, type FormercialConfig } from '@/core/render/registry'
 import { renderProject } from '@/core/render/render-project'
+import { MIN_TEXT_PX, smallText, type SmallText } from '@/core/project/doodle-layout'
 import { voiceProject } from '@/core/voice/voice-project'
 import { FormercialSettings, checkFps } from '@/core/settings'
 import { createTrust } from '@/core/storage/trust'
 import { PRESETS, fromPreset, storePresetFonts } from '@/presets'
 import { openWorkspace } from '@/core/storage/workspace'
+
+/** One line per doodle whose words are too small to read in a format. */
+export const smallTextLines = (found: SmallText[]) =>
+  found.map(
+    (f) =>
+      `${f.scene} block ${f.block + 1} (${f.format}): "${f.text.slice(0, 40)}" draws at ${f.px}px, under ${MIN_TEXT_PX}px`,
+  )
 
 /** A slug under the projects folder, or a path to a project folder. */
 export function resolveProject(arg: string, projectRoot: string): { root: string; slug: string } {
@@ -183,6 +191,8 @@ export function formercialCliPlugin(config: FormercialConfig): KickCliPlugin {
             const formats = (opts.format === 'all' ? project.formats : [opts.format]) as Format[]
             if (!formats.every((f) => f in FORMATS))
               throw new Error('--format is 16:9, 9:16, 1:1 or all')
+            for (const line of smallTextLines(smallText(project, formats)))
+              ctx.log(`small text: ${line}`)
             const voice = registry.voices.get('edge-tts')!
             const canVoice = (await voice.check()).ok
             if (!canVoice) ctx.log('edge-tts not found: rendering with the clips already made')
@@ -212,6 +222,20 @@ export function formercialCliPlugin(config: FormercialConfig): KickCliPlugin {
             }
           },
         )
+
+      group
+        .command('check <project>')
+        .description("List doodle words too small to read in any of the project's formats")
+        .action(async (arg: string) => {
+          const { slug, ws } = open(arg)
+          const lines = smallTextLines(smallText((await ws.read(slug)).project))
+          for (const line of lines) ctx.log(line)
+          ctx.log(
+            lines.length
+              ? `${lines.length} doodle(s) with small text`
+              : 'all doodle text reads fine',
+          )
+        })
 
       group
         .command('history <project>')

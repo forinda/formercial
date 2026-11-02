@@ -29,7 +29,19 @@ You can still edit the strokes directly, under **Edit as JSON**, or have an [age
 
 ## Vertical videos
 
-Wide art looks tiny in a tall frame, and it can't rearrange itself. For TikTok, Reels and Shorts, give the block a `tall` drawing, which replaces the wide one in 9:16:
+Wide art looks tiny in a tall frame. So in 9:16, a doodle without a tall drawing lays itself out again: it finds the parts that belong together, stacks them top to bottom in reading order, and makes each as wide as the frame allows. Every line and label keeps its place in the drawing order and its timing, so the voice still lines up.
+
+Parts are found by distance: lines and labels drawn close together count as one part. When that splits something you meant to keep together, or joins two things you meant to keep apart, name the parts with `group`:
+
+```json
+{ "text": "input", "x": 100, "y": 300, "group": "before" },
+{ "d": "M100 320 H400", "group": "before" },
+{ "text": "output", "x": 1100, "y": 300, "group": "after" }
+```
+
+Items with the same `group` stay together however far apart they are. A long row, like five boxes side by side, stays one part unless you name its pieces, and a part that wide shrinks to fit. Set `"reflow": false` on the block to shrink the whole wide drawing instead, as before.
+
+For full control, give the block a `tall` drawing, which replaces the wide one in 9:16:
 
 ```json
 {
@@ -40,6 +52,8 @@ Wide art looks tiny in a tall frame, and it can't rearrange itself. For TikTok, 
 ```
 
 On the drawing board, switch to **Tall (9:16)** to draw it. **Start from the wide drawing** gives you a scaled copy to rearrange. Every format shares one timeline, so keep both drawings about the same length: the slower one sets it. In 9:16, captions sit higher and larger, clear of the buttons those apps put over the bottom of the video.
+
+`kick formercial check` lists labels too small to read in each format, and `render` lists them before it starts. See [Command line](./command-line#check).
 
 ## Tips
 

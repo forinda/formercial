@@ -2,6 +2,7 @@
 // that sets everything from the scene's local time, so the same time always
 // draws the same frame.
 import type { Block, Format, Theme } from '@/core/project/project'
+import { doodleArt } from '@/core/project/doodle-layout'
 import { esc, highlight, terminal } from './highlight'
 import { stage3dLength } from './stage3d/timeline'
 
@@ -621,7 +622,7 @@ export const BLOCKS: { [T in Block['type']]: BlockDef<Of<T>> } = {
         ),
       ),
     mount(root, b, ctx) {
-      const art = ctx.format === '9:16' && b.tall ? b.tall : b
+      const art = doodleArt(b, ctx.format)
       const times = doodleTimes(art.strokes, b.at)
       const box = svg('svg', { class: 'doodle', viewBox: art.viewBox, role: 'img' })
       const ink = svg('g')

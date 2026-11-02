@@ -1,88 +1,14 @@
 // The drawing board's sums: turning pointer movements, shapes, parts and imported
 // SVGs into the paths a doodle block stores. No DOM here except for reading an SVG.
-import type { Block } from '@/core/project/project'
+import type { DoodleItem } from '@/core/project/doodle-layout'
+import { transformPath } from '@/core/project/doodle-layout'
 
-export type DoodleItem = Extract<Block, { type: 'doodle' }>['strokes'][number]
+export type { DoodleItem }
+export { transformItem, transformPath } from '@/core/project/doodle-layout'
 export type Point = { x: number; y: number }
 export type Tone = 'fg' | 'muted' | 'accent' | 'good' | 'bad'
 
 const round = (n: number) => Math.round(n * 10) / 10
-
-const ARGS: Record<string, number> = { M: 2, L: 2, H: 1, V: 1, C: 6, S: 4, Q: 4, T: 2, A: 7, Z: 0 }
-
-/** Move and scale an SVG path, absolute or relative, keeping its commands. */
-export function transformPath(d: string, t: { x?: number; y?: number; scale?: number }): string {
-  const { x: tx = 0, y: ty = 0, scale = 1 } = t
-  const out: string[] = []
-  let i = 0
-  const skip = () => {
-    while (i < d.length && /[\s,]/.test(d[i])) i++
-  }
-  const number = () => {
-    skip()
-    const m = /^[-+]?(\d*\.\d+|\d+\.?)([eE][-+]?\d+)?/.exec(d.slice(i))
-    if (!m) throw new Error(`can't read this path at "${d.slice(i, i + 12)}"`)
-    i += m[0].length
-    return Number(m[0])
-  }
-  const flag = () => {
-    skip()
-    const c = d[i++]
-    if (c !== '0' && c !== '1') throw new Error("can't read this path's arc")
-    return c
-  }
-  let command = ''
-  for (skip(); i < d.length; skip()) {
-    if (/[a-zA-Z]/.test(d[i])) command = d[i++]
-    else if (!command) throw new Error('a path starts with a command')
-    else if (command === 'M') command = 'L'
-    else if (command === 'm') command = 'l'
-    const upper = command.toUpperCase()
-    if (!(upper in ARGS)) throw new Error(`"${command}" isn't a path command`)
-    const relative = command !== upper
-    const px = (n: number) => round(n * scale + (relative ? 0 : tx))
-    const py = (n: number) => round(n * scale + (relative ? 0 : ty))
-    if (upper === 'Z') out.push(command)
-    else if (upper === 'H') out.push(`${command}${px(number())}`)
-    else if (upper === 'V') out.push(`${command}${py(number())}`)
-    else if (upper === 'A') {
-      const rx = round(number() * scale)
-      const ry = round(number() * scale)
-      const rotation = number()
-      const large = flag()
-      const sweep = flag()
-      out.push(
-        `${command}${rx} ${ry} ${rotation} ${large} ${sweep} ${px(number())} ${py(number())}`,
-      )
-    } else {
-      const pairs: string[] = []
-      for (let n = 0; n < ARGS[upper] / 2; n++) pairs.push(`${px(number())} ${py(number())}`)
-      out.push(`${command}${pairs.join(' ')}`)
-    }
-    if (upper === 'Z') command = ''
-  }
-  return out.join(' ')
-}
-
-export function transformItem<T extends DoodleItem>(
-  item: T,
-  t: { x?: number; y?: number; scale?: number },
-): T {
-  const { x = 0, y = 0, scale = 1 } = t
-  if ('d' in item) {
-    return {
-      ...item,
-      d: transformPath(item.d, t),
-      width: round(item.width * Math.max(scale, 0.5)),
-    }
-  }
-  return {
-    ...item,
-    x: round(item.x * scale + x),
-    y: round(item.y * scale + y),
-    size: round(item.size * scale),
-  }
-}
 
 /** Ramer-Douglas-Peucker: drop points that barely change the line. */
 export function simplify(points: Point[], tolerance = 2.5): Point[] {
