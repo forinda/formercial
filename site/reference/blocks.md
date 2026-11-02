@@ -56,6 +56,36 @@ Code that types itself in a VS Code style window, with line numbers, the current
 
 The text shrinks to fit the longest line. Ligatures are off, so `>=` reads as written.
 
+## array
+
+A row of values that moves, for showing an algorithm at work. It fills the scene's width, and counts comparisons when there are any.
+
+| Field    | Default  |                                                  |
+| -------- | -------- | ------------------------------------------------ |
+| `values` | required | Up to 20 numbers or short strings, left to right |
+| `steps`  | none     | What happens to them, in order                   |
+| `count`  | `true`   | Show how many comparisons have happened so far   |
+
+Each step has `do`, a slot `a` numbered from 0, and for some a slot `b`. Optional: `note`, a line shown under the row from then on; `at`; and `seconds`, default `0.6`.
+
+| `do`      |                                                 |
+| --------- | ----------------------------------------------- |
+| `compare` | Highlights slot `a`, and `b` if given, and counts one |
+| `swap`    | Slots `a` and `b` trade places                  |
+| `lift`    | The item in slot `a` rises out of the row       |
+| `shift`   | The item in slot `a` slides to the empty slot `b`. Ignored if `b` is taken |
+| `drop`    | The lifted item falls into the empty slot `a`. Ignored if `a` is taken |
+| `mark`    | Slots `a` to `b` turn green, as finished        |
+| `dim`     | Slots `a` to `b` fade, as ruled out             |
+
+Everything is worked out from the time alone, so any frame can be drawn first.
+
+## stack
+
+Function calls piling up and going away, with each frame's variables, for showing what a program holds in memory as it runs.
+
+Each step has `do`: `push` adds a frame (`name`, `vars`), `set` changes a variable (`name`, `value`, and `frame`, counted down from the top), `pop` removes the top frame, and `note` only changes the line under the stack. Any step can also have `note`, `at` and `seconds`, default `0.6`.
+
 ## terminal
 
 Commands that type themselves.

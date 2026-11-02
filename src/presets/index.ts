@@ -889,6 +889,44 @@ const showcase = parseProject({
       { minSeconds: 5, transition: 'cut' },
     ),
     scene(
+      'array',
+      'Or watch values move, one step at a time.',
+      'Or watch values move, one step at a time.',
+      [
+        {
+          type: 'array',
+          at: 0.2,
+          values: [3, 1, 2],
+          steps: [
+            { do: 'compare', a: 0, b: 1, note: '3 and 1: wrong way round' },
+            { do: 'swap', a: 0, b: 1 },
+            { do: 'compare', a: 1, b: 2, note: '3 and 2: swap' },
+            { do: 'swap', a: 1, b: 2 },
+            { do: 'mark', a: 0, b: 2, seconds: 0, note: 'sorted' },
+          ],
+        },
+      ],
+      { minSeconds: 6, transition: 'cut' },
+    ),
+    scene(
+      'stack',
+      'Or watch function calls stack up.',
+      'Or watch function calls stack up.',
+      [
+        {
+          type: 'stack',
+          at: 0.2,
+          steps: [
+            { do: 'push', name: 'main', vars: { n: 21 } },
+            { do: 'push', name: 'twice', vars: { x: 21 }, note: 'x is a copy of n' },
+            { do: 'set', name: 'x', value: 42, note: 'the copy changes' },
+            { do: 'pop', note: 'and it is gone' },
+          ],
+        },
+      ],
+      { minSeconds: 6, transition: 'cut' },
+    ),
+    scene(
       'code-sql',
       'And SQL.',
       'And S Q L.',

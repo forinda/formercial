@@ -21,6 +21,8 @@ const BLOCK_TYPES: Record<Block['type'], true> = {
   text: true,
   code: true,
   editor: true,
+  array: true,
+  stack: true,
   terminal: true,
   tree: true,
   stamp: true,
@@ -77,7 +79,8 @@ describe('presets', () => {
           expect([...player.errors]).toEqual([])
           player.destroy()
         }
-      })
+        // Every frame of every scene in three formats: too much for the default on CI.
+      }, 30_000)
 
       if (preset.lang !== 'mixed' && preset.lang !== 'none') {
         test('shows code in its own language', () => {

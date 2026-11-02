@@ -60,6 +60,72 @@ const DoodleItemSchema = z.union([
   }),
 ])
 
+const arrayFields = {
+  /** Show how many comparisons have happened so far. */
+  count: z.boolean().default(true),
+  /** What's in the row, left to right. */
+  values: z
+    .array(z.union([z.number(), z.string()]))
+    .min(1)
+    .max(20),
+  /** What happens to it, in order. Slots are numbered from 0. */
+  steps: z
+    .array(
+      z
+        .strictObject({
+          do: z.enum(['compare', 'swap', 'lift', 'shift', 'drop', 'mark', 'dim']),
+          a: z.number().int().min(0).max(19),
+          b: z.number().int().min(0).max(19).optional(),
+          /** A short line shown under the row from this step on. */
+          note: z.string().optional(),
+          at,
+          seconds: z.number().min(0).default(0.6),
+        })
+        .superRefine((step, ctx) => {
+          // compare may look at one slot alone, like a search checking each value.
+          if ((step.do === 'swap' || step.do === 'shift') && step.b === undefined) {
+            ctx.addIssue({ code: 'custom', path: ['b'], message: `${step.do} needs a slot b` })
+          }
+        }),
+    )
+    .max(2000)
+    .default([]),
+}
+/** What the editor checks a typed array block against. */
+export const ArrayValuesSchema = arrayFields.values
+export const ArrayStepsSchema = arrayFields.steps
+
+/** What the editor checks a typed stack block's steps against. */
+export const StackStepsSchema = z
+  .array(
+    z
+      .strictObject({
+        do: z.enum(['push', 'set', 'pop', 'note']),
+        /** push: the frame's name. set: which variable. */
+        name: z.string().optional(),
+        /** push: the frame's variables and their first values. */
+        vars: z.record(z.string(), z.union([z.string(), z.number()])).optional(),
+        /** set: the new value. */
+        value: z.union([z.string(), z.number()]).optional(),
+        /** set: which frame down from the top; 0 is the top. */
+        frame: z.number().int().min(0).default(0),
+        /** A short line shown under the stack from this step on. */
+        note: z.string().optional(),
+        at,
+        seconds: z.number().min(0).default(0.6),
+      })
+      .superRefine((step, ctx) => {
+        if ((step.do === 'push' || step.do === 'set') && step.name === undefined) {
+          ctx.addIssue({ code: 'custom', path: ['name'], message: `${step.do} needs a name` })
+        }
+        if (step.do === 'set' && step.value === undefined) {
+          ctx.addIssue({ code: 'custom', path: ['value'], message: 'set needs a value' })
+        }
+      }),
+  )
+  .max(2000)
+  .default([])
+
 const viewBox = z.string().regex(/^-?\d+(\.\d+)? -?\d+(\.\d+)? \d+(\.\d+)? \d+(\.\d+)?$/, {
   error: 'four numbers, like "0 0 1600 720"',
 })
@@ -250,6 +316,17 @@ const BlockSchema = z.discriminatedUnion('type', [
     cps: z.number().positive().optional(),
     /** Lines in view. Longer code scrolls as it's typed. */
     rows: z.number().int().min(3).max(60).default(14),
+  }),
+  z.object({
+    type: z.literal('array'),
+    at,
+    ...arrayFields,
+  }),
+  z.object({
+    type: z.literal('stack'),
+    at,
+    /** What happens, in order. */
+    steps: StackStepsSchema,
   }),
   z.object({
     type: z.literal('terminal'),

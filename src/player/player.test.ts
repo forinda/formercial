@@ -2,7 +2,8 @@
 import { describe, expect, test } from 'vitest'
 import { parseProject, starterProject, type Project } from '@/core/project/project'
 import { resolveTimeline, type Clip } from '@/core/project/timeline'
-import { doodleTimes, editorView } from './blocks'
+import { ArrayStepsSchema, StackStepsSchema } from '@/core/project/project'
+import { arrayView, doodleTimes, editorView, stackView } from './blocks'
 import { createPlayer, sceneNeeds } from './player'
 
 const project = (scenes: unknown[]): Project => parseProject({ ...starterProject('T'), scenes })
@@ -458,5 +459,137 @@ describe('editor block', () => {
 
   test('reports the line and column of the caret', () => {
     expect(editorView(source, 3, 1, 3)).toMatchObject({ typed: 3, line: 1, col: 1 })
+  })
+})
+
+describe('array block', () => {
+  const block = (steps: unknown[]) =>
+    ({
+      type: 'array',
+      values: [5, 1, 4],
+      steps: (steps as { seconds?: number }[]).map((s) => ({ seconds: 1, ...s })),
+      count: true,
+    }) as never
+  const xs = (b: never, t: number) => arrayView(b, t).items.map((it) => it.x)
+
+  test("a swap ends with the two items in each other's slots", () => {
+    const b = block([{ do: 'swap', a: 0, b: 1 }])
+    expect(xs(b, 0)).toEqual([0, 1, 2])
+    expect(xs(b, 0.5)).toEqual([0.5, 0.5, 2])
+    expect(xs(b, 1)).toEqual([1, 0, 2])
+  })
+
+  test('slots follow the items, so a later step moves the right one', () => {
+    const b = block([
+      { do: 'swap', a: 0, b: 1 },
+      { do: 'swap', a: 1, b: 2 },
+    ])
+    expect(xs(b, 2)).toEqual([2, 0, 1])
+  })
+
+  test('lift, shift and drop act like inserting a card', () => {
+    const b = block([
+      { do: 'lift', a: 1 },
+      { do: 'shift', a: 0, b: 1 },
+      { do: 'drop', a: 0 },
+    ])
+    expect(arrayView(b, 1).items[1].y).toBe(1)
+    expect(xs(b, 3)).toEqual([1, 0, 2])
+    expect(arrayView(b, 3).items[1].y).toBe(0)
+  })
+
+  test('a step past the row does nothing, and returns at once', () => {
+    const b = block([
+      { do: 'mark', a: 0, b: 2_000_000_000 },
+      { do: 'shift', a: 0, b: 2_000_000_000 },
+      { do: 'lift', a: 1 },
+      { do: 'drop', a: 2_000_000_000 },
+    ])
+    const view = arrayView(b, 10)
+    expect(view.items.every((it) => it.done)).toBe(true)
+    expect(view.items[0].x).toBe(0)
+    expect(view.items[1].x).toBe(1)
+  })
+
+  test('the schema refuses slots past the most a row can hold', () => {
+    expect(ArrayStepsSchema.safeParse([{ do: 'mark', a: 0, b: 20 }]).success).toBe(false)
+  })
+
+  test('a move into a taken slot is ignored, so no item gets lost', () => {
+    const b = block([
+      { do: 'shift', a: 0, b: 1 },
+      { do: 'lift', a: 2 },
+      { do: 'drop', a: 0 },
+    ])
+    expect(xs(b, 3)).toEqual([0, 1, 2])
+  })
+
+  test('swap and shift need both slots; compare may use one', () => {
+    expect(ArrayStepsSchema.safeParse([{ do: 'swap', a: 0 }]).success).toBe(false)
+    expect(ArrayStepsSchema.safeParse([{ do: 'shift', a: 0 }]).success).toBe(false)
+    expect(ArrayStepsSchema.safeParse([{ do: 'compare', a: 0 }]).success).toBe(true)
+  })
+
+  test('counts comparisons, and keeps the latest note', () => {
+    const b = block([
+      { do: 'compare', a: 0, b: 1, note: 'first' },
+      { do: 'compare', a: 1, b: 2 },
+      { do: 'mark', a: 0, b: 2, note: 'last' },
+    ])
+    expect(arrayView(b, 1.5)).toMatchObject({ compares: 2, note: 'first' })
+    expect(arrayView(b, 3)).toMatchObject({ compares: 2, note: 'last' })
+    expect(arrayView(b, 3).items.every((it) => it.done)).toBe(true)
+  })
+})
+
+describe('stack block', () => {
+  test('has its own class, so scene layout keeps the stack class to itself', () => {
+    const p = project([
+      {
+        id: 's',
+        kind: 'blocks',
+        minSeconds: 1,
+        caption: '',
+        blocks: [{ type: 'stack', steps: [{ do: 'push', name: 'main' }] }],
+      },
+    ])
+    const { host } = mount(p)
+    const scene = [...host.querySelectorAll('*')].find((e) => e.shadowRoot)?.shadowRoot
+    const root = scene ?? host
+    expect(root.querySelector('.stk')?.closest('.stack')).not.toBeNull()
+  })
+
+  const block = {
+    type: 'stack',
+    steps: [
+      { do: 'push', name: 'main', vars: { n: 21 }, seconds: 1, frame: 0 },
+      { do: 'push', name: 'twice', vars: { x: 21 }, seconds: 1, frame: 0, note: 'a copy' },
+      { do: 'set', name: 'x', value: 42, seconds: 1, frame: 0 },
+      { do: 'set', name: 'n', value: 1, seconds: 1, frame: 1 },
+      { do: 'pop', seconds: 1, frame: 0 },
+    ],
+  } as never
+
+  test('set needs a name and a value; push needs a name', () => {
+    expect(StackStepsSchema.safeParse([{ do: 'set', name: 'n' }]).success).toBe(false)
+    expect(StackStepsSchema.safeParse([{ do: 'set', value: 1 }]).success).toBe(false)
+    expect(StackStepsSchema.safeParse([{ do: 'push' }]).success).toBe(false)
+    expect(StackStepsSchema.safeParse([{ do: 'pop' }]).success).toBe(true)
+  })
+
+  test('frames pile up, newest last', () => {
+    expect(stackView(block, 2).frames.map((f) => f.name)).toEqual(['main', 'twice'])
+    expect(stackView(block, 2).note).toBe('a copy')
+  })
+
+  test('set changes the frame it names, counted from the top', () => {
+    const { frames } = stackView(block, 4)
+    expect(frames[1].vars.x).toBe(42)
+    expect(frames[0].vars.n).toBe(1)
+  })
+
+  test('pop removes the top frame, and any time can be drawn first', () => {
+    expect(stackView(block, 5).frames.map((f) => f.name)).toEqual(['main'])
+    expect(stackView(block, 0.5).frames.map((f) => f.name)).toEqual(['main'])
   })
 })
