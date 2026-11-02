@@ -30,7 +30,8 @@ import {
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type { z } from 'zod'
 import {
-  ArrayContentSchema,
+  ArrayStepsSchema,
+  ArrayValuesSchema,
   StackStepsSchema,
   DoodleStrokesSchema,
   Stage3dActorsSchema,
@@ -618,13 +619,22 @@ function BlockForm({
       )
     case 'array':
       return (
-        <JsonField
-          id={`${id}-array`}
-          label="Values and steps, as JSON"
-          value={{ values: block.values, steps: block.steps }}
-          schema={ArrayContentSchema}
-          onChange={set}
-        />
+        <>
+          <JsonField
+            id={`${id}-values`}
+            label="Values, as JSON"
+            value={block.values}
+            schema={ArrayValuesSchema}
+            onChange={(values) => set({ values })}
+          />
+          <JsonField
+            id={`${id}-steps`}
+            label="Steps, as JSON"
+            value={block.steps}
+            schema={ArrayStepsSchema}
+            onChange={(steps) => set({ steps })}
+          />
+        </>
       )
     case 'terminal':
       return (

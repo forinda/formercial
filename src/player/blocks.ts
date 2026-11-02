@@ -445,7 +445,7 @@ export const BLOCKS: { [T in Block['type']]: BlockDef<Of<T>> } = {
   stack: {
     needs: (b) => Math.max(b.at ?? 0, ...stepTimes(b).map((t) => t.end)),
     mount(root, b) {
-      const box = el('div', 'stack')
+      const box = el('div', 'stk')
       const pile = el('div', 'stk-pile')
       const note = el('div', 'arr-note')
       box.append(pile, note)

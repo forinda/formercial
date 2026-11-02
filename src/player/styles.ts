@@ -121,7 +121,7 @@ export const SCENE_CSS = `
 .arr-cell.on { border-color: var(--accent); color: var(--accent); z-index: 1 }
 .arr-cell.done { border-color: var(--good); color: var(--good) }
 .arr-cell.dim { opacity: .25 }
-.stack { display: grid; gap: calc(2 * var(--u)) }
+.stk { display: grid; gap: calc(2 * var(--u)) }
 .stk-pile { display: flex; flex-direction: column; justify-content: flex-end; gap: calc(.8 * var(--u)); min-height: calc(26 * var(--u)) }
 .stk-frame { display: flex; flex-wrap: wrap; align-items: center; gap: calc(1.6 * var(--u)); padding: calc(1 * var(--u)) calc(1.6 * var(--u)); background: var(--box); border: calc(.2 * var(--u)) solid var(--line); border-radius: 6px }
 .stk-frame.top { border-color: var(--accent) }

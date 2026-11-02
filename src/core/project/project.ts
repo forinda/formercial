@@ -85,7 +85,8 @@ const arrayFields = {
     .default([]),
 }
 /** What the editor checks a typed array block against. */
-export const ArrayContentSchema = z.object(arrayFields)
+export const ArrayValuesSchema = arrayFields.values
+export const ArrayStepsSchema = arrayFields.steps
 
 /** What the editor checks a typed stack block's steps against. */
 export const StackStepsSchema = z

@@ -2,7 +2,7 @@
 import { describe, expect, test } from 'vitest'
 import { parseProject, starterProject, type Project } from '@/core/project/project'
 import { resolveTimeline, type Clip } from '@/core/project/timeline'
-import { ArrayContentSchema } from '@/core/project/project'
+import { ArrayStepsSchema } from '@/core/project/project'
 import { arrayView, doodleTimes, editorView, stackView } from './blocks'
 import { createPlayer, sceneNeeds } from './player'
 
@@ -512,8 +512,7 @@ describe('array block', () => {
   })
 
   test('the schema refuses slots past the most a row can hold', () => {
-    const step = { do: 'mark', a: 0, b: 20 }
-    expect(ArrayContentSchema.safeParse({ values: [1], steps: [step] }).success).toBe(false)
+    expect(ArrayStepsSchema.safeParse([{ do: 'mark', a: 0, b: 20 }]).success).toBe(false)
   })
 
   test('counts comparisons, and keeps the latest note', () => {
@@ -529,6 +528,22 @@ describe('array block', () => {
 })
 
 describe('stack block', () => {
+  test('has its own class, so scene layout keeps the stack class to itself', () => {
+    const p = project([
+      {
+        id: 's',
+        kind: 'blocks',
+        minSeconds: 1,
+        caption: '',
+        blocks: [{ type: 'stack', steps: [{ do: 'push', name: 'main' }] }],
+      },
+    ])
+    const { host } = mount(p)
+    const scene = [...host.querySelectorAll('*')].find((e) => e.shadowRoot)?.shadowRoot
+    const root = scene ?? host
+    expect(root.querySelector('.stk')?.closest('.stack')).not.toBeNull()
+  })
+
   const block = {
     type: 'stack',
     steps: [
