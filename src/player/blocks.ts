@@ -303,9 +303,19 @@ export function doodleTimes(
 }
 
 /** A marker pen with its tip at 0,0, in the doodle's coordinates. */
-const PEN = [
-  { d: 'M0 0 L18 -34 L34 -26 L12 8 Z', fill: 'var(--fg)' },
-  { d: 'M18 -34 L70 -130 L92 -118 L34 -26 Z', fill: 'var(--accent)' },
+const PEN: Record<string, string | number>[] = [
+  { d: 'M-13 -46 L-7 -16 L0 0 L7 -16 L13 -46 Z', fill: 'var(--panel)' },
+  { d: 'M-5 -11 L0 0 L5 -11 Z', fill: 'var(--fg)' },
+  { d: 'M-14 -46 H14 V-58 H-14 Z', fill: 'var(--fg)' },
+  { d: 'M-14 -58 H14 V-158 Q14 -170 0 -170 Q-14 -170 -14 -158 Z', fill: 'var(--accent)' },
+  {
+    d: 'M-6 -66 V-152',
+    fill: 'none',
+    stroke: 'var(--panel)',
+    'stroke-width': 4,
+    'stroke-linecap': 'round',
+    opacity: 0.55,
+  },
 ]
 
 function mountStroke(
@@ -607,9 +617,18 @@ export const BLOCKS: { [T in Block['type']]: BlockDef<Of<T>> } = {
       const words = svg('g')
       const dots = svg('g')
       const pen = svg('g', { visibility: 'hidden' })
+      const tilted = svg('g', { transform: 'rotate(26)' })
       for (const part of PEN) {
-        pen.append(svg('path', { ...part, stroke: 'var(--fg)', 'stroke-width': 3 }))
+        tilted.append(
+          svg('path', {
+            stroke: 'var(--fg)',
+            'stroke-width': 2.5,
+            'stroke-linejoin': 'round',
+            ...part,
+          }),
+        )
       }
+      pen.append(tilted)
       box.append(ink, words, dots, pen)
       root.append(box)
 
