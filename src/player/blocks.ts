@@ -400,6 +400,18 @@ export function changedLines(prev: string[], next: string[]): number[] {
   return next.flatMap((_, j) => (kept.has(j) ? [] : [j]))
 }
 
+// Each step's changed lines depend only on the block, so they're worked out once, not per frame.
+const reviseDiffs = new WeakMap<ReviseBlock, { lines: string[][]; changed: number[][] }>()
+function diffsOf(b: ReviseBlock) {
+  let d = reviseDiffs.get(b)
+  if (!d) {
+    const lines = b.steps.map((step) => step.source.split('\n'))
+    d = { lines, changed: lines.map((l, i) => (i ? changedLines(lines[i - 1], l) : [])) }
+    reviseDiffs.set(b, d)
+  }
+  return d
+}
+
 /** What a revise block shows at a time: a pure function of it. */
 export function reviseView(b: ReviseBlock, time: number) {
   const times = stepTimes(b)
@@ -409,8 +421,8 @@ export function reviseView(b: ReviseBlock, time: number) {
   })
   const { start, end } = times[k]
   const p = time < start ? 0 : end > start ? clamp((time - start) / (end - start)) : 1
-  const lines = b.steps.map((step) => step.source.split('\n'))
-  const changed = k ? changedLines(lines[k - 1], lines[k]) : []
+  const { lines, changed: diffs } = diffsOf(b)
+  const changed = diffs[k]
   let chapter = 0
   const chapterOf = b.steps.map((step) => (chapter = step.chapter ?? chapter))
   const card = b.steps
@@ -424,7 +436,7 @@ export function reviseView(b: ReviseBlock, time: number) {
   // Keep the line that matters in view: the ringed one, else the first changed one.
   const focus = (i: number) => {
     const step = b.steps[i]
-    const first = i ? changedLines(lines[i - 1], lines[i])[0] : undefined
+    const first = diffs[i][0]
     const line = step.ring?.line ?? (first === undefined ? 1 : first + 1)
     return Math.max(0, Math.min(lines[i].length - b.rows, line - 1 - Math.floor(b.rows / 2)))
   }

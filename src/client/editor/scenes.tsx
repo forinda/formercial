@@ -35,6 +35,7 @@ import {
   StackStepsSchema,
   RunStepsSchema,
   ReviseStepsSchema,
+  ReviseChaptersSchema,
   DoodleStrokesSchema,
   Stage3dActorsSchema,
   Stage3dCameraSchema,
@@ -649,6 +650,13 @@ function BlockForm({
               ))}
             </Select>
           </Field>
+          <JsonField
+            id={`${id}-chapters`}
+            label='Chapters, as JSON, like ["Problem", "Refactor"]'
+            value={block.chapters}
+            schema={ReviseChaptersSchema}
+            onChange={(chapters) => set({ chapters })}
+          />
           <JsonField
             id={`${id}-revise`}
             label="Steps, as JSON: each has the whole file as source"

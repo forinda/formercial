@@ -175,6 +175,9 @@ export const RunStepsSchema = z
   .max(2000)
   .default([])
 
+/** What the editor checks a revise block's chapter names against. */
+export const ReviseChaptersSchema = z.array(z.string().min(1).max(30)).max(8).default([])
+
 /** A revise block's steps: the file at each step, whole; what changed is worked out. */
 export const ReviseStepsSchema = z
   .array(
@@ -504,7 +507,7 @@ const BlockSchema = z.discriminatedUnion('type', [
       /** Lines in view, so the panel keeps its size as the code grows or shrinks. */
       rows: z.number().int().min(3).max(60).default(18),
       /** Names along the bottom, filled in as the steps reach them. */
-      chapters: z.array(z.string().min(1).max(30)).max(8).default([]),
+      chapters: ReviseChaptersSchema,
       steps: ReviseStepsSchema,
     })
     .superRefine((b, ctx) => {
