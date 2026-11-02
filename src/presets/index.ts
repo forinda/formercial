@@ -965,6 +965,43 @@ const showcase = parseProject({
       { minSeconds: 8, transition: 'cut' },
     ),
     scene(
+      'run-sort',
+      'Give it values, and the row moves with the code: one pass of bubble sort.',
+      'Give it values, and the row moves with the code: one pass of bubble sort.',
+      [
+        {
+          type: 'run',
+          at: 0.2,
+          file: 'pass.c',
+          lang: 'c',
+          source: [
+            'for (int i = 0; i < 2; i++) {',
+            '  if (a[i] > a[i + 1])',
+            '    swap(&a[i], &a[i + 1]);',
+            '}',
+          ].join('\n'),
+          rows: 4,
+          values: [3, 1, 2],
+          panels: ['stack'],
+          steps: [
+            { line: 1, push: 'main', vars: { i: 0 } },
+            {
+              line: 2,
+              ring: 'a[i] > a[i + 1]',
+              array: { do: 'compare', a: 0, b: 1 },
+              note: '3 > 1',
+            },
+            { line: 3, array: { do: 'swap', a: 0, b: 1 } },
+            { line: 1, set: { i: 1 } },
+            { line: 2, array: { do: 'compare', a: 1, b: 2 }, note: '3 > 2' },
+            { line: 3, array: { do: 'swap', a: 1, b: 2 } },
+            { line: 4, array: { do: 'mark', a: 2 }, note: 'the largest has bubbled to the end' },
+          ],
+        },
+      ],
+      { minSeconds: 7, transition: 'cut' },
+    ),
+    scene(
       'code-sql',
       'And SQL.',
       'And S Q L.',

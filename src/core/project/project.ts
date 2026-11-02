@@ -66,6 +66,8 @@ const DoodleItemSchema = z.union([
   }),
 ])
 
+const ARRAY_MOVES = ['compare', 'swap', 'lift', 'shift', 'drop', 'mark', 'dim'] as const
+
 const arrayFields = {
   /** Show how many comparisons have happened so far. */
   count: z.boolean().default(true),
@@ -79,7 +81,7 @@ const arrayFields = {
     .array(
       z
         .strictObject({
-          do: z.enum(['compare', 'swap', 'lift', 'shift', 'drop', 'mark', 'dim']),
+          do: z.enum(ARRAY_MOVES),
           a: z.number().int().min(0).max(19),
           b: z.number().int().min(0).max(19).optional(),
           /** A short line shown under the row from this step on. */
@@ -153,6 +155,14 @@ export const RunStepsSchema = z
       take: z.strictObject({ box: z.string(), item: z.string().optional() }).optional(),
       /** Only these stay bright: "code", "stack", "output" or a box id. An empty list clears it. */
       focus: z.array(z.string()).optional(),
+      /** A move on the block's values, as in an array block. */
+      array: z
+        .strictObject({
+          do: z.enum(ARRAY_MOVES),
+          a: z.number().int().min(0).max(19),
+          b: z.number().int().min(0).max(19).optional(),
+        })
+        .optional(),
       /** Circle this text on the current line. */
       ring: z.string().min(1).optional(),
       /** A short line shown under the code from this step on. */
@@ -378,6 +388,8 @@ const BlockSchema = z.discriminatedUnion('type', [
       rows: z.number().int().min(3).max(60).default(14),
       /** What shows beside the code. */
       panels: z.array(z.enum(['stack', 'output'])).default(['stack', 'output']),
+      /** A row of values beside the code, moved by the steps' `array` moves. */
+      values: arrayFields.values.optional(),
       /** Named places items go in and out of, like a queue or the heap. */
       boxes: z
         .array(z.strictObject({ id: z.string().min(1).max(40), label: z.string() }))
@@ -388,7 +400,7 @@ const BlockSchema = z.discriminatedUnion('type', [
     .superRefine((b, ctx) => {
       const ids = new Set(b.boxes.map((x) => x.id))
       // A box's id names its panel, so it can't share a name with another panel.
-      const reserved = new Set(['code', 'stack', 'output'])
+      const reserved = new Set(['code', 'stack', 'output', 'array'])
       b.boxes.forEach((x, i) => {
         if (reserved.has(x.id) || b.boxes.findIndex((y) => y.id === x.id) !== i) {
           ctx.addIssue({
@@ -398,7 +410,8 @@ const BlockSchema = z.discriminatedUnion('type', [
           })
         }
       })
-      const parts = new Set(['code', ...b.panels, ...ids])
+      const reservedParts = b.values ? ['code', 'array', ...b.panels] : ['code', ...b.panels]
+      const parts = new Set([...reservedParts, ...ids])
       const lines = b.source.split('\n').length
       b.steps.forEach((step, i) => {
         step.focus?.forEach((f, j) => {
@@ -417,6 +430,34 @@ const BlockSchema = z.discriminatedUnion('type', [
               code: 'custom',
               path: ['steps', i, key, 'box'],
               message: `no box "${box}"`,
+            })
+          }
+        }
+        const move = step.array
+        if (move) {
+          const size = b.values?.length ?? 0
+          if (!size) {
+            ctx.addIssue({
+              code: 'custom',
+              path: ['steps', i, 'array'],
+              message: 'add values for array moves to act on',
+            })
+          }
+          for (const key of ['a', 'b'] as const) {
+            const slot = move[key]
+            if (size && slot !== undefined && slot >= size) {
+              ctx.addIssue({
+                code: 'custom',
+                path: ['steps', i, 'array', key],
+                message: `the values have ${size} slots`,
+              })
+            }
+          }
+          if ((move.do === 'swap' || move.do === 'shift') && move.b === undefined) {
+            ctx.addIssue({
+              code: 'custom',
+              path: ['steps', i, 'array', 'b'],
+              message: `${move.do} needs a slot b`,
             })
           }
         }

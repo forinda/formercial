@@ -101,7 +101,6 @@ const typing = (b: { at?: number; source: string; cps?: number }) =>
 
 type ArrayBlock = Of<'array'>
 
-const ARRAY_TEXT = 4.2
 /** How much to scale text measured at `widest` so it fits a cell's inner width, with a margin. Never grows. */
 export function arrayTextScale(inner: number, widest: number) {
   if (!(widest > 0) || !(inner > 0)) return 1
@@ -578,7 +577,7 @@ export const BLOCKS: { [T in Block['type']]: BlockDef<Of<T>> } = {
   },
   run: {
     needs: (b) => Math.max(b.at ?? 0, ...stepTimes(b).map((t) => t.end)),
-    mount(root, b) {
+    mount(root, b, ctx) {
       const box = el('div', 'run')
       const code = el('div', 'editor run-code')
       code.dataset.part = 'code'
@@ -620,6 +619,24 @@ export const BLOCKS: { [T in Block['type']]: BlockDef<Of<T>> } = {
         side.append(p)
         return p
       }
+      // The values reuse the array block whole, driven by the steps' moves at the steps' times.
+      let moveValues: ((local: number) => void) | null = null
+      if (b.values) {
+        const times = stepTimes(b)
+        const moves: ArrayBlock = {
+          type: 'array',
+          count: false,
+          values: b.values,
+          steps: b.steps.flatMap((step, n) =>
+            step.array
+              ? [{ ...step.array, at: times[n].start, seconds: times[n].end - times[n].start }]
+              : [],
+          ),
+        }
+        const body = el('div', '')
+        panel('array', 'Values', body)
+        moveValues = BLOCKS.array.mount(body, moves, ctx)
+      }
       const pile = el('div', 'stk-pile')
       const out = el('pre', 'run-out')
       if (b.panels.includes('stack')) panel('stack', 'Stack', pile)
@@ -641,6 +658,7 @@ export const BLOCKS: { [T in Block['type']]: BlockDef<Of<T>> } = {
       const fade = (o: number) => (o < 1 ? ` style="opacity:${o}"` : '')
       return (local) => {
         fit()
+        moveValues?.(local)
         const v = runView(b, local)
         current.hidden = !v.line
         current.style.top = `calc(${v.line - 1} * var(--ed-line))`
@@ -734,7 +752,7 @@ export const BLOCKS: { [T in Block['type']]: BlockDef<Of<T>> } = {
           const style = getComputedStyle(cells[0])
           const inner =
             cells[0].clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)
-          row.style.fontSize = `calc(${ARRAY_TEXT} * var(--u) * ${arrayTextScale(inner, widest)})`
+          row.style.fontSize = `calc(var(--arr-text) * var(--u) * ${arrayTextScale(inner, widest)})`
         }
         const view = arrayView(b, local)
         view.items.forEach((it, i) => {

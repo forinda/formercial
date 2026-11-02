@@ -112,6 +112,7 @@ Code running a line at a time, with the call stack, what it prints and any named
 | `rows`   | `14`                    | Lines in view; the current line is scrolled into view                            |
 | `panels` | `["stack", "output"]`   | What shows beside the code                                                       |
 | `boxes`  | `[]`                    | Up to six named places, `{ "id", "label" }`, like a task queue or the heap       |
+| `values` | none                    | A row of values beside the code, moved by the steps' `array` moves, for sorting and searching |
 | `steps`  | `[]`                    | What happens, in order                                                           |
 
 Each step can do several things, applied in this order:
@@ -125,10 +126,13 @@ Each step can do several things, applied in this order:
 | `print`        | A line the program prints                                                           |
 | `add`          | `{ "box", "item" }`: an item goes into a box                                        |
 | `take`         | `{ "box", "item"? }`: that item leaves the box, or the oldest one with no `item`    |
-| `focus`        | Only these stay bright: `"code"`, `"stack"`, `"output"` or a box id. `[]` clears it |
+| `focus`        | Only these stay bright: `"code"`, `"stack"`, `"output"`, `"array"` (with `values`) or a box id. `[]` clears it |
+| `array`        | `{ "do", "a", "b"? }`: a move on `values`, any of the [array](#array) block's moves |
 | `ring`         | A hand-drawn loop around this text on the current line                              |
 | `note`         | A short line under the code from this step on                                       |
 | `at`, `seconds`| When it starts, and how long it takes. Default: when the last ends, and `0.6`        |
+
+With `values`, a step's `array` move runs over the step's own time, so the line, the variables and the row move together.
 
 The stack shows its top four frames and counts the rest. In 9:16 the code sits on top and the panels below it. Everything is worked out from the time alone, so any frame can be drawn first.
 
