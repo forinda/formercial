@@ -129,6 +129,22 @@ export const SCENE_CSS = `
 .stk-var i { font-style: normal; color: var(--muted) }
 .stk-var b { font-weight: 500; color: var(--fg) }
 .stk-var.on b { color: var(--good) }
+.run { display: grid; grid-template-columns: 1.25fr 1fr; gap: calc(2.4 * var(--u)); align-items: start }
+.run-main { display: grid; gap: calc(1.6 * var(--u)); min-width: 0 }
+.run-side { display: grid; gap: calc(1.6 * var(--u)); min-width: 0 }
+.run [data-part] { transition: none }
+.run .dim { opacity: .3 }
+.run-panel { background: var(--box); border: calc(.15 * var(--u)) solid var(--line); border-radius: 8px; padding: calc(1.2 * var(--u)) calc(1.6 * var(--u)) }
+.run-title { font-family: var(--mono); font-size: calc(1.5 * var(--u)); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: calc(.8 * var(--u)) }
+.run .stk-pile { min-height: calc(12 * var(--u)) }
+.run-out { margin: 0; min-height: 3.1em; font-family: var(--mono); font-variant-ligatures: none; font-size: calc(2.2 * var(--u)); line-height: 1.55; color: var(--good); white-space: pre-wrap }
+.run-more { font-family: var(--mono); font-size: calc(1.6 * var(--u)); color: var(--muted); text-align: center }
+.run-items { display: flex; flex-wrap: wrap; gap: calc(.8 * var(--u)); min-height: calc(4.4 * var(--u)) }
+.run-items span { font-family: var(--mono); font-size: calc(1.9 * var(--u)); padding: calc(.5 * var(--u)) calc(1.2 * var(--u)); border: calc(.15 * var(--u)) solid var(--accent); border-radius: 6px; color: var(--fg) }
+.run .ed-code { position: relative }
+.run-ring { position: absolute; overflow: visible; pointer-events: none }
+.run-ring path { fill: none; stroke: #f2a33a; stroke-width: calc(.3 * var(--u)); stroke-linecap: round }
+.run .stk-frame em { min-width: 0; margin-right: auto }
 .arr-note { font-family: var(--display); font-size: calc(2.8 * var(--u)); text-align: center; min-height: 1.4em; color: var(--fg) }
 .arr-count { font-family: var(--mono); font-size: calc(2.4 * var(--u)); text-align: center; color: var(--muted); margin-top: calc(.8 * var(--u)) }
 .caret[hidden] { display: none }
@@ -162,6 +178,15 @@ export const SCENE_CSS = `
 .scene-error { position: absolute; left: calc(2 * var(--u)); right: calc(2 * var(--u)); bottom: calc(2 * var(--u)); font-family: var(--mono); font-size: calc(1.2 * var(--u)); color: #fff; background: #b3261e; padding: calc(.8 * var(--u)) calc(1.2 * var(--u)); border-radius: 4px; white-space: pre-wrap; z-index: 9 }
 :host([data-format="9:16"]) .scene { padding-top: calc(8 * var(--u)); justify-content: center }
 :host([data-format="9:16"]) .cards { grid-template-columns: 1fr }
+:host([data-format="9:16"]) .run { grid-template-columns: 1fr }
+:host([data-format="9:16"]) .run-side { grid-template-columns: 1fr 1fr; align-items: start }
+:host([data-format="9:16"]) .run .stk-pile { min-height: 0 }
+:host([data-format="9:16"]) .run .editor { font-size: calc(1.45 * var(--u)) }
+:host([data-format="9:16"]) .run, :host([data-format="9:16"]) .run-main, :host([data-format="9:16"]) .run-side { gap: calc(1.2 * var(--u)) }
+:host([data-format="9:16"]) .run .arr-note { font-size: calc(2.4 * var(--u)) }
+:host([data-format="9:16"]) .run .stk-frame { padding: calc(.6 * var(--u)) calc(1.2 * var(--u)) }
+:host([data-format="9:16"]) .run .stk-var { font-size: calc(2 * var(--u)) }
+:host([data-format="9:16"]) .run .stk-frame em { font-size: calc(1.8 * var(--u)) }
 :host([data-format="9:16"]) .end .text { font-size: calc(3 * var(--u)) }
 /* Read on a phone: larger, and wider than the rest of the scene. Long lines still shrink to fit. */
 :host([data-format="9:16"]) .code, :host([data-format="9:16"]) .term, :host([data-format="9:16"]) .tree { font-size: calc(2 * var(--u)); margin-left: calc(-3 * var(--u)); margin-right: calc(-3 * var(--u)); padding: calc(1.6 * var(--u)) calc(1.4 * var(--u)) }

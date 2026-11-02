@@ -132,6 +132,38 @@ export const StackStepsSchema = z
   .max(2000)
   .default([])
 
+/** What the editor checks a typed run block's steps against. */
+const runValue = z.union([z.string(), z.number()])
+export const RunStepsSchema = z
+  .array(
+    z.strictObject({
+      /** The line running now, from 1. */
+      line: z.number().int().min(1).optional(),
+      /** Take the top frame off the stack, first. */
+      pop: z.boolean().optional(),
+      /** Then put a new frame on top, with its variables. */
+      push: z.string().max(60).optional(),
+      vars: z.record(z.string(), runValue).optional(),
+      /** Then change variables in the top frame. */
+      set: z.record(z.string(), runValue).optional(),
+      /** A line the program prints. */
+      print: z.string().optional(),
+      /** An item going into a box, or out of it; with no item, the oldest leaves. */
+      add: z.strictObject({ box: z.string(), item: z.string() }).optional(),
+      take: z.strictObject({ box: z.string(), item: z.string().optional() }).optional(),
+      /** Only these stay bright: "code", "stack", "output" or a box id. An empty list clears it. */
+      focus: z.array(z.string()).optional(),
+      /** Circle this text on the current line. */
+      ring: z.string().min(1).optional(),
+      /** A short line shown under the code from this step on. */
+      note: z.string().optional(),
+      at,
+      seconds: z.number().min(0).default(0.6),
+    }),
+  )
+  .max(2000)
+  .default([])
+
 const viewBox = z.string().regex(/^-?\d+(\.\d+)? -?\d+(\.\d+)? \d+(\.\d+)? \d+(\.\d+)?$/, {
   error: 'four numbers, like "0 0 1600 720"',
 })
@@ -334,6 +366,69 @@ const BlockSchema = z.discriminatedUnion('type', [
     /** What happens, in order. */
     steps: StackStepsSchema,
   }),
+  z
+    .object({
+      type: z.literal('run'),
+      at,
+      /** The name on the tab. */
+      file: z.string().default('untitled'),
+      lang: z.enum(['ts', 'js', 'py', 'c', 'sql', 'json', 'plain']).default('c'),
+      source: z.string(),
+      /** Lines in view; the current line is kept in view. */
+      rows: z.number().int().min(3).max(60).default(14),
+      /** What shows beside the code. */
+      panels: z.array(z.enum(['stack', 'output'])).default(['stack', 'output']),
+      /** Named places items go in and out of, like a queue or the heap. */
+      boxes: z
+        .array(z.strictObject({ id: z.string().min(1).max(40), label: z.string() }))
+        .max(6)
+        .default([]),
+      steps: RunStepsSchema,
+    })
+    .superRefine((b, ctx) => {
+      const ids = new Set(b.boxes.map((x) => x.id))
+      // A box's id names its panel, so it can't share a name with another panel.
+      const reserved = new Set(['code', 'stack', 'output'])
+      b.boxes.forEach((x, i) => {
+        if (reserved.has(x.id) || b.boxes.findIndex((y) => y.id === x.id) !== i) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['boxes', i, 'id'],
+            message: `box id "${x.id}" is reserved or repeated`,
+          })
+        }
+      })
+      const parts = new Set(['code', ...b.panels, ...ids])
+      const lines = b.source.split('\n').length
+      b.steps.forEach((step, i) => {
+        step.focus?.forEach((f, j) => {
+          if (!parts.has(f)) {
+            ctx.addIssue({
+              code: 'custom',
+              path: ['steps', i, 'focus', j],
+              message: `nothing called "${f}" to focus on`,
+            })
+          }
+        })
+        for (const key of ['add', 'take'] as const) {
+          const box = step[key]?.box
+          if (box !== undefined && !ids.has(box)) {
+            ctx.addIssue({
+              code: 'custom',
+              path: ['steps', i, key, 'box'],
+              message: `no box "${box}"`,
+            })
+          }
+        }
+        if (step.line !== undefined && step.line > lines) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['steps', i, 'line'],
+            message: `the code has ${lines} lines`,
+          })
+        }
+      })
+    }),
   z.object({
     type: z.literal('terminal'),
     at,

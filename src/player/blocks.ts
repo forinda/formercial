@@ -292,6 +292,99 @@ export function editorView(source: string, rows: number, cps: number, since: num
   }
 }
 
+type RunBlock = Of<'run'>
+type Fading = { text: string; opacity: number; going?: boolean }
+
+const ease = (x: number) => 1 - (1 - clamp(x)) ** 3
+
+/** Everything a run block shows at a time: a pure function of it, like the other step blocks. */
+export function runView(b: RunBlock, time: number) {
+  const total = b.source.split('\n').length
+  const frames: { name: string; vars: Record<string, string | number>; opacity: number }[] = []
+  const leaving: typeof frames = []
+  const output: Fading[] = []
+  const boxes: Record<string, Fading[]> = Object.fromEntries(b.boxes.map((x) => [x.id, []]))
+  let line = 0
+  let scroll = 0
+  // Set inside the forEach below, which TypeScript can't follow, hence the casts.
+  let focus = null as string[] | null
+  let ring = null as { line: number; text: string; p: number } | null
+  let changed: string[] = []
+  let note = ''
+  const target = (n: number) =>
+    Math.max(0, Math.min(total - b.rows, n - 1 - Math.floor(b.rows / 2)))
+  const times = stepTimes(b)
+  b.steps.forEach((step, n) => {
+    const { start, end } = times[n]
+    if (time < start) return
+    const p = end > start ? clamp((time - start) / (end - start)) : 1
+    // Highlights belong to the step running now; the state they leave stays.
+    leaving.length = 0
+    changed = []
+    ring = null
+    for (const id in boxes) boxes[id] = boxes[id].filter((x) => !x.going)
+    if (step.pop && frames.length) {
+      const top = frames.pop()!
+      if (p < 1) leaving.push({ ...top, opacity: 1 - p })
+    }
+    if (step.push) frames.push({ name: step.push, vars: { ...step.vars }, opacity: p })
+    const top = frames[frames.length - 1]
+    if (step.set && top) {
+      Object.assign(top.vars, step.set)
+      changed = Object.keys(step.set)
+    }
+    if (step.print !== undefined) output.push({ text: step.print, opacity: p })
+    if (step.add && boxes[step.add.box])
+      boxes[step.add.box].push({ text: step.add.item, opacity: p })
+    if (step.take && boxes[step.take.box]) {
+      const list = boxes[step.take.box]
+      const item = step.take.item
+      const i = item === undefined ? 0 : list.findIndex((x) => x.text === item)
+      // It fades out during this step and is gone by the next.
+      if (list[i]) {
+        if (p < 1) list[i] = { ...list[i], opacity: 1 - p, going: true }
+        else list.splice(i, 1)
+      }
+    }
+    if (step.focus) focus = step.focus.length ? step.focus : null
+    if (step.line !== undefined) {
+      const from = target(line || step.line)
+      scroll = from + (target(step.line) - from) * ease((time - start) / SCROLL_SECONDS)
+      line = step.line
+    }
+    if (step.ring && line) ring = { line, text: step.ring, p }
+    if (step.note) note = step.note
+  })
+  const round = (x: number) => Math.round(x * 1000) / 1000
+  return {
+    line,
+    scroll: round(scroll),
+    frames: [...frames, ...leaving].map((f) => ({ ...f, opacity: round(f.opacity) })),
+    changed,
+    output: output.map((o) => ({ ...o, opacity: round(o.opacity) })),
+    boxes: Object.fromEntries(
+      Object.entries(boxes).map(([id, list]) => [
+        id,
+        list.map((x) => ({ text: x.text, opacity: round(x.opacity) })),
+      ]),
+    ),
+    focus,
+    ring,
+    note,
+  }
+}
+
+/** Frames a run block's stack shows before it counts the rest. */
+const RUN_FRAMES = 4
+
+/** A loose hand-drawn loop around a w by h box, open where the pen lifts. */
+export function ringPath(w: number, h: number) {
+  const pts = [10, 24, 6, 6, 90, 2, 95, 18, 99, 34, 18, 40, 6, 26, 2, 16, 22, 8, 38, 7]
+  const at = pts.map((v, i) => Math.round((i % 2 ? (v * h) / 40 : (v * w) / 100) * 10) / 10)
+  const pair = (i: number) => `${at[i]} ${at[i + 1]}`
+  return `M${pair(0)} C${pair(2)} ${pair(4)} ${pair(6)} C${pair(8)} ${pair(10)} ${pair(12)} C${pair(14)} ${pair(16)} ${pair(18)}`
+}
+
 const SVG = 'http://www.w3.org/2000/svg'
 const svg = (tag: string, attrs: Record<string, string | number> = {}) => {
   const e = document.createElementNS(SVG, tag)
@@ -480,6 +573,133 @@ export const BLOCKS: { [T in Block['type']]: BlockDef<Of<T>> } = {
           shown = html
         }
         note.textContent = view.note
+      }
+    },
+  },
+  run: {
+    needs: (b) => Math.max(b.at ?? 0, ...stepTimes(b).map((t) => t.end)),
+    mount(root, b) {
+      const box = el('div', 'run')
+      const code = el('div', 'editor run-code')
+      code.dataset.part = 'code'
+      const tabs = el('div', 'ed-tabs')
+      tabs.append(el('span', 'ed-tab', esc(b.file)))
+      const view = el('div', 'ed-view')
+      view.style.height = `calc(${b.rows} * var(--ed-line))`
+      const scroller = el('div', 'ed-scroller')
+      const current = el('div', 'ed-current')
+      const lines = b.source.split('\n').length
+      const gutter = el(
+        'pre',
+        'ed-gutter',
+        Array.from({ length: lines }, (_, i) => i + 1).join('\n'),
+      )
+      gutter.style.minWidth = `${String(lines).length + 1}ch`
+      const text = el('pre', 'ed-code', highlight(b.lang, b.source))
+      const ring = svg('svg', { class: 'run-ring' })
+      const loop = svg('path', { pathLength: 1, 'stroke-dasharray': '1 1' })
+      ring.append(loop)
+      // Ten zeros measure a column of the mono font, whatever size the stage is.
+      const probe = el('span', 'arr-probe', '0000000000')
+      text.append(ring, probe)
+      scroller.append(current, gutter, text)
+      view.append(scroller)
+      const position = el('span', '')
+      const status = el('div', 'ed-status')
+      status.append(position, el('span', '', `UTF-8 &nbsp; ${LANG_NAMES[b.lang]}`))
+      code.append(tabs, view, status)
+      const note = el('div', 'arr-note run-note')
+      const left = el('div', 'run-main')
+      left.append(code, note)
+
+      const side = el('div', 'run-side')
+      const panel = (part: string, title: string, body: HTMLElement) => {
+        const p = el('div', 'run-panel')
+        p.dataset.part = part
+        p.append(el('div', 'run-title', esc(title)), body)
+        side.append(p)
+        return p
+      }
+      const pile = el('div', 'stk-pile')
+      const out = el('pre', 'run-out')
+      if (b.panels.includes('stack')) panel('stack', 'Stack', pile)
+      if (b.panels.includes('output')) panel('output', 'Output', out)
+      const chips = Object.fromEntries(
+        b.boxes.map((x) => [x.id, panel(x.id, x.label, el('div', 'run-items')).lastElementChild!]),
+      )
+      box.append(left, side)
+      root.append(box)
+
+      const sourceLines = b.source.split('\n')
+      const fit = fitOnce(view)
+      const shown: Record<string, string> = {}
+      const put = (key: string, target: Element, html: string) => {
+        if (shown[key] === html) return
+        target.innerHTML = html
+        shown[key] = html
+      }
+      const fade = (o: number) => (o < 1 ? ` style="opacity:${o}"` : '')
+      return (local) => {
+        fit()
+        const v = runView(b, local)
+        current.hidden = !v.line
+        current.style.top = `calc(${v.line - 1} * var(--ed-line))`
+        scroller.style.transform = `translateY(calc(${-v.scroll} * var(--ed-line)))`
+        position.textContent = v.line ? `Ln ${v.line}` : ''
+        // Mono text, so a column is 1ch: no measuring.
+        const col = v.ring ? sourceLines[v.ring.line - 1].indexOf(v.ring.text) : -1
+        ring.style.visibility = v.ring && col >= 0 ? 'visible' : 'hidden'
+        if (v.ring && col >= 0) {
+          // offsetWidth, not the on-screen box: a transition's scale mustn't move the ring.
+          const ch = probe.offsetWidth / 10
+          const row = parseFloat(getComputedStyle(text).lineHeight)
+          const w = Math.round((v.ring.text.length + 1.6) * ch)
+          const h = Math.round(row * 1.35)
+          ring.setAttribute('width', String(w))
+          ring.setAttribute('height', String(h))
+          ring.setAttribute('viewBox', `0 0 ${w} ${h}`)
+          ring.style.left = `${Math.round((col - 0.8) * ch)}px`
+          ring.style.top = `${Math.round((v.ring.line - 1) * row - row * 0.18)}px`
+          loop.setAttribute('d', ringPath(w, h))
+          loop.setAttribute('stroke-dashoffset', String(Math.round((1 - v.ring.p) * 1000) / 1000))
+        }
+        // Deep recursion: the top frames, and a count of the rest.
+        const hidden = Math.max(0, v.frames.length - RUN_FRAMES)
+        put(
+          'stack',
+          pile,
+          v.frames
+            .map((f, i) => {
+              if (i < hidden)
+                return i === hidden - 1 ? `<div class="run-more">+${hidden} more</div>` : ''
+              const top = i === v.frames.length - 1 && f.opacity === 1 ? ' top' : ''
+              const vars = Object.entries(f.vars)
+                .map(
+                  ([k, val]) =>
+                    `<span class="stk-var${top && v.changed.includes(k) ? ' on' : ''}"><i>${esc(k)}</i><b>${esc(String(val))}</b></span>`,
+                )
+                .join('')
+              return `<div class="stk-frame${top}"${fade(f.opacity)}><em>${esc(f.name)}</em>${vars}</div>`
+            })
+            .reverse()
+            .join(''),
+        )
+        put(
+          'out',
+          out,
+          v.output.map((o) => `<span${fade(o.opacity)}>${esc(o.text)}\n</span>`).join(''),
+        )
+        for (const [id, list] of Object.entries(v.boxes)) {
+          put(
+            id,
+            chips[id],
+            list.map((x) => `<span${fade(x.opacity)}>${esc(x.text)}</span>`).join(''),
+          )
+        }
+        for (const part of box.querySelectorAll<HTMLElement>('[data-part]')) {
+          part.classList.toggle('dim', !!v.focus && !v.focus.includes(part.dataset.part!))
+        }
+        note.textContent = v.note
       }
     },
   },

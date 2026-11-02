@@ -33,6 +33,7 @@ import {
   ArrayStepsSchema,
   ArrayValuesSchema,
   StackStepsSchema,
+  RunStepsSchema,
   DoodleStrokesSchema,
   Stage3dActorsSchema,
   Stage3dCameraSchema,
@@ -185,6 +186,19 @@ const BLANK: { [T in Block['type']]: Extract<Block, { type: T }> } = {
     count: true,
     values: [3, 1, 2],
     steps: [{ do: 'swap', a: 0, b: 1, seconds: 0.6 }],
+  },
+  run: {
+    type: 'run',
+    file: 'main.c',
+    lang: 'c',
+    source: 'int main(void) {\n  printf("hi\\n");\n}',
+    rows: 14,
+    panels: ['stack', 'output'],
+    boxes: [],
+    steps: [
+      { line: 1, push: 'main', seconds: 0.6 },
+      { line: 2, print: 'hi', seconds: 0.6 },
+    ],
   },
   stack: {
     type: 'stack',
@@ -605,6 +619,35 @@ function BlockForm({
             <RowsField id={`${id}-rows`} value={block.rows} onChange={(rows) => set({ rows })} />
             {number('at', 'Starts at (s)')}
             {number('cps', 'Characters / s')}
+          </div>
+        </>
+      )
+    case 'run':
+      return (
+        <>
+          {text('file', 'File name')}
+          <Field id={`${id}-lang`} label="Language">
+            <Select
+              id={`${id}-lang`}
+              value={block.lang}
+              onChange={(e) => set({ lang: e.target.value })}
+            >
+              {LANGS.map((l) => (
+                <option key={l}>{l}</option>
+              ))}
+            </Select>
+          </Field>
+          {text('source', 'Code', true)}
+          <JsonField
+            id={`${id}-run`}
+            label="Steps, as JSON"
+            value={block.steps}
+            schema={RunStepsSchema}
+            onChange={(steps) => set({ steps })}
+          />
+          <div className="flex gap-2">
+            <RowsField id={`${id}-rows`} value={block.rows} onChange={(rows) => set({ rows })} />
+            {number('at', 'Starts at (s)')}
           </div>
         </>
       )
