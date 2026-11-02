@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.6.0 (2026-11-02)
+
+[Full changelog](https://github.com/forinda/formercial/compare/v0.5.2...v0.6.0)
+
+### 🚀 Features
+
+- **captions:** time captions from the voice's words, and light each word [`97dae94`](https://github.com/forinda/formercial/commit/97dae940e1d6eae0b68fdde9737b9f87e926a96c)
+- **blocks:** give the run block tabs, so steps can follow a call across files [`242098b`](https://github.com/forinda/formercial/commit/242098be65b0e982b4148102d507e04bc5caf224)
+- **blocks:** add a revise block that changes code a step at a time [`e2e84e6`](https://github.com/forinda/formercial/commit/e2e84e62bdfb2c0dbeafd4cdb11255d5b2ae4ce9)
+- **blocks:** let a run block move a row of values with its code [`40e4e59`](https://github.com/forinda/formercial/commit/40e4e596b1982bc7a775d10f98dadcdd22d3a6a8)
+- **blocks:** add a run block that steps through code [`a5ceb51`](https://github.com/forinda/formercial/commit/a5ceb51532a0a14b79ec777ceffc1c09552df9d3)
+
+### 🐛 Bug Fixes
+
+- **blocks:** edit revise chapters in the editor, diff steps once [`e1fddf7`](https://github.com/forinda/formercial/commit/e1fddf7edd7a6886e9fd94b50af0a3ee77c3c3eb)
+- **blocks:** reject run box ids that clash and focus on missing parts [`e25f085`](https://github.com/forinda/formercial/commit/e25f08562f0f0e4d7ffdc0eb642ca56f5049bb93)
+
 ## v0.5.2 (2026-11-02)
 
 [Full changelog](https://github.com/forinda/formercial/compare/v0.5.1...v0.5.2)
