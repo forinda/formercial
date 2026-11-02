@@ -86,6 +86,52 @@ Function calls piling up and going away, with each frame's variables, for showin
 
 Each step has `do`: `push` adds a frame (`name`, `vars`), `set` changes a variable (`name`, `value`, and `frame`, counted down from the top), `pop` removes the top frame, and `note` only changes the line under the stack. Any step can also have `note`, `at` and `seconds`, default `0.6`.
 
+## run
+
+Code running a line at a time, with the call stack, what it prints and any named boxes following along, for showing what a program does rather than telling it. Good for recursion, loops, and queues like an event loop.
+
+```json
+{
+  "type": "run",
+  "file": "fact.c",
+  "lang": "c",
+  "source": "int fact(int n) {\n  if (n <= 1) return 1;\n  return n * fact(n - 1);\n}",
+  "steps": [
+    { "line": 1, "push": "fact", "vars": { "n": 3 } },
+    { "line": 3, "ring": "fact(n - 1)", "note": "each call gets its own n" },
+    { "line": 2, "pop": true, "print": "6", "focus": ["code", "output"] }
+  ]
+}
+```
+
+| Field    | Default                 |                                                                                  |
+| -------- | ----------------------- | -------------------------------------------------------------------------------- |
+| `source` | required                | The code, shown whole from the start                                             |
+| `file`   | `"untitled"`            | The name on the tab                                                              |
+| `lang`   | `"c"`                   | `ts`, `js`, `py`, `c`, `sql`, `json` or `plain`, for highlighting                |
+| `rows`   | `14`                    | Lines in view; the current line is scrolled into view                            |
+| `panels` | `["stack", "output"]`   | What shows beside the code                                                       |
+| `boxes`  | `[]`                    | Up to six named places, `{ "id", "label" }`, like a task queue or the heap       |
+| `steps`  | `[]`                    | What happens, in order                                                           |
+
+Each step can do several things, applied in this order:
+
+| Field          |                                                                                     |
+| -------------- | ----------------------------------------------------------------------------------- |
+| `line`         | The line running now, from 1                                                        |
+| `pop`          | `true` takes the top frame off the stack; it fades out during the step              |
+| `push`, `vars` | A new frame on top, with its variables                                              |
+| `set`          | Changes variables in the top frame, as `{ "name": value }`. They light up for the step |
+| `print`        | A line the program prints                                                           |
+| `add`          | `{ "box", "item" }`: an item goes into a box                                        |
+| `take`         | `{ "box", "item"? }`: that item leaves the box, or the oldest one with no `item`    |
+| `focus`        | Only these stay bright: `"code"`, `"stack"`, `"output"` or a box id. `[]` clears it |
+| `ring`         | A hand-drawn loop around this text on the current line                              |
+| `note`         | A short line under the code from this step on                                       |
+| `at`, `seconds`| When it starts, and how long it takes. Default: when the last ends, and `0.6`        |
+
+The stack shows its top four frames and counts the rest. In 9:16 the code sits on top and the panels below it. Everything is worked out from the time alone, so any frame can be drawn first.
+
 ## terminal
 
 Commands that type themselves.
