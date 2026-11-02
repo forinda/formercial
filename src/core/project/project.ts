@@ -22,6 +22,7 @@ export const slugFrom = (name: string) =>
     .slice(0, 56) || 'project'
 
 const format = z.enum(['16:9', '9:16', '1:1'])
+const codeLang = z.enum(['ts', 'js', 'py', 'c', 'java', 'sql', 'json', 'plain'])
 // Seconds into the scene when a block appears.
 const at = z.number().min(0).optional()
 
@@ -173,6 +174,29 @@ export const RunStepsSchema = z
   )
   .max(2000)
   .default([])
+
+/** A revise block's steps: the file at each step, whole; what changed is worked out. */
+export const ReviseStepsSchema = z
+  .array(
+    z.strictObject({
+      source: z.string(),
+      /** Which of `chapters`, from 0. Default: the step before's. */
+      chapter: z.number().int().min(0).optional(),
+      card: z
+        .strictObject({
+          tag: z.string().max(30).optional(),
+          title: z.string().min(1),
+          text: z.string().optional(),
+        })
+        .optional(),
+      /** Circle this text on this line, from 1. */
+      ring: z.strictObject({ line: z.number().int().min(1), text: z.string().min(1) }).optional(),
+      at,
+      seconds: z.number().min(0).default(0.8),
+    }),
+  )
+  .min(1)
+  .max(200)
 
 const viewBox = z.string().regex(/^-?\d+(\.\d+)? -?\d+(\.\d+)? \d+(\.\d+)? \d+(\.\d+)?$/, {
   error: 'four numbers, like "0 0 1600 720"',
@@ -350,7 +374,7 @@ const BlockSchema = z.discriminatedUnion('type', [
     type: z.literal('code'),
     at,
     label: z.string().optional(),
-    lang: z.enum(['ts', 'js', 'py', 'c', 'sql', 'json', 'plain']).default('ts'),
+    lang: codeLang.default('ts'),
     source: z.string(),
     cps: z.number().positive().optional(),
   }),
@@ -359,7 +383,7 @@ const BlockSchema = z.discriminatedUnion('type', [
     at,
     /** The name on the tab. */
     file: z.string().default('untitled'),
-    lang: z.enum(['ts', 'js', 'py', 'c', 'sql', 'json', 'plain']).default('py'),
+    lang: codeLang.default('py'),
     source: z.string(),
     cps: z.number().positive().optional(),
     /** Lines in view. Longer code scrolls as it's typed. */
@@ -382,7 +406,7 @@ const BlockSchema = z.discriminatedUnion('type', [
       at,
       /** The name on the tab. */
       file: z.string().default('untitled'),
-      lang: z.enum(['ts', 'js', 'py', 'c', 'sql', 'json', 'plain']).default('c'),
+      lang: codeLang.default('c'),
       source: z.string(),
       /** Lines in view; the current line is kept in view. */
       rows: z.number().int().min(3).max(60).default(14),
@@ -466,6 +490,38 @@ const BlockSchema = z.discriminatedUnion('type', [
             code: 'custom',
             path: ['steps', i, 'line'],
             message: `the code has ${lines} lines`,
+          })
+        }
+      })
+    }),
+  z
+    .object({
+      type: z.literal('revise'),
+      at,
+      /** The name on the tab. */
+      file: z.string().default('untitled'),
+      lang: codeLang.default('ts'),
+      /** Lines in view, so the panel keeps its size as the code grows or shrinks. */
+      rows: z.number().int().min(3).max(60).default(18),
+      /** Names along the bottom, filled in as the steps reach them. */
+      chapters: z.array(z.string().min(1).max(30)).max(8).default([]),
+      steps: ReviseStepsSchema,
+    })
+    .superRefine((b, ctx) => {
+      b.steps.forEach((step, i) => {
+        if (step.chapter !== undefined && step.chapter >= b.chapters.length) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['steps', i, 'chapter'],
+            message: `there are ${b.chapters.length} chapters`,
+          })
+        }
+        const lines = step.source.split('\n')
+        if (step.ring && !lines[step.ring.line - 1]?.includes(step.ring.text)) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['steps', i, 'ring'],
+            message: `line ${step.ring.line} doesn't contain "${step.ring.text}"`,
           })
         }
       })

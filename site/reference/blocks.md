@@ -36,7 +36,7 @@ Code that types itself.
 | Field    | Default  |                                                                           |
 | -------- | -------- | ------------------------------------------------------------------------- |
 | `source` | required | Newlines and indentation are kept.                                        |
-| `lang`   | `"ts"`   | `"ts"`, `"js"`, `"py"`, `"c"`, `"sql"`, `"json"` or `"plain"`, for highlighting. |
+| `lang`   | `"ts"`   | `"ts"`, `"js"`, `"py"`, `"c"`, `"java"`, `"sql"`, `"json"` or `"plain"`, for highlighting. |
 | `label`  | none     | A small title, like a file name.                                          |
 | `cps`    | `34`     | Characters typed per second.                                              |
 
@@ -50,7 +50,7 @@ Code that types itself in a VS Code style window, with line numbers, the current
 | -------- | ------------ | -------------------------------------------------------------------------------- |
 | `source` | required     | Newlines and indentation are kept.                                               |
 | `file`   | `"untitled"` | The name on the tab.                                                             |
-| `lang`   | `"py"`       | `"ts"`, `"js"`, `"py"`, `"c"`, `"sql"`, `"json"` or `"plain"`, for highlighting. |
+| `lang`   | `"py"`       | `"ts"`, `"js"`, `"py"`, `"c"`, `"java"`, `"sql"`, `"json"` or `"plain"`, for highlighting. |
 | `rows`   | `14`         | Lines in view, `3` to `60`.                                                      |
 | `cps`    | `34`         | Characters typed per second.                                                     |
 
@@ -86,6 +86,52 @@ Function calls piling up and going away, with each frame's variables, for showin
 
 Each step has `do`: `push` adds a frame (`name`, `vars`), `set` changes a variable (`name`, `value`, and `frame`, counted down from the top), `pop` removes the top frame, and `note` only changes the line under the stack. Any step can also have `note`, `at` and `seconds`, default `0.6`.
 
+## revise
+
+Code changing a step at a time, as in a refactoring: each step gives the whole file, and what changed since the step before is marked. A card beside it says what the step does and why.
+
+```json
+{
+  "type": "revise",
+  "file": "Fee.java",
+  "lang": "java",
+  "chapters": ["Problem", "Refactor"],
+  "steps": [
+    {
+      "source": "double f = t.hours() * 3.0;\nif (t.minutes() <= 15) f = 0;",
+      "chapter": 0,
+      "card": { "tag": "Before", "title": "The grace period hides at the bottom" },
+      "ring": { "line": 2, "text": "t.minutes() <= 15" }
+    },
+    {
+      "source": "if (t.minutes() <= 15) return 0;\ndouble f = t.hours() * 3.0;",
+      "chapter": 1,
+      "card": { "tag": "Guard Clause", "title": "Check it first", "text": "Short stays leave at once." }
+    }
+  ]
+}
+```
+
+| Field      | Default      |                                                                              |
+| ---------- | ------------ | ---------------------------------------------------------------------------- |
+| `steps`    | required     | The file at each step, in order, from one to 200                             |
+| `file`     | `"untitled"` | The name on the tab, beside the file's line count                            |
+| `lang`     | `"ts"`       | As for [run](#run)                                                           |
+| `rows`     | `18`         | Lines in view, so the panel keeps its size as the code grows or shrinks      |
+| `chapters` | `[]`         | Up to eight names along the bottom, each filling as its steps run            |
+
+A step:
+
+| Field             |                                                                                         |
+| ----------------- | --------------------------------------------------------------------------------------- |
+| `source`          | The whole file at this step. Lines that are new or changed get a red bar and a tint      |
+| `chapter`         | Which of `chapters`, from 0. Default: the step before's                                 |
+| `card`            | `{ "tag"?, "title", "text"? }`, with the step's number. Default: the last card stays     |
+| `ring`            | `{ "line", "text" }`: a hand-drawn loop around that text on that line, from 1            |
+| `at`, `seconds`   | When it starts, and how long the change takes. Default: when the last ends, and `0.8`   |
+
+The old version fades out as the new one fades in, and the view scrolls to the ringed line, or else the first changed one. In 9:16 the card sits under the code.
+
 ## run
 
 Code running a line at a time, with the call stack, what it prints and any named boxes following along, for showing what a program does rather than telling it. Good for recursion, loops, and queues like an event loop.
@@ -108,7 +154,7 @@ Code running a line at a time, with the call stack, what it prints and any named
 | -------- | ----------------------- | -------------------------------------------------------------------------------- |
 | `source` | required                | The code, shown whole from the start                                             |
 | `file`   | `"untitled"`            | The name on the tab                                                              |
-| `lang`   | `"c"`                   | `ts`, `js`, `py`, `c`, `sql`, `json` or `plain`, for highlighting                |
+| `lang`   | `"c"`                   | `ts`, `js`, `py`, `c`, `java`, `sql`, `json` or `plain`, for highlighting        |
 | `rows`   | `14`                    | Lines in view; the current line is scrolled into view                            |
 | `panels` | `["stack", "output"]`   | What shows beside the code                                                       |
 | `boxes`  | `[]`                    | Up to six named places, `{ "id", "label" }`, like a task queue or the heap       |

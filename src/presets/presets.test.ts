@@ -24,6 +24,7 @@ const BLOCK_TYPES: Record<Block['type'], true> = {
   array: true,
   stack: true,
   run: true,
+  revise: true,
   terminal: true,
   tree: true,
   stamp: true,
