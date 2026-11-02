@@ -34,6 +34,7 @@ import {
   ArrayValuesSchema,
   StackStepsSchema,
   RunStepsSchema,
+  RunFilesSchema,
   ReviseStepsSchema,
   ReviseChaptersSchema,
   DoodleStrokesSchema,
@@ -207,6 +208,7 @@ const BLANK: { [T in Block['type']]: Extract<Block, { type: T }> } = {
     source: 'int main(void) {\n  printf("hi\\n");\n}',
     rows: 14,
     panels: ['stack', 'output'],
+    files: [],
     boxes: [],
     steps: [
       { line: 1, push: 'main', seconds: 0.6 },
@@ -686,6 +688,13 @@ function BlockForm({
             </Select>
           </Field>
           {text('source', 'Code', true)}
+          <JsonField
+            id={`${id}-files`}
+            label='More tabs, as JSON, like [{ "name": "sum.c", "source": "…" }]'
+            value={block.files}
+            schema={RunFilesSchema}
+            onChange={(files) => set({ files })}
+          />
           <JsonField
             id={`${id}-run`}
             label="Steps, as JSON"

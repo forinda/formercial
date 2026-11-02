@@ -965,6 +965,57 @@ const showcase = parseProject({
       { minSeconds: 8, transition: 'cut' },
     ),
     scene(
+      'run-tabs',
+      'Code in more than one file gets a tab each, and the steps follow the call across.',
+      'Code in more than one file gets a tab each, and the steps follow the call across.',
+      [
+        {
+          type: 'run',
+          at: 0.2,
+          file: 'main.c',
+          lang: 'c',
+          source: [
+            '#include "sum.h"',
+            '',
+            'int main(void) {',
+            '  int a[] = {4, 2};',
+            '  printf("%d\\n", sum(a, 2));',
+            '}',
+          ].join('\n'),
+          files: [
+            {
+              name: 'sum.c',
+              source: [
+                'int sum(int *a, int n) {',
+                '  int s = 0;',
+                '  for (int i = 0; i < n; i++)',
+                '    s += a[i];',
+                '  return s;',
+                '}',
+              ].join('\n'),
+            },
+          ],
+          rows: 7,
+          steps: [
+            { line: 5, push: 'main', ring: 'sum(a, 2)' },
+            {
+              file: 'sum.c',
+              line: 1,
+              push: 'sum',
+              vars: { n: 2 },
+              note: 'the call jumps to sum.c',
+            },
+            { line: 2, set: { s: 0 } },
+            { line: 4, set: { i: 0, s: 4 } },
+            { line: 4, set: { i: 1, s: 6 } },
+            { line: 5, ring: 'return s' },
+            { file: 'main.c', line: 5, pop: true, print: '6', note: 'and back to main.c' },
+          ],
+        },
+      ],
+      { minSeconds: 8, transition: 'cut' },
+    ),
+    scene(
       'run-sort',
       'Give it values, and the row moves with the code: one pass of bubble sort.',
       'Give it values, and the row moves with the code: one pass of bubble sort.',

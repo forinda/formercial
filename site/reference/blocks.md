@@ -154,6 +154,7 @@ Code running a line at a time, with the call stack, what it prints and any named
 | -------- | ----------------------- | -------------------------------------------------------------------------------- |
 | `source` | required                | The code, shown whole from the start                                             |
 | `file`   | `"untitled"`            | The name on the tab                                                              |
+| `files`  | `[]`                    | Up to five more tabs, `{ "name", "source" }`, after the first. Steps switch with `file` |
 | `lang`   | `"c"`                   | `ts`, `js`, `py`, `c`, `java`, `sql`, `json` or `plain`, for highlighting        |
 | `rows`   | `14`                    | Lines in view; the current line is scrolled into view                            |
 | `panels` | `["stack", "output"]`   | What shows beside the code                                                       |
@@ -165,7 +166,8 @@ Each step can do several things, applied in this order:
 
 | Field          |                                                                                     |
 | -------------- | ----------------------------------------------------------------------------------- |
-| `line`         | The line running now, from 1                                                        |
+| `file`         | Switch to the tab with this name; later steps stay on it, and it opens at its top   |
+| `line`         | The line running now, from 1, in the tab shown                                      |
 | `pop`          | `true` takes the top frame off the stack; it fades out during the step              |
 | `push`, `vars` | A new frame on top, with its variables                                              |
 | `set`          | Changes variables in the top frame, as `{ "name": value }`. They light up for the step |

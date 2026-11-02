@@ -94,4 +94,31 @@ describe('runView', () => {
     expect(() => run({ values: [1, 2], steps: [{ focus: ['array'] }] })).not.toThrow()
     expect(() => run({ steps: [{ focus: ['array'] }] })).toThrow(/"array"/)
   })
+
+  test('tabs: a step switches by name, later steps stay, a new tab starts at its top', () => {
+    const t = run({
+      file: 'main.c',
+      files: [{ name: 'list.c', source: '1\n2\n3\n4\n5\n6\n7\n8\n9' }],
+      steps: [
+        { at: 0, seconds: 0, line: 8 },
+        { at: 1, seconds: 0, file: 'list.c' },
+        { at: 2, seconds: 0, line: 9 },
+        { at: 3, seconds: 0, file: 'main.c', line: 2 },
+      ],
+    })
+    expect(runView(t, 0.5)).toMatchObject({ tab: 0, line: 8, scroll: 4 })
+    expect(runView(t, 1.5)).toMatchObject({ tab: 1, line: 0, scroll: 0 })
+    expect(runView(t, 2.5)).toMatchObject({ tab: 1, line: 9, scroll: 5 })
+    expect(runView(t, 3.5)).toMatchObject({ tab: 0, line: 2, scroll: 0 })
+  })
+
+  test('tabs: names are unique, steps name real tabs, lines fit the tab shown', () => {
+    expect(() => run({ file: 'a.c', files: [{ name: 'a.c', source: 'x' }] })).toThrow(
+      /two tabs are called "a.c"/,
+    )
+    expect(() => run({ steps: [{ file: 'nope.c' }] })).toThrow(/no tab "nope.c"/)
+    const two = { file: 'a.c', files: [{ name: 'b.c', source: 'one line' }] }
+    expect(() => run({ ...two, steps: [{ file: 'b.c' }, { line: 2 }] })).toThrow(/b.c has 1 line\b/)
+    expect(() => run({ ...two, steps: [{ line: 8 }] })).not.toThrow()
+  })
 })

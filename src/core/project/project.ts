@@ -135,12 +135,20 @@ export const StackStepsSchema = z
   .max(2000)
   .default([])
 
+/** What the editor checks a run block's extra tabs against. */
+export const RunFilesSchema = z
+  .array(z.strictObject({ name: z.string().min(1).max(60), source: z.string() }))
+  .max(5)
+  .default([])
+
 /** What the editor checks a typed run block's steps against. */
 const runValue = z.union([z.string(), z.number()])
 export const RunStepsSchema = z
   .array(
     z.strictObject({
-      /** The line running now, from 1. */
+      /** Switch to this tab, by its name; later steps stay on it. */
+      file: z.string().optional(),
+      /** The line running now, from 1, in the tab shown. */
       line: z.number().int().min(1).optional(),
       /** Take the top frame off the stack, first. */
       pop: z.boolean().optional(),
@@ -411,6 +419,8 @@ const BlockSchema = z.discriminatedUnion('type', [
       file: z.string().default('untitled'),
       lang: codeLang.default('c'),
       source: z.string(),
+      /** More tabs after the first, which is `file` and `source`. */
+      files: RunFilesSchema,
       /** Lines in view; the current line is kept in view. */
       rows: z.number().int().min(3).max(60).default(14),
       /** What shows beside the code. */
@@ -439,8 +449,29 @@ const BlockSchema = z.discriminatedUnion('type', [
       })
       const reservedParts = b.values ? ['code', 'array', ...b.panels] : ['code', ...b.panels]
       const parts = new Set([...reservedParts, ...ids])
-      const lines = b.source.split('\n').length
+      const tabs = [{ name: b.file, source: b.source }, ...b.files]
+      tabs.forEach((tab, i) => {
+        if (tabs.findIndex((t) => t.name === tab.name) !== i) {
+          ctx.addIssue({
+            code: 'custom',
+            path: i ? ['files', i - 1, 'name'] : ['file'],
+            message: `two tabs are called "${tab.name}"`,
+          })
+        }
+      })
+      let tab = 0
       b.steps.forEach((step, i) => {
+        if (step.file !== undefined) {
+          const found = tabs.findIndex((t) => t.name === step.file)
+          if (found < 0) {
+            ctx.addIssue({
+              code: 'custom',
+              path: ['steps', i, 'file'],
+              message: `no tab "${step.file}"`,
+            })
+          } else tab = found
+        }
+        const lines = tabs[tab].source.split('\n').length
         step.focus?.forEach((f, j) => {
           if (!parts.has(f)) {
             ctx.addIssue({
@@ -492,7 +523,7 @@ const BlockSchema = z.discriminatedUnion('type', [
           ctx.addIssue({
             code: 'custom',
             path: ['steps', i, 'line'],
-            message: `the code has ${lines} lines`,
+            message: `${tabs[tab].name} has ${lines} line${lines === 1 ? '' : 's'}`,
           })
         }
       })
