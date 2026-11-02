@@ -100,6 +100,13 @@ const typing = (b: { at?: number; source: string; cps?: number }) =>
 
 type ArrayBlock = Of<'array'>
 
+const ARRAY_TEXT = 4.2
+/** How much to scale a cell's mono text so the longest value fits, leaving a margin. Never grows. */
+export function arrayTextScale(cell: number, fontSize: number, longest: number) {
+  const scale = (cell * 0.8) / (Math.max(1, longest) * 0.6 * fontSize)
+  return Math.round(Math.min(1, scale) * 1000) / 1000
+}
+
 /** When each step of an array block starts and ends: in order, unless one says otherwise. */
 export function arrayTimes(b: ArrayBlock): { start: number; end: number }[] {
   let clock = b.at ?? 0
@@ -489,7 +496,18 @@ export const BLOCKS: { [T in Block['type']]: BlockDef<Of<T>> } = {
       box.append(row, note)
       if (counts) box.append(count)
       root.append(box)
+      const longest = Math.max(...b.values.map((v) => String(v).length))
+      let fitted = false
       return (local) => {
+        // Once it has a size: shrink the text if the longest value wouldn't fit its cell.
+        if (!fitted && row.clientWidth) {
+          fitted = true
+          row.style.fontSize = `calc(${ARRAY_TEXT} * var(--u) * ${arrayTextScale(
+            row.clientWidth / b.values.length,
+            parseFloat(getComputedStyle(row).fontSize),
+            longest,
+          )})`
+        }
         const view = arrayView(b, local)
         view.items.forEach((it, i) => {
           cells[i].style.left = `calc(${it.x} * 100% / var(--n))`
