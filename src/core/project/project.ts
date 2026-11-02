@@ -73,14 +73,15 @@ const arrayFields = {
     .array(
       z.strictObject({
         do: z.enum(['compare', 'swap', 'lift', 'shift', 'drop', 'mark', 'dim']),
-        a: z.number().int().min(0),
-        b: z.number().int().min(0).optional(),
+        a: z.number().int().min(0).max(19),
+        b: z.number().int().min(0).max(19).optional(),
         /** A short line shown under the row from this step on. */
         note: z.string().optional(),
         at,
         seconds: z.number().min(0).default(0.6),
       }),
     )
+    .max(2000)
     .default([]),
 }
 /** What the editor checks a typed array block against. */
@@ -105,6 +106,7 @@ export const StackStepsSchema = z
       seconds: z.number().min(0).default(0.6),
     }),
   )
+  .max(2000)
   .default([])
 
 const viewBox = z.string().regex(/^-?\d+(\.\d+)? -?\d+(\.\d+)? \d+(\.\d+)? \d+(\.\d+)?$/, {

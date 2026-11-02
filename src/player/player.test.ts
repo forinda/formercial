@@ -2,6 +2,7 @@
 import { describe, expect, test } from 'vitest'
 import { parseProject, starterProject, type Project } from '@/core/project/project'
 import { resolveTimeline, type Clip } from '@/core/project/timeline'
+import { ArrayContentSchema } from '@/core/project/project'
 import { arrayView, doodleTimes, editorView, stackView } from './blocks'
 import { createPlayer, sceneNeeds } from './player'
 
@@ -495,6 +496,24 @@ describe('array block', () => {
     expect(arrayView(b, 1).items[1].y).toBe(1)
     expect(xs(b, 3)).toEqual([1, 0, 2])
     expect(arrayView(b, 3).items[1].y).toBe(0)
+  })
+
+  test('a step past the row does nothing, and returns at once', () => {
+    const b = block([
+      { do: 'mark', a: 0, b: 2_000_000_000 },
+      { do: 'shift', a: 0, b: 2_000_000_000 },
+      { do: 'lift', a: 1 },
+      { do: 'drop', a: 2_000_000_000 },
+    ])
+    const view = arrayView(b, 10)
+    expect(view.items.every((it) => it.done)).toBe(true)
+    expect(view.items[0].x).toBe(0)
+    expect(view.items[1].x).toBe(1)
+  })
+
+  test('the schema refuses slots past the most a row can hold', () => {
+    const step = { do: 'mark', a: 0, b: 20 }
+    expect(ArrayContentSchema.safeParse({ values: [1], steps: [step] }).success).toBe(false)
   })
 
   test('counts comparisons, and keeps the latest note', () => {

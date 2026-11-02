@@ -136,7 +136,9 @@ export function arrayView(b: ArrayBlock, time: number) {
     const eased = p * p * (3 - 2 * p)
     const arc = Math.sin(Math.PI * p)
     const moving = p < 1
-    const at = (slot: number) => (slot < slots.length ? slots[slot] : null)
+    const at = (slot: number) => slots[slot] ?? null
+    // Past the row is nothing, however far a step asks to go.
+    const last = Math.min(step.b ?? step.a, slots.length - 1)
     const a = at(step.a)
     const c = step.b === undefined ? null : at(step.b)
     if (step.note) note = step.note
@@ -167,7 +169,7 @@ export function arrayView(b: ArrayBlock, time: number) {
         }
         break
       case 'shift':
-        if (a === null || step.b === undefined) break
+        if (a === null || step.b === undefined || step.b >= slots.length) break
         items[a].x = step.a + (step.b - step.a) * eased
         items[a].active = moving
         if (!moving) {
@@ -176,7 +178,7 @@ export function arrayView(b: ArrayBlock, time: number) {
         }
         break
       case 'drop':
-        if (held === null) break
+        if (held === null || step.a >= slots.length) break
         items[held].x = items[held].x + (step.a - items[held].x) * eased
         items[held].y = 1 - eased
         items[held].active = moving
@@ -186,13 +188,13 @@ export function arrayView(b: ArrayBlock, time: number) {
         }
         break
       case 'dim':
-        for (let s = step.a; s <= (step.b ?? step.a); s++) {
+        for (let s = step.a; s <= last; s++) {
           const i = at(s)
           if (i !== null) items[i].dim = true
         }
         break
       case 'mark':
-        for (let s = step.a; s <= (step.b ?? step.a); s++) {
+        for (let s = step.a; s <= last; s++) {
           const i = at(s)
           if (i !== null) items[i].done = true
         }
