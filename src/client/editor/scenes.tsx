@@ -609,13 +609,16 @@ function BlockForm({
       )
     case 'stack':
       return (
-        <JsonField
-          id={`${id}-stack`}
-          label="Steps, as JSON"
-          value={block.steps}
-          schema={StackStepsSchema}
-          onChange={(steps) => set({ steps })}
-        />
+        <>
+          <JsonField
+            id={`${id}-stack`}
+            label="Steps, as JSON"
+            value={block.steps}
+            schema={StackStepsSchema}
+            onChange={(steps) => set({ steps })}
+          />
+          {number('at', 'Starts at (s)')}
+        </>
       )
     case 'array':
       return (
@@ -634,6 +637,7 @@ function BlockForm({
             schema={ArrayStepsSchema}
             onChange={(steps) => set({ steps })}
           />
+          {number('at', 'Starts at (s)')}
         </>
       )
     case 'terminal':

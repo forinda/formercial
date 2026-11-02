@@ -169,7 +169,8 @@ export function arrayView(b: ArrayBlock, time: number) {
         }
         break
       case 'shift':
-        if (a === null || step.b === undefined || step.b >= slots.length) break
+        if (a === null || step.b === undefined || step.b >= slots.length || slots[step.b] !== null)
+          break
         items[a].x = step.a + (step.b - step.a) * eased
         items[a].active = moving
         if (!moving) {
@@ -178,7 +179,7 @@ export function arrayView(b: ArrayBlock, time: number) {
         }
         break
       case 'drop':
-        if (held === null || step.a >= slots.length) break
+        if (held === null || step.a >= slots.length || slots[step.a] !== null) break
         items[held].x = items[held].x + (step.a - items[held].x) * eased
         items[held].y = 1 - eased
         items[held].active = moving

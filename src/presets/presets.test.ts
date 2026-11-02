@@ -79,7 +79,8 @@ describe('presets', () => {
           expect([...player.errors]).toEqual([])
           player.destroy()
         }
-      })
+        // Every frame of every scene in three formats: too much for the default on CI.
+      }, 30_000)
 
       if (preset.lang !== 'mixed' && preset.lang !== 'none') {
         test('shows code in its own language', () => {

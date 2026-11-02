@@ -2,7 +2,7 @@
 import { describe, expect, test } from 'vitest'
 import { parseProject, starterProject, type Project } from '@/core/project/project'
 import { resolveTimeline, type Clip } from '@/core/project/timeline'
-import { ArrayStepsSchema } from '@/core/project/project'
+import { ArrayStepsSchema, StackStepsSchema } from '@/core/project/project'
 import { arrayView, doodleTimes, editorView, stackView } from './blocks'
 import { createPlayer, sceneNeeds } from './player'
 
@@ -515,6 +515,21 @@ describe('array block', () => {
     expect(ArrayStepsSchema.safeParse([{ do: 'mark', a: 0, b: 20 }]).success).toBe(false)
   })
 
+  test('a move into a taken slot is ignored, so no item gets lost', () => {
+    const b = block([
+      { do: 'shift', a: 0, b: 1 },
+      { do: 'lift', a: 2 },
+      { do: 'drop', a: 0 },
+    ])
+    expect(xs(b, 3)).toEqual([0, 1, 2])
+  })
+
+  test('swap and shift need both slots; compare may use one', () => {
+    expect(ArrayStepsSchema.safeParse([{ do: 'swap', a: 0 }]).success).toBe(false)
+    expect(ArrayStepsSchema.safeParse([{ do: 'shift', a: 0 }]).success).toBe(false)
+    expect(ArrayStepsSchema.safeParse([{ do: 'compare', a: 0 }]).success).toBe(true)
+  })
+
   test('counts comparisons, and keeps the latest note', () => {
     const b = block([
       { do: 'compare', a: 0, b: 1, note: 'first' },
@@ -554,6 +569,13 @@ describe('stack block', () => {
       { do: 'pop', seconds: 1, frame: 0 },
     ],
   } as never
+
+  test('set needs a name and a value; push needs a name', () => {
+    expect(StackStepsSchema.safeParse([{ do: 'set', name: 'n' }]).success).toBe(false)
+    expect(StackStepsSchema.safeParse([{ do: 'set', value: 1 }]).success).toBe(false)
+    expect(StackStepsSchema.safeParse([{ do: 'push' }]).success).toBe(false)
+    expect(StackStepsSchema.safeParse([{ do: 'pop' }]).success).toBe(true)
+  })
 
   test('frames pile up, newest last', () => {
     expect(stackView(block, 2).frames.map((f) => f.name)).toEqual(['main', 'twice'])

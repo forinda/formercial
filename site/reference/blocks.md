@@ -70,11 +70,11 @@ Each step has `do`, a slot `a` numbered from 0, and for some a slot `b`. Optiona
 
 | `do`      |                                                 |
 | --------- | ----------------------------------------------- |
-| `compare` | Highlights slots `a` and `b`, and counts one    |
+| `compare` | Highlights slot `a`, and `b` if given, and counts one |
 | `swap`    | Slots `a` and `b` trade places                  |
 | `lift`    | The item in slot `a` rises out of the row       |
-| `shift`   | The item in slot `a` slides to the empty slot `b` |
-| `drop`    | The lifted item falls into the empty slot `a`   |
+| `shift`   | The item in slot `a` slides to the empty slot `b`. Ignored if `b` is taken |
+| `drop`    | The lifted item falls into the empty slot `a`. Ignored if `a` is taken |
 | `mark`    | Slots `a` to `b` turn green, as finished        |
 | `dim`     | Slots `a` to `b` fade, as ruled out             |
 
