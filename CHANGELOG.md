@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.5.2 (2026-11-02)
+
+[Full changelog](https://github.com/forinda/formercial/compare/v0.5.1...v0.5.2)
+
+### 🚀 Features
+
+- **doodle:** reflow wide drawings for 9:16 and check for small text [`8eaa9db`](https://github.com/forinda/formercial/commit/8eaa9db140a246a9acc05636d8858b03328fabb6)
+
+### 🐛 Bug Fixes
+
+- **doodle:** keep reflow safe on odd paths and many parts [`eb373a5`](https://github.com/forinda/formercial/commit/eb373a58af3c93dc2679146d15781379a6877cb2)
+
+### 🔧 Chores
+
+- **deps:** bump the production-dependencies group with 2 updates [`34b8368`](https://github.com/forinda/formercial/commit/34b83685a1f1b947f3a149ace2ead348139d6797)
+
 ## v0.5.1 (2026-11-02)
 
 [Full changelog](https://github.com/forinda/formercial/compare/v0.5.0...v0.5.1)
