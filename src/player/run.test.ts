@@ -82,4 +82,16 @@ describe('runView', () => {
     expect(() => run({ panels: ['stack'], steps: [{ focus: ['output'] }] })).toThrow(/"output"/)
     expect(() => run({ steps: [{ focus: ['code', 'stack', 'output'] }] })).not.toThrow()
   })
+
+  test('array moves need values, real slots, and a b to swap with', () => {
+    expect(() => run({ steps: [{ array: { do: 'compare', a: 0 } }] })).toThrow(/add values/)
+    expect(() => run({ values: [1, 2], steps: [{ array: { do: 'mark', a: 2 } }] })).toThrow(
+      /2 slots/,
+    )
+    expect(() => run({ values: [1, 2], steps: [{ array: { do: 'swap', a: 0 } }] })).toThrow(
+      /needs a slot b/,
+    )
+    expect(() => run({ values: [1, 2], steps: [{ focus: ['array'] }] })).not.toThrow()
+    expect(() => run({ steps: [{ focus: ['array'] }] })).toThrow(/"array"/)
+  })
 })

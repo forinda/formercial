@@ -113,8 +113,11 @@ export const SCENE_CSS = `
 .ed-thumb[hidden] { display: none }
 .ed-status { display: flex; justify-content: space-between; background: #007acc; color: #fff; font-size: .7em; padding: .3em 1em }
 .editor .k { color: #569cd6 } .editor .s { color: #ce9178 } .editor .c { color: #6a9955; font-style: normal } .editor .n { color: #b5cea8 } .editor .f { color: #dcdcaa }
-.array { --arr-rise: calc(9.5 * var(--u)); padding-top: var(--arr-rise) }
-.arr-row { position: relative; font-size: calc(4.2 * var(--u)); height: calc(8 * var(--u)); margin-bottom: var(--arr-rise) }
+.array { --arr-rise: calc(9.5 * var(--u)); --arr-text: 4.2; padding-top: var(--arr-rise) }
+.run .array { --arr-rise: calc(4 * var(--u)); --arr-text: 2.8 }
+.run .arr-row { height: calc(5.5 * var(--u)) }
+.run .array .arr-note { display: none }
+.arr-row { position: relative; font-size: calc(var(--arr-text) * var(--u)); height: calc(8 * var(--u)); margin-bottom: var(--arr-rise) }
 .arr-cell { position: absolute; top: 0; width: calc(100% / var(--n) - .8 * var(--u)); height: 100%; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-variant-ligatures: none; background: var(--box); border: calc(.25 * var(--u)) solid var(--line); border-radius: 6px; color: var(--fg) }
 .arr-probe { position: absolute; visibility: hidden; white-space: pre }
 .arr-cell.on { border-color: var(--accent); color: var(--accent); z-index: 1 }
@@ -181,6 +184,7 @@ export const SCENE_CSS = `
 :host([data-format="9:16"]) .run { grid-template-columns: 1fr }
 :host([data-format="9:16"]) .run-side { grid-template-columns: 1fr 1fr; align-items: start }
 :host([data-format="9:16"]) .run .stk-pile { min-height: 0 }
+:host([data-format="9:16"]) .run-panel[data-part="array"] { grid-column: 1 / -1 }
 :host([data-format="9:16"]) .run .editor { font-size: calc(1.45 * var(--u)) }
 :host([data-format="9:16"]) .run, :host([data-format="9:16"]) .run-main, :host([data-format="9:16"]) .run-side { gap: calc(1.2 * var(--u)) }
 :host([data-format="9:16"]) .run .arr-note { font-size: calc(2.4 * var(--u)) }
