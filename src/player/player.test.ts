@@ -498,10 +498,10 @@ describe('array block', () => {
     expect(arrayView(b, 3).items[1].y).toBe(0)
   })
 
-  test('long values shrink to fit a narrow cell; short ones stay full size', () => {
-    expect(arrayTextScale(200, 80, 2)).toBe(1)
-    expect(arrayTextScale(100, 80, 2)).toBe(0.833)
-    expect(arrayTextScale(100, 80, 8)).toBe(0.208)
+  test('measured text shrinks to fit a narrow cell, and never grows', () => {
+    expect(arrayTextScale(200, 96)).toBe(1)
+    expect(arrayTextScale(100, 180)).toBe(0.5)
+    expect(arrayTextScale(100, 0)).toBe(1)
   })
 
   test('a step past the row does nothing, and returns at once', () => {
