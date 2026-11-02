@@ -201,6 +201,7 @@ const BLANK: { [T in Block['type']]: Extract<Block, { type: T }> } = {
     viewBox: '0 0 1600 720',
     pen: true,
     wobble: true,
+    reflow: true,
     strokes: [
       {
         d: 'M300 400 C500 150 900 650 1300 300',

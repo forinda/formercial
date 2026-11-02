@@ -151,6 +151,7 @@ A whiteboard drawing that draws itself with a pen. It's plain data, so it needs 
 | `strokes` | What to draw, in order: lines and labels, described below.                                                 |
 | `viewBox` | The drawing's coordinates. Default `"0 0 1600 720"`.                                                       |
 | `tall`    | Optional: `{ "viewBox", "strokes" }`, a separate drawing for 9:16. `viewBox` defaults to `"0 0 900 1400"`. |
+| `reflow`  | With no `tall` drawing, lay the wide one out again for 9:16, stacking its parts. Default `true`. See [Vertical videos](../guide/doodles#vertical-videos). |
 | `pen`     | Show the pen. Default `true`.                                                                              |
 | `wobble`  | Hand-drawn wobble on the lines. Default `true`.                                                            |
 
@@ -165,6 +166,7 @@ A line:
 | `at`          | Seconds into the scene to start. Default: when the one before it ends.                                                                                                                                                     |
 | `fill`        | Optional: a tone that fades in inside the shape as it's drawn                                                                                                                                                              |
 | `fillOpacity` | How solid that fill ends up, `0` to `1`. Default `1`.                                                                                                                                                                      |
+| `group`       | Optional: a name. Lines and labels with the same name stay together when the drawing is laid out for 9:16. |
 | `flow`        | Optional: dots moving along the path, as `{ "count", "speed", "tone", "size", "at" }`. `speed` is in `viewBox` units a second, and negative runs backwards. They start when the line is drawn, unless `at` says otherwise. |
 
 A label:
@@ -174,6 +176,7 @@ A label:
 | `text`, `x`, `y`        | The words, and where their left end sits. Labels don't wrap: split long ones. |
 | `size`                  | Default `56`                                                                  |
 | `tone`, `seconds`, `at` | As for a line                                                                 |
+| `group`                 | As for a line |
 | `mono`                  | `true` draws it in the theme's mono font with ligatures off, for code and commands learners must read exactly. Default `false`. |
 
 ## stage3d

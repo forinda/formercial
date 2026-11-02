@@ -44,6 +44,16 @@ It voices first (when edge-tts is installed), then renders each format. Without 
 
 A project with custom scenes must be [trusted](./custom-scenes#trust) first: open it with `preview` and trust it in the editor.
 
+Before rendering, it lists any doodle words too small to read in the formats being rendered, the same list `check` gives. They don't stop the render.
+
+### check
+
+```bash
+pnpm kick formercial check my-product
+```
+
+Lists doodle labels that end up under 24 pixels tall in any of the project's formats, by scene, block and format, with the smallest label in each. Readers on a phone can't make them out. It assumes the doodle has the scene to itself, so a doodle sharing a scene is smaller still. Make the label larger, give the block a `tall` drawing, or split a long line.
+
 ### history, rollback, name
 
 ```bash

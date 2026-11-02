@@ -8,6 +8,8 @@ export const FORMATS = {
   '1:1': [1080, 1080],
 } as const
 export type Format = keyof typeof FORMATS
+/** How big --u is per format, in 1% of the frame's width: larger where the frame is narrower. */
+export const UNIT: Record<Format, number> = { '16:9': 1, '1:1': 1.35, '9:16': 1.85 }
 
 export const SLUG = /^[a-z0-9][a-z0-9-]{0,62}$/
 
@@ -46,6 +48,8 @@ const DoodleItemSchema = z.union([
         at,
       })
       .optional(),
+    /** Items sharing a group stay together when a wide drawing is laid out for 9:16. */
+    group: z.string().max(40).optional(),
   }),
   z.strictObject({
     text: z.string().min(1),
@@ -57,6 +61,8 @@ const DoodleItemSchema = z.union([
     seconds: z.number().min(0).default(0.8),
     /** Draw in the theme's mono font, for code and commands learners must read exactly. */
     mono: z.boolean().optional(),
+    /** Items sharing a group stay together when a wide drawing is laid out for 9:16. */
+    group: z.string().max(40).optional(),
   }),
 ])
 
@@ -391,6 +397,8 @@ const BlockSchema = z.discriminatedUnion('type', [
     strokes: DoodleStrokesSchema,
     /** A separate drawing for 9:16: wide art is tiny in a tall frame. */
     tall: DoodleTallSchema.optional(),
+    /** With no tall drawing, stack the wide one's groups for 9:16 instead of shrinking it whole. */
+    reflow: z.boolean().default(true),
   }),
   z.object({
     type: z.literal('stage3d'),

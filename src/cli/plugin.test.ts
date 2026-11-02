@@ -69,6 +69,7 @@ describe('kick formercial', () => {
       'new',
       'voice',
       'render',
+      'check',
       'history',
       'rollback',
       'name',

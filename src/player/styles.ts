@@ -2,9 +2,7 @@
 // larger on tall and square frames, whose width is smaller), so one set of
 // rules fits all three shapes. The stage sets everything a scene would inherit,
 // so the page around it can't change the video.
-import type { Format } from '@/core/project/project'
-
-export const UNIT: Record<Format, number> = { '16:9': 1, '1:1': 1.35, '9:16': 1.85 }
+export { UNIT } from '@/core/project/project'
 
 export const STAGE_CSS = `
 .fm-stage { color-scheme: dark; position: relative; width: 100%; aspect-ratio: var(--ratio); container-type: inline-size; overflow: hidden; background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 14px; font-weight: 400; line-height: 1.5; letter-spacing: normal; text-align: left }
