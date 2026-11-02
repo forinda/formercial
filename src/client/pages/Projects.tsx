@@ -71,7 +71,12 @@ export default function Projects({
   const [error, setError] = useState('')
   const [creating, setCreating] = useState(false)
   // Tab, view, search and page live in the address, so reload and Back keep your place.
-  const start = new URLSearchParams(usePage().url.split('?')[1] ?? '')
+  // On the client that's the browser's address: after replaceState, Inertia's stored
+  // page still has the old one. The server has only Inertia's.
+  const inertia = usePage()
+  const start = new URLSearchParams(
+    typeof window === 'undefined' ? (inertia.url.split('?')[1] ?? '') : window.location.search,
+  )
   const [tab, setTab] = useState<Tab>(
     start.get('tab') === 'templates' || !projects.length ? 'templates' : 'projects',
   )

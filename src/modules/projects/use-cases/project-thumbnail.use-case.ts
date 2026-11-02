@@ -32,8 +32,15 @@ export class ProjectThumbnailUseCase {
   /** The thumbnail's path in the project, or null before anything is rendered. */
   async execute(slug: string): Promise<string | null> {
     const prefix = `${this.ws.key(slug, 'renders')}/`
-    const { files } = await this.storage.list({ prefix })
-    const render = latestRender(files.map((f) => f.key.slice(slug.length + 1)))
+    // Every page of the listing: many renders can run past one.
+    const paths: string[] = []
+    let cursor: string | undefined
+    do {
+      const page = await this.storage.list({ prefix, cursor })
+      paths.push(...page.files.map((f) => f.key.slice(slug.length + 1)))
+      cursor = page.cursor
+    } while (cursor)
+    const render = latestRender(paths)
     if (!render) return null
     const thumb = `thumbs/${basename(render, '.mp4')}.jpg`
     if (await this.ws.stat(slug, thumb)) return thumb
