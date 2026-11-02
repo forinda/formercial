@@ -61,6 +61,26 @@ describe('reflow', () => {
     expect(c.y).not.toBe(a.y)
   })
 
+  test('moves a path that starts with a lowercase m', () => {
+    const [moved] = reflow({ viewBox: '0 0 1600 720', strokes: [line('m100 100 l600 0')] }).strokes
+    const [x0, , x1] = itemBox(moved)!
+    expect((x0 + x1) / 2).toBeCloseTo(450, 0)
+  })
+
+  test('keeps every scale positive with many parts', () => {
+    const strokes = Array.from({ length: 30 }, (_, i) =>
+      label(`p${i}`, (i % 6) * 260, ((i / 6) | 0) * 200 + 60),
+    )
+    for (const s of reflow({ viewBox: '0 0 1600 720', strokes }).strokes) {
+      expect('size' in s && s.size).toBeGreaterThan(0)
+    }
+  })
+
+  test('falls back to the wide drawing on a path it cannot read', () => {
+    const art = { viewBox: '0 0 1600 720', strokes: [line('M0 0 L10 10 X5')] }
+    expect(reflow(art)).toBe(art)
+  })
+
   test('scales flowing dots with the drawing', () => {
     const flow = { count: 3, speed: 100, tone: 'accent' as const, size: 10 }
     const [moved] = reflow({

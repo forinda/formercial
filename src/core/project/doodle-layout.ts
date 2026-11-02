@@ -33,6 +33,7 @@ export function transformPath(d: string, t: { x?: number; y?: number; scale?: nu
     return c
   }
   let command = ''
+  let started = false
   for (skip(); i < d.length; skip()) {
     if (/[a-zA-Z]/.test(d[i])) command = d[i++]
     else if (!command) throw new Error('a path starts with a command')
@@ -40,7 +41,9 @@ export function transformPath(d: string, t: { x?: number; y?: number; scale?: nu
     else if (command === 'm') command = 'l'
     const upper = command.toUpperCase()
     if (!(upper in ARGS)) throw new Error(`"${command}" isn't a path command`)
-    const relative = command !== upper
+    // A path's first moveto is absolute even when written as "m".
+    const relative = command !== upper && (started || upper !== 'M')
+    started = true
     const px = (n: number) => round(n * scale + (relative ? 0 : tx))
     const py = (n: number) => round(n * scale + (relative ? 0 : ty))
     if (upper === 'Z') out.push(command)
@@ -179,9 +182,20 @@ function groups(strokes: DoodleItem[]): Group[] {
  * as the frame allows. Items keep their order and timing, so the voice still lines up.
  */
 export function reflow(art: Art): Art {
+  try {
+    return stack(art)
+  } catch {
+    // A path the parser can't read: the browser may still draw it, so show the wide drawing.
+    return art
+  }
+}
+
+function stack(art: Art): Art {
   const gs = groups(art.strokes)
   if (!gs.length) return art
-  const { width: W, height: H, pad, gap, maxScale } = TALL
+  const { width: W, height: H, pad, maxScale } = TALL
+  // At most a quarter of the height goes to gaps, so many parts still have room.
+  const gap = Math.min(TALL.gap, ((H - 2 * pad) * 0.25) / Math.max(1, gs.length - 1))
   const gaps = gap * (gs.length - 1)
   let scales = gs.map((g) => Math.min(maxScale, (W - 2 * pad) / Math.max(1, g.box[2] - g.box[0])))
   const tall = () => gs.reduce((sum, g, i) => sum + (g.box[3] - g.box[1]) * scales[i], 0)
@@ -238,13 +252,13 @@ export type SmallText = { scene: string; block: number; format: Format; text: st
  * Doodle labels too small to read, per format. It assumes a doodle has the whole
  * scene, so a doodle sharing its scene is smaller still.
  */
-export function smallText(project: Project): SmallText[] {
+export function smallText(project: Project, only?: Format[]): SmallText[] {
   const found: SmallText[] = []
   for (const scene of project.scenes) {
     if (scene.kind !== 'blocks') continue
     scene.blocks.forEach((b, block) => {
       if (b.type !== 'doodle') return
-      for (const format of project.formats) {
+      for (const format of project.formats.filter((f) => !only || only.includes(f))) {
         const art = doodleArt(b, format)
         const scale = pixelsPerUnit(art.viewBox, format)
         let least: { text: string; px: number } | undefined

@@ -191,9 +191,7 @@ export function formercialCliPlugin(config: FormercialConfig): KickCliPlugin {
             const formats = (opts.format === 'all' ? project.formats : [opts.format]) as Format[]
             if (!formats.every((f) => f in FORMATS))
               throw new Error('--format is 16:9, 9:16, 1:1 or all')
-            for (const line of smallTextLines(
-              smallText(project).filter((f) => formats.includes(f.format)),
-            ))
+            for (const line of smallTextLines(smallText(project, formats)))
               ctx.log(`small text: ${line}`)
             const voice = registry.voices.get('edge-tts')!
             const canVoice = (await voice.check()).ok
