@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.5.1 (2026-11-02)
+
+[Full changelog](https://github.com/forinda/formercial/compare/v0.5.0...v0.5.1)
+
+### 🐛 Bug Fixes
+
+- **blocks:** measure array text instead of estimating it [`680c494`](https://github.com/forinda/formercial/commit/680c49442c1463e7e5c6d37668d6aa687648b064)
+- **blocks:** shrink array text to fit its cells [`323d4f7`](https://github.com/forinda/formercial/commit/323d4f7a49ca547bdda27b2085ec5c87139d2f4d)
+
 ## v0.5.0 (2026-11-02)
 
 [Full changelog](https://github.com/forinda/formercial/compare/v0.4.0...v0.5.0)
