@@ -1,3 +1,5 @@
+import type { Word } from '@/core/project/timeline'
+
 /** Whether a driver or provider can run here, and what to install if not. */
 export interface Check {
   ok: boolean
@@ -8,5 +10,10 @@ export interface Check {
 export interface VoiceProvider {
   name: string
   check(): Promise<Check>
-  speak(text: string, opts: { voice: string; rate: string }, outFile: string): Promise<void>
+  /** Writes the audio; may also say when each word is spoken, for captions that follow the voice. */
+  speak(
+    text: string,
+    opts: { voice: string; rate: string },
+    outFile: string,
+  ): Promise<{ words?: Word[] } | void>
 }

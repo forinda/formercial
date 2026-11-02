@@ -46,6 +46,7 @@ projects/my-product/renders/
 - **Video:** H.264, from x264 or, with `chromium-nvenc`, an NVIDIA GPU.
 - **Audio:** AAC at 192 kbps.
 - **Captions:** when on, they're drawn into the picture. The `.srt` then goes in `renders/srt/`, ready to upload. It isn't beside the video because players like VLC and mpv load a same-named `.srt` automatically, which would show the captions twice.
+- **Captions follow the voice:** edge-tts reports when each word is said, so each piece of a caption shows while its words are spoken, in the picture and in the `.srt`. Turn on **Light each word as it's said** (`"captionStyle": "words"`) to light the word being spoken too. Clips voiced before this have no word times: change the line, or delete `voice/.made.json`, to voice them again.
 - **Subtitles without burned-in captions:** with captions off, the `.srt` sits beside the MP4, so players do load it. Each cue runs while its line is spoken.
 
 Git ignores renders, and everything else in the default `projects/` folder except the example project. To keep your commercials in version control, point [`FORMERCIAL_PROJECTS`](../reference/configuration) at a folder in your own repository.

@@ -132,4 +132,23 @@ describe('probeSeconds', () => {
     silence(tmp)
     expect(await probeSeconds(tmp)).toBeCloseTo(1, 1)
   })
+
+  test('keeps the word times a provider gives, with the clip', async () => {
+    const ws = await setup(project([scene('a', 'Hi there')]))
+    const words = [
+      { text: 'Hi', start: 0.1, end: 0.3 },
+      { text: 'there', start: 0.35, end: 0.7 },
+    ]
+    const provider: VoiceProvider = {
+      name: 'timed',
+      check: async () => ({ ok: true, missing: [] }),
+      async speak(_text, _opts, outFile) {
+        silence(outFile)
+        return { words }
+      },
+    }
+    expect((await voiceProject(ws, 'demo', provider)).a?.words).toEqual(words)
+    const { project: p } = await ws.read('demo')
+    expect((await clipLengths(ws, 'demo', p)).a?.words).toEqual(words)
+  })
 })
