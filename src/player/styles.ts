@@ -12,6 +12,8 @@ export const STAGE_CSS = `
 .fm-caption { position: absolute; left: calc(6 * var(--u)); right: calc(6 * var(--u)); bottom: calc(3 * var(--u)); text-align: center; font-size: calc(1.9 * var(--u)); line-height: 1.35; text-wrap: balance; color: var(--fg); z-index: 5 }
 .fm-caption span { background: color-mix(in srgb, var(--bg) 82%, transparent); padding: calc(.3 * var(--u)) calc(.8 * var(--u)); border-radius: calc(.3 * var(--u)); box-decoration-break: clone; -webkit-box-decoration-break: clone }
 /* TikTok, Reels and Shorts cover the bottom of a tall video with their own buttons and text. */
+.fm-caption b { font-weight: inherit }
+.fm-caption b.on { color: var(--accent) }
 .fm-stage[data-format="9:16"] .fm-caption { bottom: calc(18.5 * var(--u)); font-size: calc(2.5 * var(--u)) }
 `
 

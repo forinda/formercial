@@ -257,6 +257,18 @@ export function ThemePanel({
           Burn captions into the video
         </Label>
       </div>
+      {project.captions && (
+        <div className="flex items-center gap-2">
+          <Switch
+            id="p-caption-words"
+            checked={project.captionStyle === 'words'}
+            onCheckedChange={(on) => onChange({ ...project, captionStyle: on ? 'words' : 'lines' })}
+          />
+          <Label htmlFor="p-caption-words" className="text-[13px] font-normal">
+            Light each word as it's said
+          </Label>
+        </div>
+      )}
       <Field id="p-voice" label="Voice (edge-tts name)">
         <Input
           id="p-voice"

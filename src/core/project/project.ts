@@ -745,6 +745,8 @@ export const ProjectSchema = z
       })
       .optional(),
     captions: z.boolean().default(true),
+    /** lines: a piece at a time. words: the same, with each word lit as it's said, when the voice gives word times. */
+    captionStyle: z.enum(['lines', 'words']).default('lines'),
     /** Seconds of picture kept after a scene's voice ends, before the next scene. */
     pauseSeconds: z.number().min(0).max(5).default(1.3),
     scenes: z.array(SceneSchema).min(1),

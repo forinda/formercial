@@ -14,8 +14,13 @@ export function toSrt(project: Project, timeline: Timeline): string {
   return timeline.scenes
     .filter((s) => captions.get(s.id)?.trim())
     .flatMap((s) =>
-      captionChunks(captions.get(s.id)!, s.clip ? s.clip.seconds : s.length).map((c) => ({
-        ...c,
+      captionChunks(
+        captions.get(s.id)!,
+        s.clip ? s.clip.seconds : s.length,
+        undefined,
+        s.clip?.words,
+      ).map((c) => ({
+        text: c.text,
         start: s.start + c.start,
         end: s.start + c.end,
       })),

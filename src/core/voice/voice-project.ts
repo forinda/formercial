@@ -4,12 +4,12 @@ import { mkdir } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { probeSeconds } from '@/core/media/media'
 import type { Project, Scene } from '@/core/project/project'
-import type { Clip } from '@/core/project/timeline'
+import type { Clip, Word } from '@/core/project/timeline'
 import { withWorkdir } from '@/core/storage/workdir'
 import type { Workspace } from '@/core/storage/workspace'
 import type { VoiceProvider } from './provider'
 
-type Made = Record<string, { stamp: string; seconds: number }>
+type Made = Record<string, { stamp: string; seconds: number; words?: Word[] }>
 const MADE = 'voice/.made.json'
 
 export const ttsPath = (id: string) => `voice/${id}.tts.mp3`
@@ -47,7 +47,10 @@ export async function clipLengths(
       made[scene.id]?.stamp === stampOf(project, scene) &&
       (await ws.stat(slug, ttsPath(scene.id)))
     ) {
-      out[scene.id] = { path: ttsPath(scene.id), seconds: made[scene.id].seconds }
+      const { seconds, words } = made[scene.id]
+      out[scene.id] = words
+        ? { path: ttsPath(scene.id), seconds, words }
+        : { path: ttsPath(scene.id), seconds }
     }
   }
   return out
@@ -71,18 +74,24 @@ export async function voiceProject(
     if (scene.voice === 'recording' && (await ws.stat(slug, recordingPath(scene.id)))) continue
     const text = scene.spoken.trim()
     const path = ttsPath(scene.id)
-    const seconds = await withWorkdir(ws, slug, [], async (dir) => {
+    const { seconds, words } = await withWorkdir(ws, slug, [], async (dir) => {
       await mkdir(dirname(join(dir, path)), { recursive: true })
-      await provider.speak(
+      const said = await provider.speak(
         text,
         { voice: project.voice.tts, rate: project.voice.rate },
         join(dir, path),
       )
-      return { result: await probeSeconds(join(dir, path)), outputs: [path] }
+      return {
+        result: { seconds: await probeSeconds(join(dir, path)), words: said?.words },
+        outputs: [path],
+      }
     })
-    made[scene.id] = { stamp: stampOf(project, scene), seconds }
+    // Kept with the stamp, so word times never outlive the audio they describe.
+    made[scene.id] = words
+      ? { stamp: stampOf(project, scene), seconds, words }
+      : { stamp: stampOf(project, scene), seconds }
     await ws.putFile(slug, MADE, JSON.stringify(made, null, 2))
-    clips[scene.id] = { path, seconds }
+    clips[scene.id] = words ? { path, seconds, words } : { path, seconds }
   }
   opts.onProgress?.(todo.length, todo.length)
   return clips

@@ -2,7 +2,9 @@
 // resolved timeline, so they all cut the same way.
 import type { Project, Scene } from './project'
 
-export type Clip = { path: string; seconds: number }
+/** A spoken word and when it's said, in seconds from the start of its clip. */
+export type Word = { text: string; start: number; end: number }
+export type Clip = { path: string; seconds: number; words?: Word[] }
 export type TimelineScene = { id: string; start: number; length: number; clip?: Clip }
 export type Timeline = { scenes: TimelineScene[]; total: number }
 

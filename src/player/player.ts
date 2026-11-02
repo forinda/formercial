@@ -289,11 +289,25 @@ export function createPlayer(
     const on = showCaptions && !!text.trim() && local < seconds
     caption.hidden = !on
     const piece = on
-      ? captionChunks(text, seconds, format === '9:16' ? TWO_TALL_LINES : undefined).find(
-          (c) => local < c.end,
-        )
+      ? captionChunks(
+          text,
+          seconds,
+          format === '9:16' ? TWO_TALL_LINES : undefined,
+          at.clip?.words,
+        ).find((c) => local < c.end)
       : undefined
-    const html = piece ? `<span>${esc(piece.text)}</span>` : ''
+    // Lit word by word: each word from when it's said until the next one is.
+    const lit =
+      piece?.words && project.captionStyle === 'words'
+        ? piece.words
+            .map((w, i, all) => {
+              const next = all[i + 1]?.start ?? piece.end
+              const cls = local >= w.start && local < next ? 'on' : local >= next ? 'said' : ''
+              return `<b class="${cls}">${esc(w.text)}</b>`
+            })
+            .join(' ')
+        : undefined
+    const html = piece ? `<span>${lit ?? esc(piece.text)}</span>` : ''
     if (caption.innerHTML !== html) caption.innerHTML = html
   }
 
