@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.5.0 (2026-11-02)
+
+[Full changelog](https://github.com/forinda/formercial/compare/v0.4.0...v0.5.0)
+
+### 🚀 Features
+
+- **doodle:** draw with a better pen [`d20d96f`](https://github.com/forinda/formercial/commit/d20d96ffdfcf6059d992474cd4b322883b5443ab)
+- **blocks:** add array and stack blocks that show code at work [`aad2455`](https://github.com/forinda/formercial/commit/aad2455b49154afd01872fed4a093cd12fd2b5c2)
+
+### 🐛 Bug Fixes
+
+- **blocks:** reject impossible steps, and fix the CI timeout [`a8acc84`](https://github.com/forinda/formercial/commit/a8acc845949d934735543b2de1e7863071e09419)
+- **blocks:** address review findings [`a6bee25`](https://github.com/forinda/formercial/commit/a6bee259c2b1d9b39fce59b2065f8217c5b9cc95)
+- **blocks:** keep array steps inside the row [`05e76e1`](https://github.com/forinda/formercial/commit/05e76e12fd2ccf99ad0fdb96dcf878628db5701f)
+
 ## v0.4.0 (2026-11-01)
 
 [Full changelog](https://github.com/forinda/formercial/compare/v0.3.0...v0.4.0)
