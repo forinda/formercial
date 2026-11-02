@@ -101,6 +101,7 @@ export const SCENE_CSS = `
 .editor { --ed-line: 1.55em; font-variant-ligatures: none; font-family: var(--mono); font-size: calc(2.2 * var(--u)); background: #1e1e1e; color: #d4d4d4; border-radius: 10px; overflow: hidden; box-shadow: 0 calc(.8 * var(--u)) calc(2.4 * var(--u)) rgb(0 0 0 / .3) }
 .ed-tabs { background: #252526; display: flex; font-size: .8em }
 .ed-tab { background: #1e1e1e; color: #fff; padding: .7em 1.6em; border-top: 2px solid #007acc }
+.ed-tab.off { background: #2d2d2d; color: #969696; border-top-color: transparent }
 .ed-view { --ed-line: 1.55em; position: relative; overflow: hidden }
 .ed-scroller { display: flex; position: relative; line-height: var(--ed-line) }
 .ed-current { position: absolute; left: 0; right: 0; height: var(--ed-line); background: #2a2d2e; outline: 1px solid #333 }
