@@ -98,6 +98,156 @@ function typer(
 const typing = (b: { at?: number; source: string; cps?: number }) =>
   (b.at ?? 0) + b.source.length / (b.cps ?? DEFAULT_CPS)
 
+type ArrayBlock = Of<'array'>
+
+/** When each step of an array block starts and ends: in order, unless one says otherwise. */
+export function arrayTimes(b: ArrayBlock): { start: number; end: number }[] {
+  let clock = b.at ?? 0
+  return b.steps.map((step) => {
+    const start = step.at ?? clock
+    clock = start + step.seconds
+    return { start, end: clock }
+  })
+}
+
+/**
+ * Where everything in an array block is at a time: a pure function of it, so
+ * any frame can be drawn first. `x` is a slot, which may be between two; `y` is
+ * how far above the row, in the row's heights, and negative is below.
+ */
+export function arrayView(b: ArrayBlock, time: number) {
+  const items = b.values.map((value, i) => ({
+    value,
+    x: i,
+    y: 0,
+    done: false,
+    active: false,
+    dim: false,
+  }))
+  const slots: (number | null)[] = items.map((_, i) => i)
+  const times = arrayTimes(b)
+  let held: number | null = null
+  let compares = 0
+  let note = ''
+  b.steps.forEach((step, n) => {
+    const { start, end } = times[n]
+    if (time < start) return
+    const p = end > start ? clamp((time - start) / (end - start)) : 1
+    const eased = p * p * (3 - 2 * p)
+    const arc = Math.sin(Math.PI * p)
+    const moving = p < 1
+    const at = (slot: number) => (slot < slots.length ? slots[slot] : null)
+    const a = at(step.a)
+    const c = step.b === undefined ? null : at(step.b)
+    if (step.note) note = step.note
+    switch (step.do) {
+      case 'compare':
+        compares++
+        for (const i of [a, c]) if (i !== null && moving) items[i].active = true
+        break
+      case 'swap':
+        if (a === null || c === null) break
+        items[a].x = step.a + (step.b! - step.a) * eased
+        items[c].x = step.b! + (step.a - step.b!) * eased
+        items[a].y = arc
+        items[c].y = -arc
+        items[a].active = items[c].active = moving
+        if (!moving) {
+          slots[step.a] = c
+          slots[step.b!] = a
+        }
+        break
+      case 'lift':
+        if (a === null) break
+        items[a].y = eased
+        items[a].active = true
+        if (!moving) {
+          held = a
+          slots[step.a] = null
+        }
+        break
+      case 'shift':
+        if (a === null || step.b === undefined) break
+        items[a].x = step.a + (step.b - step.a) * eased
+        items[a].active = moving
+        if (!moving) {
+          slots[step.b] = a
+          slots[step.a] = null
+        }
+        break
+      case 'drop':
+        if (held === null) break
+        items[held].x = items[held].x + (step.a - items[held].x) * eased
+        items[held].y = 1 - eased
+        items[held].active = moving
+        if (!moving) {
+          slots[step.a] = held
+          held = null
+        }
+        break
+      case 'dim':
+        for (let s = step.a; s <= (step.b ?? step.a); s++) {
+          const i = at(s)
+          if (i !== null) items[i].dim = true
+        }
+        break
+      case 'mark':
+        for (let s = step.a; s <= (step.b ?? step.a); s++) {
+          const i = at(s)
+          if (i !== null) items[i].done = true
+        }
+        break
+    }
+  })
+  const round = (n: number) => Math.round(n * 1000) / 1000
+  return { items: items.map((it) => ({ ...it, x: round(it.x), y: round(it.y) })), compares, note }
+}
+
+type StackBlock = Of<'stack'>
+
+function stepTimes(b: { at?: number; steps: { at?: number; seconds: number }[] }) {
+  let clock = b.at ?? 0
+  return b.steps.map((step) => {
+    const start = step.at ?? clock
+    clock = start + step.seconds
+    return { start, end: clock }
+  })
+}
+
+/** The call stack at a time, bottom frame first: a pure function of it. */
+export function stackView(b: StackBlock, time: number) {
+  const frames: {
+    name: string
+    vars: Record<string, string | number>
+    changed: string
+    opacity: number
+  }[] = []
+  let note = ''
+  const times = stepTimes(b)
+  b.steps.forEach((step, n) => {
+    const { start, end } = times[n]
+    if (time < start) return
+    const p = end > start ? clamp((time - start) / (end - start)) : 1
+    if (step.note) note = step.note
+    for (const f of frames) f.changed = ''
+    if (step.do === 'push') {
+      frames.push({ name: step.name ?? '', vars: { ...step.vars }, changed: '', opacity: p })
+    } else if (step.do === 'pop') {
+      const top = frames[frames.length - 1]
+      if (!top) return
+      if (p < 1) top.opacity = 1 - p
+      else frames.pop()
+    } else if (step.do === 'set' && step.name) {
+      const f = frames[frames.length - 1 - step.frame]
+      if (f) {
+        f.vars[step.name] = step.value ?? ''
+        if (p < 1) f.changed = step.name
+      }
+    }
+  })
+  return { frames, note }
+}
+
 const SCROLL_SECONDS = 0.22
 const LANG_NAMES = {
   ts: 'TypeScript',
@@ -277,6 +427,66 @@ export const BLOCKS: { [T in Block['type']]: BlockDef<Of<T>> } = {
         thumb.style.top = `${(v.scroll / (hidden || 1)) * (100 - (b.rows / total) * 100)}%`
         // Solid while typing, then a steady blink.
         caret.hidden = local < at || (v.typed >= b.source.length && Math.floor(local * 2) % 2 === 1)
+      }
+    },
+  },
+  stack: {
+    needs: (b) => Math.max(b.at ?? 0, ...stepTimes(b).map((t) => t.end)),
+    mount(root, b) {
+      const box = el('div', 'stack')
+      const pile = el('div', 'stk-pile')
+      const note = el('div', 'arr-note')
+      box.append(pile, note)
+      root.append(box)
+      let shown = ''
+      return (local) => {
+        const view = stackView(b, local)
+        const html = view.frames
+          .map((f, i) => {
+            const vars = Object.entries(f.vars)
+              .map(
+                ([k, v]) =>
+                  `<span class="stk-var${f.changed === k ? ' on' : ''}"><i>${esc(k)}</i><b>${esc(String(v))}</b></span>`,
+              )
+              .join('')
+            const top = i === view.frames.length - 1 ? ' top' : ''
+            return `<div class="stk-frame${top}" style="opacity:${Math.round(f.opacity * 100) / 100}"><em>${esc(f.name)}</em>${vars}</div>`
+          })
+          .reverse()
+          .join('')
+        if (html !== shown) {
+          pile.innerHTML = html
+          shown = html
+        }
+        note.textContent = view.note
+      }
+    },
+  },
+  array: {
+    needs: (b) => Math.max(b.at ?? 0, ...arrayTimes(b).map((t) => t.end)),
+    mount(root, b) {
+      const box = el('div', 'array')
+      box.style.setProperty('--n', String(b.values.length))
+      const row = el('div', 'arr-row')
+      const cells = b.values.map((value) => el('div', 'arr-cell', esc(String(value))))
+      row.append(...cells)
+      const note = el('div', 'arr-note')
+      const count = el('div', 'arr-count')
+      const counts = b.count && b.steps.some((s) => s.do === 'compare')
+      box.append(row, note)
+      if (counts) box.append(count)
+      root.append(box)
+      return (local) => {
+        const view = arrayView(b, local)
+        view.items.forEach((it, i) => {
+          cells[i].style.left = `calc(${it.x} * 100% / var(--n))`
+          cells[i].style.transform = `translateY(calc(${-it.y} * var(--arr-rise)))`
+          cells[i].classList.toggle('on', it.active)
+          cells[i].classList.toggle('done', it.done)
+          cells[i].classList.toggle('dim', it.dim)
+        })
+        note.textContent = view.note
+        if (counts) count.textContent = `comparisons: ${view.compares}`
       }
     },
   },

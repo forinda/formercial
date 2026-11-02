@@ -115,6 +115,23 @@ export const SCENE_CSS = `
 .ed-thumb[hidden] { display: none }
 .ed-status { display: flex; justify-content: space-between; background: #007acc; color: #fff; font-size: .7em; padding: .3em 1em }
 .editor .k { color: #569cd6 } .editor .s { color: #ce9178 } .editor .c { color: #6a9955; font-style: normal } .editor .n { color: #b5cea8 } .editor .f { color: #dcdcaa }
+.array { --arr-rise: calc(9.5 * var(--u)); padding-top: var(--arr-rise) }
+.arr-row { position: relative; height: calc(8 * var(--u)); margin-bottom: var(--arr-rise) }
+.arr-cell { position: absolute; top: 0; width: calc(100% / var(--n) - .8 * var(--u)); height: 100%; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-variant-ligatures: none; font-size: calc(4.2 * var(--u)); background: var(--box); border: calc(.25 * var(--u)) solid var(--line); border-radius: 6px; color: var(--fg) }
+.arr-cell.on { border-color: var(--accent); color: var(--accent); z-index: 1 }
+.arr-cell.done { border-color: var(--good); color: var(--good) }
+.arr-cell.dim { opacity: .25 }
+.stack { display: grid; gap: calc(2 * var(--u)) }
+.stk-pile { display: flex; flex-direction: column; justify-content: flex-end; gap: calc(.8 * var(--u)); min-height: calc(26 * var(--u)) }
+.stk-frame { display: flex; flex-wrap: wrap; align-items: center; gap: calc(1.6 * var(--u)); padding: calc(1 * var(--u)) calc(1.6 * var(--u)); background: var(--box); border: calc(.2 * var(--u)) solid var(--line); border-radius: 6px }
+.stk-frame.top { border-color: var(--accent) }
+.stk-frame em { font-family: var(--mono); font-style: normal; font-size: calc(2.2 * var(--u)); color: var(--accent); min-width: 8em }
+.stk-var { display: inline-flex; align-items: baseline; gap: .4em; font-family: var(--mono); font-variant-ligatures: none; font-size: calc(2.6 * var(--u)) }
+.stk-var i { font-style: normal; color: var(--muted) }
+.stk-var b { font-weight: 500; color: var(--fg) }
+.stk-var.on b { color: var(--good) }
+.arr-note { font-family: var(--display); font-size: calc(2.8 * var(--u)); text-align: center; min-height: 1.4em; color: var(--fg) }
+.arr-count { font-family: var(--mono); font-size: calc(2.4 * var(--u)); text-align: center; color: var(--muted); margin-top: calc(.8 * var(--u)) }
 .caret[hidden] { display: none }
 .caret { display: inline-block; width: .6em; height: 1.1em; background: var(--accent); vertical-align: -0.2em }
 .k { color: var(--keyword) } .s { color: var(--good) } .c { color: var(--muted); font-style: italic } .n { color: var(--accent) } .f { color: var(--call) }

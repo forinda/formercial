@@ -30,6 +30,8 @@ import {
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type { z } from 'zod'
 import {
+  ArrayContentSchema,
+  StackStepsSchema,
   DoodleStrokesSchema,
   Stage3dActorsSchema,
   Stage3dCameraSchema,
@@ -177,6 +179,16 @@ const BLANK: { [T in Block['type']]: Extract<Block, { type: T }> } = {
   text: { type: 'text', text: 'Some text.' },
   code: { type: 'code', lang: 'ts', label: 'file.ts', source: 'const hello = "world"' },
   editor: { type: 'editor', file: 'main.py', lang: 'py', source: 'print("hello")', rows: 14 },
+  array: {
+    type: 'array',
+    count: true,
+    values: [3, 1, 2],
+    steps: [{ do: 'swap', a: 0, b: 1, seconds: 0.6 }],
+  },
+  stack: {
+    type: 'stack',
+    steps: [{ do: 'push', name: 'main', vars: { n: 21 }, seconds: 0.6, frame: 0 }],
+  },
   terminal: { type: 'terminal', label: 'terminal', source: '$ kick dev' },
   tree: { type: 'tree', lines: ['src/', '└ index.ts'] },
   stamp: { type: 'stamp', text: 'Shipped', tone: 'good' },
@@ -593,6 +605,26 @@ function BlockForm({
             {number('cps', 'Characters / s')}
           </div>
         </>
+      )
+    case 'stack':
+      return (
+        <JsonField
+          id={`${id}-stack`}
+          label="Steps, as JSON"
+          value={block.steps}
+          schema={StackStepsSchema}
+          onChange={(steps) => set({ steps })}
+        />
+      )
+    case 'array':
+      return (
+        <JsonField
+          id={`${id}-array`}
+          label="Values and steps, as JSON"
+          value={{ values: block.values, steps: block.steps }}
+          schema={ArrayContentSchema}
+          onChange={set}
+        />
       )
     case 'terminal':
       return (
