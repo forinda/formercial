@@ -70,4 +70,16 @@ describe('runView', () => {
     expect(() => run({ steps: [{ add: { box: 'nope', item: 'x' } }] })).toThrow(/no box "nope"/)
     expect(() => run({ steps: [{ line: 9 }] })).toThrow(/8 lines/)
   })
+
+  test('rejects box ids that clash, and focus on parts that are not there', () => {
+    expect(() => run({ boxes: [{ id: 'stack', label: 'S' }] })).toThrow(/reserved or repeated/)
+    const twice = [
+      { id: 'q', label: 'A' },
+      { id: 'q', label: 'B' },
+    ]
+    expect(() => run({ boxes: twice })).toThrow(/reserved or repeated/)
+    expect(() => run({ steps: [{ focus: ['Stack'] }] })).toThrow(/"Stack" to focus on/)
+    expect(() => run({ panels: ['stack'], steps: [{ focus: ['output'] }] })).toThrow(/"output"/)
+    expect(() => run({ steps: [{ focus: ['code', 'stack', 'output'] }] })).not.toThrow()
+  })
 })

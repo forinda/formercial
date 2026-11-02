@@ -387,8 +387,29 @@ const BlockSchema = z.discriminatedUnion('type', [
     })
     .superRefine((b, ctx) => {
       const ids = new Set(b.boxes.map((x) => x.id))
+      // A box's id names its panel, so it can't share a name with another panel.
+      const reserved = new Set(['code', 'stack', 'output'])
+      b.boxes.forEach((x, i) => {
+        if (reserved.has(x.id) || b.boxes.findIndex((y) => y.id === x.id) !== i) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['boxes', i, 'id'],
+            message: `box id "${x.id}" is reserved or repeated`,
+          })
+        }
+      })
+      const parts = new Set(['code', ...b.panels, ...ids])
       const lines = b.source.split('\n').length
       b.steps.forEach((step, i) => {
+        step.focus?.forEach((f, j) => {
+          if (!parts.has(f)) {
+            ctx.addIssue({
+              code: 'custom',
+              path: ['steps', i, 'focus', j],
+              message: `nothing called "${f}" to focus on`,
+            })
+          }
+        })
         for (const key of ['add', 'take'] as const) {
           const box = step[key]?.box
           if (box !== undefined && !ids.has(box)) {
