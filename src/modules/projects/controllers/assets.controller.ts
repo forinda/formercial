@@ -14,6 +14,7 @@ import { z } from 'zod'
 import { readBody } from '../http/read-body'
 import { AddFontUseCase } from '../use-cases/add-font.use-case'
 import { AddIconUseCase } from '../use-cases/add-icon.use-case'
+import { ProjectThumbnailUseCase } from '../use-cases/project-thumbnail.use-case'
 import { ReadProjectFileUseCase } from '../use-cases/read-project-file.use-case'
 import { SearchIconsUseCase } from '../use-cases/search-icons.use-case'
 import { UploadProjectFileUseCase } from '../use-cases/upload-project-file.use-case'
@@ -34,6 +35,7 @@ export class AssetsController {
     private readonly addFontUseCase: AddFontUseCase,
     private readonly readFile: ReadProjectFileUseCase,
     private readonly uploadFile: UploadProjectFileUseCase,
+    private readonly thumbnails: ProjectThumbnailUseCase,
   ) {}
 
   @McpTool({
@@ -66,6 +68,14 @@ export class AssetsController {
       family: String(ctx.body?.family ?? '').trim(),
       weight: ctx.body?.weight === undefined ? undefined : Number(ctx.body.weight),
     })
+  }
+
+  /** A still from the latest render, made on first request; 404 before any render. */
+  @Get('/:slug/thumbnail')
+  async thumbnail(ctx: RequestContext) {
+    const path = await this.thumbnails.execute(ctx.params.slug)
+    if (!path) throw HttpException.notFound('nothing rendered yet')
+    return ctx.sendResponse(await this.readFile.execute(ctx.params.slug, path))
   }
 
   /** A stream, with its own status and headers, so it can't be a returned value. */

@@ -6,6 +6,23 @@ import { FormercialSettings } from '@/core/settings'
 import { historyFileFor, openHistory, type History } from './history'
 import { SLUG, parseProject, type Project } from '@/core/project/project'
 
+/** What the projects page shows for one project, without loading all of it there. */
+export type ProjectSummary = {
+  slug: string
+  name: string
+  scenes?: number
+  formats?: Project['formats']
+  colors?: { bg: string; fg: string; accent: string }
+}
+
+export const summaryOf = (slug: string, p: Project): ProjectSummary => ({
+  slug,
+  name: p.name,
+  scenes: p.scenes.length,
+  formats: p.formats,
+  colors: { bg: p.theme.colors.bg, fg: p.theme.colors.fg, accent: p.theme.colors.accent },
+})
+
 export class StaleWriteError extends Error {
   constructor(readonly current: string) {
     super('project.json changed since it was read')
@@ -92,8 +109,8 @@ export function createWorkspace(storage: Storage, opts: { history?: History } = 
     deleteFile: (slug: string, path: string) => storage.delete(key(slug, path)),
     stat: (slug: string, path: string): Promise<FileInfo | null> => storage.stat(key(slug, path)),
 
-    async list(): Promise<{ slug: string; name: string }[]> {
-      const out: { slug: string; name: string }[] = []
+    async list(): Promise<ProjectSummary[]> {
+      const out: ProjectSummary[] = []
       let cursor: string | undefined
       do {
         const page = await storage.list({ delimiter: '/', cursor })
@@ -103,14 +120,15 @@ export function createWorkspace(storage: Storage, opts: { history?: History } = 
           const bytes = await storage.get(`${slug}/project.json`)
           if (!bytes) continue
           try {
-            out.push({ slug, name: parseProject(JSON.parse(new TextDecoder().decode(bytes))).name })
+            out.push(summaryOf(slug, parseProject(JSON.parse(new TextDecoder().decode(bytes)))))
           } catch {
             out.push({ slug, name: `${slug} (invalid project.json)` })
           }
         }
         cursor = page.cursor
       } while (cursor)
-      return out.sort((a, b) => a.slug.localeCompare(b.slug))
+      // Numbers sort as numbers, so lesson 9 comes before lesson 10.
+      return out.sort((a, b) => a.slug.localeCompare(b.slug, 'en', { numeric: true }))
     },
 
     async read(slug: string): Promise<{ project: Project; version: string }> {

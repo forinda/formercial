@@ -36,7 +36,7 @@ describe('PagesController', () => {
   it('GET / renders Projects', async () => {
     const res = await (await boot()).get('/').set(visit).expect(200)
     expect(res.body.component).toBe('Projects')
-    expect(res.body.props.projects).toEqual([{ slug: 'demo', name: 'Demo' }])
+    expect(res.body.props.projects).toMatchObject([{ slug: 'demo', name: 'Demo', scenes: 1 }])
     expect(res.body.props.presets.map((p: { id: string }) => p.id)).toEqual([
       'showcase',
       'doodle-light-bulb',

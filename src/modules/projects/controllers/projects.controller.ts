@@ -33,7 +33,7 @@ export class ProjectsController {
 
   @McpTool({
     name: 'list_projects',
-    description: 'Every commercial in the workspace, as { slug, name }.',
+    description: 'Every commercial in the workspace, as { slug, name, scenes, formats, colors }.',
     annotations: { readOnlyHint: true },
   })
   @Get('/')

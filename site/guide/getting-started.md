@@ -65,6 +65,8 @@ pnpm kick formercial new "Learn TypeScript" --preset typescript-types
 
 Creating a project from a preset downloads its fonts from Google Fonts into the project, so it looks the same on any machine. If that fails, the project is still made, and you can press **Download** under **Project → Fonts** later.
 
-Or use **New commercial** on the projects page, with **Start from** set to a preset. The language and doodle presets are ready to render as-is. `showcase` has a custom scene, so [trust](./custom-scenes#trust) it first or delete that scene. Change the text, code and colors to make it yours, then press **Download** next to each font under **Project** so renders look the same everywhere.
+Or open **New from a template** on the projects page, pick a preset, name it and press **New commercial**. The language and doodle presets are ready to render as-is. `showcase` has a custom scene, so [trust](./custom-scenes#trust) it first or delete that scene. Change the text, code and colors to make it yours, then press **Download** next to each font under **Project** so renders look the same everywhere.
+
+The **Projects** tab lists what you've made. Search by name or folder, and switch between **Cards** and **Table**. A card shows a still from the project's latest render, made the first time it's shown and kept in the project's `thumbs/` folder. Before a project is rendered, its card shows its name in its own colors.
 
 Then read [Making a commercial](./making-a-commercial).
