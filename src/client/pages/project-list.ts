@@ -19,3 +19,17 @@ export function pageOf<T>(list: T[], page: number, size = PAGE_SIZE) {
   const current = Math.min(Math.max(1, Math.floor(page) || 1), pages)
   return { items: list.slice((current - 1) * size, current * size), page: current, pages }
 }
+
+/**
+ * The page numbers a pager shows: the first two, the last two, and the pages
+ * either side of the current one, with null where a run of pages is left out.
+ */
+export function pageNumbers(page: number, pages: number): (number | null)[] {
+  const keep = new Set([1, 2, page - 1, page, page + 1, pages - 1, pages])
+  const out: (number | null)[] = []
+  for (let n = 1; n <= pages; n++) {
+    if (keep.has(n)) out.push(n)
+    else if (out.at(-1) !== null) out.push(null)
+  }
+  return out
+}

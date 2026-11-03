@@ -39,18 +39,21 @@ export function reveal(el: HTMLElement, since: number) {
     r >= 1 ? '' : `translateY(calc(${Math.round((1 - eased) * 1000) / 1000} * 1.2 * var(--u)))`
 }
 
-/** Shrink an element's font until its content fits its width; once, when first visible. */
-export function fitOnce(el: HTMLElement): (() => void) & { done: boolean } {
+/**
+ * Shrink an element's font until its content fits its width; once, when first visible.
+ * `into` takes the size instead, when the element's frame (tabs, status bar) should shrink with it.
+ */
+export function fitOnce(el: HTMLElement, into = el): (() => void) & { done: boolean } {
   let done = false
   const fit = () => {
     // Measure with the real fonts: a fallback font would size it wrong for good.
     if (done || !el.clientWidth || document.fonts?.status === 'loading') return
     done = true
-    let size = parseFloat(getComputedStyle(el).fontSize)
+    let size = parseFloat(getComputedStyle(into).fontSize)
     // Enough steps to reach about 14% of the size, so no line stays clipped.
     for (let i = 0; i < 32 && el.scrollWidth > el.clientWidth + 1; i++) {
       size *= 0.94
-      el.style.fontSize = `${size}px`
+      into.style.fontSize = `${size}px`
     }
   }
   return Object.defineProperty(fit, 'done', { get: () => done }) as typeof fit & { done: boolean }
@@ -472,15 +475,32 @@ export function reviseView(b: ReviseBlock, time: number) {
 /** Frames a run block's stack shows before it counts the rest. */
 const RUN_FRAMES = 4
 
-/** A loose hand-drawn loop around a w by h box, open where the pen lifts. */
+/**
+ * A hand-drawn loop around a w by h box: straight-ish top and bottom, round ends
+ * of radius h/2, so the ends keep their shape however long the ring is and never
+ * cut into the text. The pen runs on past where it started, like a real one.
+ */
 export function ringPath(w: number, h: number) {
-  const pts = [10, 24, 6, 6, 90, 2, 95, 18, 99, 34, 18, 40, 6, 26, 2, 16, 22, 8, 38, 7]
-  // Curves fall short of their control points, so x is spread 12% to reach the box's ends.
-  const at = pts.map(
-    (v, i) => Math.round((i % 2 ? (v * h) / 40 : ((50 + (v - 50) * 1.12) * w) / 100) * 10) / 10,
-  )
-  const pair = (i: number) => `${at[i]} ${at[i + 1]}`
-  return `M${pair(0)} C${pair(2)} ${pair(4)} ${pair(6)} C${pair(8)} ${pair(10)} ${pair(12)} C${pair(14)} ${pair(16)} ${pair(18)}`
+  const r = Math.min(h, w) / 2
+  const k = r * 1.33 // a cubic with its controls this far out bulges about r: a round end
+  const [L, R] = [r, w - r]
+  const along = (f: number) => L + (R - L) * f
+  const pts = [
+    [L + r * 0.3, h * 0.1],
+    [along(0.35), h * 0.02],
+    [along(0.7), h * 0.06],
+    [R, h * 0.03],
+    [R + k, h * 0.03],
+    [R + k, h * 0.97],
+    [R, h * 0.97],
+    [along(0.6), h],
+    [along(0.3), h * 0.94],
+    [L, h * 0.96],
+    [L - k, h * 0.98],
+    [L - k * 0.95, h * 0.04],
+    [L + r * 0.9, h * 0.04], // not 0: the round cap would poke above the code view and clip
+  ].map(([x, y]) => `${Math.round(x * 10) / 10} ${Math.round(y * 10) / 10}`)
+  return `M${pts[0]} C${pts.slice(1, 4).join(' ')} C${pts.slice(4, 7).join(' ')} C${pts.slice(7, 10).join(' ')} C${pts.slice(10).join(' ')}`
 }
 
 const SVG = 'http://www.w3.org/2000/svg'
@@ -556,24 +576,27 @@ function mountStroke(
  * transition's scale doesn't move it.
  */
 function codeRing(text: HTMLElement) {
-  const ring = svg('svg', { class: 'run-ring' })
+  // No size until drawn: an SVG's default 300 by 150 would widen narrow code and shrink its font.
+  const ring = svg('svg', { class: 'run-ring', width: 0, height: 0 })
   const loop = svg('path', { pathLength: 1, 'stroke-dasharray': '1 1' })
   ring.append(loop)
   const probe = el('span', 'arr-probe', '0000000000')
   text.append(ring, probe)
   /** Line from 1, column from 0; hidden when `at` is null. */
   const draw = (at: { line: number; col: number; length: number; p: number } | null) => {
-    ring.style.visibility = at ? 'visible' : 'hidden'
+    // Out of layout when hidden, so a stale ring can't widen the code while it's being fitted.
+    ring.style.display = at ? '' : 'none'
     if (!at) return
     const ch = probe.offsetWidth / 10
     const row = parseFloat(getComputedStyle(text).lineHeight)
-    const w = Math.round((at.length + 1.6) * ch)
-    const h = Math.round(row * 1.35)
+    // A column of room each side, and the line's own height: clear of the text and of the lines around it.
+    const w = Math.round((at.length + 2) * ch)
+    const h = Math.round(row)
     ring.setAttribute('width', String(w))
     ring.setAttribute('height', String(h))
     ring.setAttribute('viewBox', `0 0 ${w} ${h}`)
-    ring.style.left = `${Math.round((at.col - 0.8) * ch)}px`
-    ring.style.top = `${Math.round((at.line - 1) * row - row * 0.18)}px`
+    ring.style.left = `${Math.round((at.col - 1) * ch)}px`
+    ring.style.top = `${Math.round((at.line - 1) * row)}px`
     loop.setAttribute('d', ringPath(w, h))
     loop.setAttribute('stroke-dashoffset', String(Math.round((1 - at.p) * 1000) / 1000))
   }
@@ -785,7 +808,7 @@ export const BLOCKS: { [T in Block['type']]: BlockDef<Of<T>> } = {
       box.append(left, side)
       root.append(box)
 
-      const fit = fitOnce(view)
+      const fit = fitOnce(view, code)
       let shownTab = -1
       const shown: Record<string, string> = {}
       const put = (key: string, target: Element, html: string) => {
@@ -797,6 +820,7 @@ export const BLOCKS: { [T in Block['type']]: BlockDef<Of<T>> } = {
       return (local) => {
         if (!fit.done) {
           showTab(widest.source)
+          drawRing(null)
           fit()
           shownTab = -1
         }
@@ -909,12 +933,13 @@ export const BLOCKS: { [T in Block['type']]: BlockDef<Of<T>> } = {
         (w, step) => Math.max(w, ...step.source.split('\n').map((l) => l.length)),
         0,
       )
-      const fit = fitOnce(view)
+      const fit = fitOnce(view, code)
       let shown = -1
       return (local) => {
         if (!fit.done) {
           after.innerHTML = html('0'.repeat(widest))
           drawRing.attach()
+          drawRing(null)
           fit()
           shown = -1
         }

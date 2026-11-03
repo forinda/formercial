@@ -1,4 +1,5 @@
 import { Link, router, usePage } from '@inertiajs/react'
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/client/components/ui/button'
 import { Input } from '@/client/components/ui/input'
@@ -8,7 +9,7 @@ import { ThemeToggle } from '@/client/editor/theme'
 import { api } from '@/client/editor/useProject'
 import { cn } from '@/client/lib/utils'
 import type { ProjectSummary } from '@/core/storage/workspace'
-import { pageOf, searchProjects } from './project-list'
+import { pageNumbers, pageOf, searchProjects } from './project-list'
 
 type PresetInfo = ProjectSummary & { id: string; title: string; description: string }
 type Tab = 'projects' | 'templates'
@@ -238,26 +239,61 @@ export default function Projects({
               )}
 
               {pages > 1 && (
-                <nav aria-label="Pages" className="flex items-center justify-between gap-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={page <= 1}
-                    onClick={() => show({ page: page - 1 })}
-                  >
-                    Previous
-                  </Button>
-                  <span className="text-sm text-muted-foreground">
-                    Page {page} of {pages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={page >= pages}
-                    onClick={() => show({ page: page + 1 })}
-                  >
-                    Next
-                  </Button>
+                <nav
+                  aria-label="Pages"
+                  className="flex flex-wrap items-center justify-center gap-1"
+                >
+                  {(
+                    [
+                      [ChevronsLeft, 'First page', 1],
+                      [ChevronLeft, 'Previous page', page - 1],
+                    ] as const
+                  ).map(([Icon, label, to]) => (
+                    <Button
+                      key={label}
+                      variant="outline"
+                      size="sm"
+                      aria-label={label}
+                      disabled={page <= 1}
+                      onClick={() => show({ page: to })}
+                    >
+                      <Icon className="size-4" aria-hidden />
+                    </Button>
+                  ))}
+                  {pageNumbers(page, pages).map((n, i) =>
+                    n === null ? (
+                      <span key={`gap${i}`} className="px-1 text-sm text-muted-foreground">
+                        …
+                      </span>
+                    ) : (
+                      <Button
+                        key={n}
+                        variant={n === page ? 'default' : 'outline'}
+                        size="sm"
+                        aria-current={n === page ? 'page' : undefined}
+                        onClick={() => show({ page: n })}
+                      >
+                        {n}
+                      </Button>
+                    ),
+                  )}
+                  {(
+                    [
+                      [ChevronRight, 'Next page', page + 1],
+                      [ChevronsRight, 'Last page', pages],
+                    ] as const
+                  ).map(([Icon, label, to]) => (
+                    <Button
+                      key={label}
+                      variant="outline"
+                      size="sm"
+                      aria-label={label}
+                      disabled={page >= pages}
+                      onClick={() => show({ page: to })}
+                    >
+                      <Icon className="size-4" aria-hidden />
+                    </Button>
+                  ))}
                 </nav>
               )}
             </>

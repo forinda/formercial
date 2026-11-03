@@ -246,7 +246,7 @@ export function formercialCliPlugin(config: FormercialConfig): KickCliPlugin {
           await ws.remember(slug, await ws.getFile(slug, 'project.json'), 'outside')
           const current = (await ws.history.head(slug))?.id
           for (const r of await ws.history.list(slug)) {
-            const when = new Date(r.createdAt).toISOString().slice(0, 19).replace('T', ' ')
+            const when = new Date(r.createdAt).toLocaleString('sv-SE')
             const name = r.label ? ` [${r.label}]` : ''
             ctx.log(
               `${r.id === current ? '*' : ' '} ${String(r.id).padStart(5)}  ${when}  ${r.source.padEnd(8)} ${r.summary}${name}`,
