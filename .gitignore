@@ -35,3 +35,4 @@ site/.vitepress/dist/
 
 # Release notes, written while cutting a release
 .tmp/
+.playwright-mcp
