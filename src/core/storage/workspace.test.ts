@@ -36,8 +36,8 @@ describe('workspace', () => {
     await w.write('zeta', starterProject('Zeta'), null)
     await w.write('alpha', starterProject('Alpha'), null)
     await w.putFile('alpha', 'media/logo.svg', '<svg/>')
-    expect(await w.list()).toEqual([
-      { slug: 'alpha', name: 'Alpha' },
+    expect(await w.list()).toMatchObject([
+      { slug: 'alpha', name: 'Alpha', scenes: 1, formats: ['16:9'], colors: { bg: '#0d2226' } },
       { slug: 'zeta', name: 'Zeta' },
     ])
   })

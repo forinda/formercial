@@ -81,9 +81,11 @@ function audio(ext: 'webm', seconds = 1): Buffer {
 describe('projects api', () => {
   test('creates, lists and reads a project', async () => {
     const http = await boot()
-    expect((await http.get('/api/v1/projects').expect(200)).body).toEqual([
-      { slug: 'demo', name: 'Demo' },
+    expect((await http.get('/api/v1/projects').expect(200)).body).toMatchObject([
+      { slug: 'demo', name: 'Demo', scenes: 1, formats: ['16:9'] },
     ])
+    // Nothing rendered yet: the card shows its placeholder instead.
+    await http.get('/api/v1/projects/demo/thumbnail').expect(404)
     const second = await http.post('/api/v1/projects').send({ name: 'Demo' }).expect(201)
     expect(second.body.slug).toBe('demo-2')
     const read = await http.get('/api/v1/projects/demo').expect(200)

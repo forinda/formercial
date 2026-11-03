@@ -2,7 +2,7 @@ import { Controller, Get, type RequestContext, Inject } from '@forinda/kickjs'
 import { inertia } from '@forinda/kickjs-inertia'
 import { FORMATS, type Format } from '@/core/project/project'
 import type { Trust } from '@/core/storage/trust'
-import type { Workspace } from '@/core/storage/workspace'
+import { summaryOf, type Workspace } from '@/core/storage/workspace'
 import { clipLengths } from '@/core/voice/voice-project'
 import { ProjectHistory } from '@/modules/projects/services/project-history.service'
 import { TRUST, WORKSPACE } from '@/modules/projects/tokens'
@@ -45,7 +45,12 @@ export class PagesController {
       'Projects',
       {
         projects: await this.ws.list(),
-        presets: PRESETS.map(({ id, title, description }) => ({ id, title, description })),
+        presets: PRESETS.map(({ id, title, description, project }) => ({
+          id,
+          title,
+          description,
+          ...summaryOf(id, project),
+        })),
       },
       { meta: { title: 'Projects' } },
     )
