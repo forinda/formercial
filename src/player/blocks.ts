@@ -498,7 +498,7 @@ export function ringPath(w: number, h: number) {
     [L, h * 0.96],
     [L - k, h * 0.98],
     [L - k * 0.95, h * 0.04],
-    [L + r * 0.9, 0],
+    [L + r * 0.9, h * 0.04], // not 0: the round cap would poke above the code view and clip
   ].map(([x, y]) => `${Math.round(x * 10) / 10} ${Math.round(y * 10) / 10}`)
   return `M${pts[0]} C${pts.slice(1, 4).join(' ')} C${pts.slice(4, 7).join(' ')} C${pts.slice(7, 10).join(' ')} C${pts.slice(10).join(' ')}`
 }

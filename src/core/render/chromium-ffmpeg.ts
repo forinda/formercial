@@ -1,6 +1,7 @@
 // The built-in render drivers: Chromium draws each frame of the render page,
 // ffmpeg encodes them and lays the voice and music under the picture.
 // chromium-nvenc does the drawing and encoding on an NVIDIA GPU.
+import { existsSync } from 'node:fs'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
 import { audioGraph } from '@/core/media/audio'
@@ -45,7 +46,10 @@ export const chromiumDriver = ({
     const [width, height] = FORMATS[job.format]
     const total = Math.min(job.timeline.total, job.seconds ?? Infinity)
     const frames = Math.round(total * job.fps)
-    const name = `renders/${job.format.replace(':', 'x')}-${stamp()}`
+    // Local time repeats when clocks go back, and two renders can share a second: never overwrite one.
+    const base = `renders/${job.format.replace(':', 'x')}-${stamp()}`
+    let name = base
+    for (let n = 2; existsSync(join(dir, `${name}.mp4`)); n++) name = `${base}-${n}`
     await mkdir(join(dir, 'renders'), { recursive: true })
     const picture = join(dir, `${name}.picture.mp4`)
 

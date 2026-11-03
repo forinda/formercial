@@ -63,4 +63,18 @@ describe('fitOnce', () => {
     fitOnce(el)()
     expect(el.scrollWidth).toBeLessThanOrEqual(101)
   })
+
+  test('shrinks the element passed as into, not the frame', () => {
+    const view = document.createElement('div')
+    const code = document.createElement('pre')
+    view.style.fontSize = '40px'
+    code.style.fontSize = '40px'
+    document.body.append(view, code)
+    Object.defineProperty(view, 'clientWidth', { value: 100 })
+    Object.defineProperty(view, 'scrollWidth', { get: () => parseFloat(code.style.fontSize) * 17.5 })
+    fitOnce(view, code)()
+    expect(view.style.fontSize).toBe('40px')
+    expect(parseFloat(code.style.fontSize)).toBeLessThan(40)
+    expect(view.scrollWidth).toBeLessThanOrEqual(101)
+  })
 })

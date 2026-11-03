@@ -219,8 +219,9 @@ export const SCENE_CSS = `
 :host([data-format="9:16"]) .run-side { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start }
 :host([data-format="9:16"]) .run .stk-pile { min-height: 0 }
 :host([data-format="9:16"]) .run-panel[data-part="array"] { grid-column: 1 / -1 }
-/* A panel left alone on its row, like output with no stack, takes the full width. */
-:host([data-format="9:16"]) .run-side > :last-child:nth-child(odd) { grid-column: 1 / -1 }
+/* A panel left alone on its row, like output with no stack, takes the full width. The array always has its own row. */
+:host([data-format="9:16"]) .run-side > :only-child,
+:host([data-format="9:16"]) .run-side > [data-part="array"] + :last-child { grid-column: 1 / -1 }
 :host([data-format="9:16"]) .run .editor { font-size: calc(1.45 * var(--u)) }
 :host([data-format="9:16"]) .run, :host([data-format="9:16"]) .run-main, :host([data-format="9:16"]) .run-side { gap: calc(1.2 * var(--u)) }
 :host([data-format="9:16"]) .run .arr-note { font-size: calc(2.4 * var(--u)) }
