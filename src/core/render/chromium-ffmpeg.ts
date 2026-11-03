@@ -11,8 +11,8 @@ import { findChrome, launchChrome } from './cdp'
 import type { RenderDriver } from './driver'
 import { startEncoder } from './encoder'
 
-const stamp = () =>
-  new Date().toISOString().replace(/[-:]/g, '').replace(/\..*/, '').replace('T', '-')
+// Local time, as 20261103-124301: Swedish dates are ISO-shaped.
+const stamp = () => new Date().toLocaleString('sv-SE').replace(/[-:]/g, '').replace(' ', '-')
 
 export type ChromiumDriverSetup = {
   name: string
