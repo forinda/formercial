@@ -25,8 +25,9 @@ export default function Utilities({
       </p>
       {!sandboxed && (
         <p role="note" className="rounded-md border border-destructive/40 p-3 text-sm">
-          Install bubblewrap (<code>bwrap</code>) so files are converted with no network and no view
-          of your other files. Until then the document tools are off, unless{' '}
+          Files aren't converted in a sandbox here: bubblewrap (<code>bwrap</code>) is either not
+          installed, or installed but not allowed to make one (some containers and kernels block
+          it). Until it works, the document tools are off unless{' '}
           <code>TOOLS_ALLOW_UNSANDBOXED=true</code> is set, and the rest rely on their own
           safeguards.
         </p>
@@ -50,7 +51,7 @@ export default function Utilities({
                       <span className="text-sm text-muted-foreground">{t.description}</span>
                       {t.missing.length > 0 && (
                         <span className="text-xs text-destructive">
-                          Needs {t.missing.join(', ')} installed
+                          Missing {t.missing.join(', ')}
                         </span>
                       )}
                     </span>

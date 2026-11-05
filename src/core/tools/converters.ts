@@ -114,10 +114,13 @@ const SCRIPTING = '/org.openoffice.Office.Common/Security/Scripting'
 /**
  * Settings for LibreOffice's own profile, so a document can't reach outside
  * itself even where there is no sandbox: no linked pictures or sections from the
- * web or this machine, no macros, no OLE or DDE, links never updated and
- * formulas (WEBSERVICE, links to other workbooks) never recalculated on load.
- * Link and recalc values are LibreOffice's "never": Writer 0, Calc 1, recalc 1.
- * Tested in office-safety.test.ts.
+ * web or this machine, no macros, no OLE or DDE, and links never updated
+ * (LibreOffice's "never": Writer 0, Calc 1).
+ *
+ * Formulas are always recalculated on load (0), so a spreadsheet saved with
+ * stale or missing results still prints the right totals; formulas that reach
+ * outside (WEBSERVICE, links to other workbooks) are refused by LibreOffice as
+ * external content even then. Both tested in office-safety.test.ts.
  */
 const SAFE_SETTINGS: [path: string, name: string, value: string][] = [
   [SCRIPTING, 'BlockUntrustedRefererLinks', 'true'],
@@ -126,8 +129,8 @@ const SAFE_SETTINGS: [path: string, name: string, value: string][] = [
   [SCRIPTING, 'MacroSecurityLevel', '3'],
   ['/org.openoffice.Office.Writer/Content/Update', 'Link', '0'],
   ['/org.openoffice.Office.Calc/Content/Update', 'Link', '1'],
-  ['/org.openoffice.Office.Calc/Formula/Load', 'ODFRecalcMode', '1'],
-  ['/org.openoffice.Office.Calc/Formula/Load', 'OOXMLRecalcMode', '1'],
+  ['/org.openoffice.Office.Calc/Formula/Load', 'ODFRecalcMode', '0'],
+  ['/org.openoffice.Office.Calc/Formula/Load', 'OOXMLRecalcMode', '0'],
 ]
 
 export const SAFE_PROFILE = `<?xml version="1.0" encoding="UTF-8"?>

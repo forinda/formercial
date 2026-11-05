@@ -73,6 +73,8 @@ export class ToolJobs {
   canSandbox = canSandbox
   /** Whether the owner lets document tools run without the sandbox; tests swap it. */
   allowUnsandboxed = () => getEnv('TOOLS_ALLOW_UNSANDBOXED') === true
+  /** Whether bwrap is installed at all, working or not; tests swap it. */
+  hasBwrap = () => hasCommand('bwrap', ['--version'])
 
   /** What a tool lacks on this machine: programs (checked once), or the sandbox it needs. */
   private async missing(tool: AnyTool): Promise<string[]> {
@@ -84,7 +86,8 @@ export class ToolJobs {
     const have = await this.available
     const lacks = tool.needs.filter((n) => !have[n])
     if (tool.needsSandbox && !this.allowUnsandboxed() && !(await this.canSandbox()))
-      lacks.push('bubblewrap')
+      // Installed but refused (some containers and kernels block it) isn't fixed by installing it.
+      lacks.push((await this.hasBwrap()) ? 'a working bubblewrap sandbox' : 'bubblewrap')
     return lacks
   }
 
@@ -109,8 +112,7 @@ export class ToolJobs {
   async create(toolId: unknown, options: unknown): Promise<ToolJob> {
     const tool = this.tool(toolId)
     const lacks = await this.missing(tool)
-    if (lacks.length)
-      throw HttpException.badRequest(`this machine needs ${lacks.join(', ')} installed`)
+    if (lacks.length) throw HttpException.badRequest(`this machine is missing ${lacks.join(', ')}`)
     const parsed = tool.options.safeParse(options ?? {})
     if (!parsed.success) throw HttpException.badRequest('those options are not right for this tool')
     await this.sweep()

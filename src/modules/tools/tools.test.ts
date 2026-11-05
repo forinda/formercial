@@ -157,8 +157,14 @@ describe('tools that need the sandbox', () => {
     const { http, jobs } = await boot([guarded, shout])
     jobs.canSandbox = async () => false
     jobs.allowUnsandboxed = () => false
+    jobs.hasBwrap = async () => false
     const list = (await http.get('/api/v1/tools').expect(200)).body
     expect(list.map((t: { missing: string[] }) => t.missing)).toEqual([['bubblewrap'], []])
+    // Installed but refused: installing it again wouldn't help, so it says so.
+    jobs.hasBwrap = async () => true
+    expect((await http.get('/api/v1/tools').expect(200)).body[0].missing).toEqual([
+      'a working bubblewrap sandbox',
+    ])
     const refused = await http.post('/api/v1/tools/guarded/jobs').send({}).expect(400)
     expect(JSON.stringify(refused.body)).toContain('bubblewrap')
     await http.post('/api/v1/tools/shout/jobs').send({}).expect(201)
