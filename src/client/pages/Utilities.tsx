@@ -9,7 +9,13 @@ const GROUPS = [
   { id: 'pdf', title: 'PDF' },
 ] as const
 
-export default function Utilities({ tools }: { tools: ToolSummary[] }) {
+export default function Utilities({
+  tools,
+  sandboxed,
+}: {
+  tools: ToolSummary[]
+  sandboxed: boolean
+}) {
   return (
     <main className="mx-auto grid max-w-5xl gap-6 px-4 py-12">
       <Sections current="utilities" />
@@ -17,6 +23,12 @@ export default function Utilities({ tools }: { tools: ToolSummary[] }) {
       <p className="text-muted-foreground">
         Files are worked on here, on this machine, and deleted an hour later.
       </p>
+      {!sandboxed && (
+        <p role="note" className="rounded-md border border-destructive/40 p-3 text-sm">
+          Install bubblewrap (<code>bwrap</code>) so documents are converted with no network and no
+          view of your other files. Until then only the converters' own safeguards apply.
+        </p>
+      )}
       {GROUPS.map((g) => {
         const list = tools.filter((t) => t.group === g.id)
         if (!list.length) return null
