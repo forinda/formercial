@@ -7,6 +7,8 @@ import { Input } from '@/client/components/ui/input'
 import { Select } from '@/client/components/ui/select'
 import { api } from '@/client/editor/useProject'
 import { saveSeat, type Seat } from '@/client/fun/session'
+import { GAME_REGISTRY } from '@/arcade/registry'
+import { Link } from '@inertiajs/react'
 
 type Game = {
   id: string
@@ -132,6 +134,34 @@ export default function Fun({ games }: { games: Game[] }) {
         beside you. Playing across machines comes with sign-in. Rooms close after two hours without
         a move.
       </p>
+      <section className="grid gap-4">
+        <h2 className="text-lg font-semibold">Play solo</h2>
+        {Object.entries(GAME_REGISTRY).map(([category, list]) =>
+          list.length ? (
+            <div key={category} className="grid gap-2">
+              <h3 className="text-sm text-muted-foreground capitalize">{category}</h3>
+              <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                {list.map((g) => (
+                  <li key={g.id}>
+                    <Link
+                      href={`/fun/play/${g.id}`}
+                      className="flex h-full items-start gap-3 rounded-lg border p-3 hover:border-primary"
+                    >
+                      <span aria-hidden className="text-2xl">
+                        {g.icon}
+                      </span>
+                      <span className="grid gap-0.5">
+                        <span className="font-medium">{g.name}</span>
+                        <span className="text-xs text-muted-foreground">{g.description}</span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null,
+        )}
+      </section>
     </main>
   )
 }

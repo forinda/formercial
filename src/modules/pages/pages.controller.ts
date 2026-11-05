@@ -88,6 +88,14 @@ export class PagesController {
   }
 
   /** A room's page; the browser brings its own player token, kept from making or joining it. */
+  /** A solo arcade game; the page finds it by id in the arcade's list. */
+  @Get('/fun/play/:id')
+  funPlay(ctx: RequestContext) {
+    const id = String(ctx.params.id)
+    if (!/^[a-z0-9-]{1,40}$/.test(id)) return notFound('No such game.')
+    return inertia('FunPlay', { id }, { meta: { title: 'Fun Club' } })
+  }
+
   @Get('/fun/:code')
   funRoom(ctx: RequestContext) {
     // Only a real room code reaches the page: it ends up in request paths there.

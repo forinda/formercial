@@ -56,6 +56,15 @@ describe('PagesController', () => {
       await http.get(`/fun/${bad}`).set(visit).expect(404)
   })
 
+  it('GET /fun/play/<id> renders a solo game only for a safe id', async () => {
+    const http = await boot()
+    const res = await http.get('/fun/play/snake').set(visit).expect(200)
+    expect(res.body.component).toBe('FunPlay')
+    expect(res.body.props.id).toBe('snake')
+    for (const bad of ['..%2F..%2Fprojects', 'Snake', 'a'.repeat(41)])
+      await http.get(`/fun/play/${bad}`).set(visit).expect(404)
+  })
+
   it('GET /p/demo renders Editor with the project', async () => {
     const res = await (await boot()).get('/p/demo').set(visit).expect(200)
     expect(res.body.component).toBe('Editor')
