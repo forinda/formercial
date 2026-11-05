@@ -71,7 +71,9 @@ describe('fitOnce', () => {
     code.style.fontSize = '40px'
     document.body.append(view, code)
     Object.defineProperty(view, 'clientWidth', { value: 100 })
-    Object.defineProperty(view, 'scrollWidth', { get: () => parseFloat(code.style.fontSize) * 17.5 })
+    Object.defineProperty(view, 'scrollWidth', {
+      get: () => parseFloat(code.style.fontSize) * 17.5,
+    })
     fitOnce(view, code)()
     expect(view.style.fontSize).toBe('40px')
     expect(parseFloat(code.style.fontSize)).toBeLessThan(40)
