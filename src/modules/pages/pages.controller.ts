@@ -4,6 +4,7 @@ import { FORMATS, type Format } from '@/core/project/project'
 import type { Trust } from '@/core/storage/trust'
 import { summaryOf, type Workspace } from '@/core/storage/workspace'
 import { clipLengths } from '@/core/voice/voice-project'
+import { FunRooms } from '@/modules/fun/fun-rooms.service'
 import { MemeStore } from '@/modules/memes/meme-store.service'
 import { ProjectHistory } from '@/modules/projects/services/project-history.service'
 import { TRUST, WORKSPACE } from '@/modules/projects/tokens'
@@ -18,6 +19,7 @@ export class PagesController {
     @Inject(TRUST) private readonly trust: Trust,
     private readonly history: ProjectHistory,
     private readonly memes: MemeStore,
+    private readonly fun: FunRooms,
   ) {}
 
   // Each page loads the project from the workspace; a missing or invalid one
@@ -80,8 +82,15 @@ export class PagesController {
   }
 
   @Get('/fun')
-  fun() {
-    return inertia('Fun', {}, { meta: { title: 'Fun Club' } })
+  funPage() {
+    return inertia('Fun', { games: this.fun.rooms.games() }, { meta: { title: 'Fun Club' } })
+  }
+
+  /** A room's page; the browser brings its own player token, kept from making or joining it. */
+  @Get('/fun/:code')
+  funRoom(ctx: RequestContext) {
+    const code = String(ctx.params.code).toUpperCase()
+    return inertia('FunRoom', { code }, { meta: { title: `Room ${code}` } })
   }
 
   @Get('/memes')

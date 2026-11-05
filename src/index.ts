@@ -14,6 +14,7 @@ import { LOCAL_HOST, localOnly } from './middleware/local-only'
 import { withDomainErrors } from './modules/projects/http/domain-errors'
 import { modules } from './modules'
 import { storageAdapter } from './adapters/storage'
+import { WsAdapter } from '@forinda/kickjs-ws'
 import { studioAdapter } from './adapters/studio'
 
 // Export the app for the Vite plugin (dev mode)
@@ -63,6 +64,8 @@ export const app = await bootstrap({
     }),
     // Files on disk under uploads/ until S3_BUCKET is set. Inject with @Autowired(STORAGE).
     storageAdapter(),
+    // Live play for the Fun Club at /ws/fun, on the app's own port. Small frames only.
+    WsAdapter({ path: '/ws', maxPayload: 16 * 1024 }),
     studioAdapter(),
     // Tools for agents: the routes marked @McpTool, called through the same
     // middleware as the editor. At /_mcp/messages, or over stdio via kick formercial mcp.
