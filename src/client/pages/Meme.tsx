@@ -14,6 +14,9 @@ import {
   drawMeme,
   gifDelays,
   gifSize,
+  memeLength,
+  memeMoves,
+  stillFrames,
   type Meme,
   type MemeSize,
   type MemeText,
@@ -29,12 +32,18 @@ const loadAnton = () =>
     .then((face) => void document.fonts.add(face))
     .catch(() => {}))
 
+type Frame = { image: CanvasImageSource; w: number; h: number }
 type Picture = {
-  frames: { image: CanvasImageSource; w: number; h: number }[]
+  frames: Frame[]
   starts: number[]
   total: number
 }
-const LAYOUT_NAMES = { bar: 'Caption bar', classic: 'Classic top and bottom', free: 'Place freely' }
+const LAYOUT_NAMES = {
+  bar: 'Caption bar',
+  classic: 'Classic top and bottom',
+  free: 'Place freely',
+  post: 'Social post card',
+}
 const NEW_TEXT: MemeText = {
   text: 'More text',
   x: 50,
@@ -59,10 +68,13 @@ export default function MemeEditor({ id, meme: first }: { id: string; meme: Meme
   const [sure, setSure] = useState(false)
   const canvas = useRef<HTMLCanvasElement>(null)
   const picture = useRef<Picture | null>(null)
+  const avatar = useRef<Frame | null>(null)
   const latest = useRef(meme)
   latest.current = meme
   const fileUrl = (path: string) => `/api/v1/memes/${id}/file?path=${encodeURIComponent(path)}`
   const set = (patch: Partial<Meme>) => setMeme((m) => ({ ...m, ...patch }))
+  const setPost = (patch: Partial<Meme['post']>) =>
+    setMeme((m) => ({ ...m, post: { ...m.post, ...patch } }))
   const setText = (i: number, patch: Partial<MemeText>) =>
     setMeme((m) => ({ ...m, texts: m.texts.map((t, j) => (j === i ? { ...t, ...patch } : t)) }))
 
@@ -104,7 +116,24 @@ export default function MemeEditor({ id, meme: first }: { id: string; meme: Meme
     }
   }, [meme.media])
 
-  // Draw every frame, so a GIF plays; the meme itself comes from the latest state.
+  // The post card's face, a still image.
+  useEffect(() => {
+    avatar.current = null
+    const face = meme.post.avatar
+    if (!face) return
+    const img = new Image()
+    img.onload = () => {
+      if (meme.post.avatar === face)
+        avatar.current = { image: img, w: img.naturalWidth, h: img.naturalHeight }
+    }
+    img.src = fileUrl(face)
+  }, [meme.post.avatar])
+
+  // The GIF frame showing `t` seconds in, or the still picture.
+  const frameAt = (pic: Picture | null, t: number) =>
+    pic ? (pic.frames[gifFrame(pic.starts, pic.total, t, true)] ?? null) : null
+
+  // Draw every frame, so a GIF and timed text play; the meme comes from the latest state.
   useEffect(() => {
     let raf = 0
     const start = performance.now()
@@ -112,10 +141,9 @@ export default function MemeEditor({ id, meme: first }: { id: string; meme: Meme
       const g = canvas.current?.getContext('2d')
       const pic = picture.current
       if (g) {
-        const frame = pic
-          ? pic.frames[gifFrame(pic.starts, pic.total, (now - start) / 1000, true)]
-          : null
-        drawMeme(g, latest.current, frame ?? null)
+        const loop = memeLength(latest.current, pic?.total ?? 0)
+        const t = loop ? ((now - start) / 1000) % loop : 0
+        drawMeme(g, latest.current, { picture: frameAt(pic, t), avatar: avatar.current }, t)
       }
       raf = requestAnimationFrame(tick)
     }
@@ -139,7 +167,10 @@ export default function MemeEditor({ id, meme: first }: { id: string; meme: Meme
     return () => clearTimeout(timer)
   }, [meme])
 
-  async function upload(file: File | undefined) {
+  async function upload(
+    file: File | undefined,
+    use: (path: string) => void = (media) => set({ media }),
+  ) {
     if (!file) return
     const ext = (file.name.split('.').pop() ?? '').toLowerCase()
     if (!/^(gif|png|jpe?g|webp)$/.test(ext)) return setStatus('Pick a GIF, PNG, JPEG or WebP file')
@@ -152,7 +183,8 @@ export default function MemeEditor({ id, meme: first }: { id: string; meme: Meme
         body: file,
         headers: { 'content-type': file.type || 'application/octet-stream' },
       })
-      set({ media: path })
+      use(path)
+      setStatus('Saved')
     } catch (err) {
       setStatus(`Upload failed: ${(err as Error).message}`)
     }
@@ -171,15 +203,15 @@ export default function MemeEditor({ id, meme: first }: { id: string; meme: Meme
     const c = canvas.current
     const g = c?.getContext('2d')
     if (!c || !g) return
-    const pic = picture.current
-    drawMeme(g, meme, pic ? pic.frames[0] : null)
+    drawMeme(g, meme, { picture: frameAt(picture.current, 0), avatar: avatar.current }, 0)
     c.toBlob((blob) => blob && save(blob, 'png'), 'image/png')
   }
 
-  // Every GIF frame drawn with the meme over it, then encoded here in the browser.
+  // Every frame drawn with the meme over it, then encoded here in the browser: a GIF's
+  // own frames, or ten a second for a still picture with timed text.
   async function downloadGif() {
     const pic = picture.current
-    if (!pic) return
+    if (meme.media && !pic) return setStatus('The picture is still loading')
     await loadAnton()
     setStatus('Making the GIF…')
     const [W, H] = MEME_SIZES[meme.size]
@@ -193,10 +225,13 @@ export default function MemeEditor({ id, meme: first }: { id: string; meme: Meme
     const fg = full.getContext('2d')
     const sg = small.getContext('2d', { willReadFrequently: true })
     if (!fg || !sg) return setStatus("This browser can't make a GIF")
-    const delays = gifDelays(pic.starts, pic.total)
+    const animated = pic && pic.total > 0 ? pic : null
+    const starts = animated ? animated.starts : stillFrames(meme.seconds)
+    const delays = gifDelays(starts, animated ? animated.total : meme.seconds)
     const gif = GIFEncoder()
-    for (let i = 0; i < pic.frames.length; i++) {
-      drawMeme(fg, meme, pic.frames[i])
+    for (let i = 0; i < starts.length; i++) {
+      const t = starts[i]
+      drawMeme(fg, meme, { picture: frameAt(pic, t), avatar: avatar.current }, t)
       sg.drawImage(full, 0, 0, w, h)
       const { data } = sg.getImageData(0, 0, w, h)
       const palette = quantize(data, 256)
@@ -306,6 +341,83 @@ export default function MemeEditor({ id, meme: first }: { id: string; meme: Meme
               </>
             )}
           </div>
+          {meme.layout === 'post' && (
+            <fieldset className="grid gap-2 rounded-md border p-2">
+              <legend className="px-1 text-xs text-muted-foreground">Who posted it</legend>
+              <p className="text-xs text-muted-foreground">
+                For your own or made-up accounts. Don't put words in a real person's mouth.
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <Row label="Name">
+                  <Input
+                    value={meme.post.name}
+                    onChange={(e) => setPost({ name: e.target.value })}
+                  />
+                </Row>
+                <Row label="Handle">
+                  <Input
+                    value={meme.post.handle}
+                    onChange={(e) => setPost({ handle: e.target.value })}
+                  />
+                </Row>
+                <Row label="Time">
+                  <Input
+                    value={meme.post.time}
+                    onChange={(e) => setPost({ time: e.target.value })}
+                  />
+                </Row>
+                <Row label="Card">
+                  <Select
+                    value={meme.post.dark ? 'dark' : 'light'}
+                    onChange={(e) => setPost({ dark: e.target.value === 'dark' })}
+                  >
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                  </Select>
+                </Row>
+                <Row label="Checkmark">
+                  <Select
+                    value={meme.post.badge ? 'on' : 'off'}
+                    onChange={(e) => setPost({ badge: e.target.value === 'on' })}
+                  >
+                    <option value="off">None</option>
+                    <option value="on">Show</option>
+                  </Select>
+                </Row>
+                <Row label="Checkmark colour">
+                  <Input
+                    type="color"
+                    value={meme.post.badgeColor}
+                    onChange={(e) => setPost({ badgeColor: e.target.value })}
+                  />
+                </Row>
+              </div>
+              <Row label={`Face${meme.post.avatar ? ` (${meme.post.avatar})` : ''}`}>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="text-xs"
+                  onChange={(e) =>
+                    void upload(e.target.files?.[0], (avatar) => setPost({ avatar }))
+                  }
+                />
+              </Row>
+            </fieldset>
+          )}
+          {memeMoves(meme) && !meme.media?.endsWith('.gif') && (
+            <Row label="Loops every (seconds)">
+              <Input
+                type="number"
+                min={1}
+                max={30}
+                value={meme.seconds}
+                onChange={(e) => {
+                  const seconds = Number(e.target.value)
+                  if (seconds >= 1 && seconds <= 30) set({ seconds })
+                }}
+              />
+            </Row>
+          )}
           {meme.texts.map((t, i) => (
             <fieldset key={i} className="grid gap-2 rounded-md border p-2">
               <legend className="px-1 text-xs text-muted-foreground">Text {i + 1}</legend>
@@ -328,7 +440,7 @@ export default function MemeEditor({ id, meme: first }: { id: string; meme: Meme
                     }}
                   />
                 </Row>
-                {meme.layout !== 'bar' && (
+                {meme.layout !== 'bar' && meme.layout !== 'post' && (
                   <>
                     <Row label="Colour">
                       <Input
@@ -363,6 +475,22 @@ export default function MemeEditor({ id, meme: first }: { id: string; meme: Meme
                       />
                     </Row>
                   ))}
+                {(['at', 'until'] as const).map((k) => (
+                  <Row key={k} label={k === 'at' ? 'Shows at (s)' : 'Gone at (s)'}>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={60}
+                      step={0.1}
+                      value={t[k] ?? ''}
+                      onChange={(e) => {
+                        if (e.target.value === '') return setText(i, { [k]: undefined })
+                        const v = Number(e.target.value)
+                        if (v >= 0 && v <= 60 && (k === 'at' || v > 0)) setText(i, { [k]: v })
+                      }}
+                    />
+                  </Row>
+                ))}
               </div>
               <Button
                 variant="ghost"
@@ -381,7 +509,7 @@ export default function MemeEditor({ id, meme: first }: { id: string; meme: Meme
             Add text
           </Button>
           <Button onClick={() => void downloadPng()}>Download PNG</Button>
-          {meme.media?.endsWith('.gif') && (
+          {memeMoves(meme) && (
             <Button variant="secondary" onClick={() => void downloadGif()}>
               Download GIF
             </Button>
