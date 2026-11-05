@@ -4,6 +4,7 @@ import { FORMATS, type Format } from '@/core/project/project'
 import type { Trust } from '@/core/storage/trust'
 import { summaryOf, type Workspace } from '@/core/storage/workspace'
 import { clipLengths } from '@/core/voice/voice-project'
+import { MemeStore } from '@/modules/memes/meme-store.service'
 import { ProjectHistory } from '@/modules/projects/services/project-history.service'
 import { TRUST, WORKSPACE } from '@/modules/projects/tokens'
 import { PRESETS } from '@/presets'
@@ -16,6 +17,7 @@ export class PagesController {
     @Inject(WORKSPACE) private readonly ws: Workspace,
     @Inject(TRUST) private readonly trust: Trust,
     private readonly history: ProjectHistory,
+    private readonly memes: MemeStore,
   ) {}
 
   // Each page loads the project from the workspace; a missing or invalid one
@@ -75,5 +77,26 @@ export class PagesController {
       { ...props, format },
       { meta: { title: `${props.project.name} ${format}` } },
     )
+  }
+
+  @Get('/fun')
+  fun() {
+    return inertia('Fun', {}, { meta: { title: 'Fun Club' } })
+  }
+
+  @Get('/memes')
+  async memesPage() {
+    return inertia('Memes', { memes: await this.memes.list() }, { meta: { title: 'Memes' } })
+  }
+
+  @Get('/memes/:id')
+  async memePage(ctx: RequestContext) {
+    let meme
+    try {
+      meme = await this.memes.read(ctx.params.id)
+    } catch {
+      return notFound(`No meme called "${ctx.params.id}".`)
+    }
+    return inertia('Meme', { id: ctx.params.id, meme }, { meta: { title: meme.name } })
   }
 }

@@ -4,8 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/client/components/ui/button'
 import { Input } from '@/client/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/client/components/ui/tabs'
-import { TooltipProvider } from '@/client/components/ui/tooltip'
-import { ThemeToggle } from '@/client/editor/theme'
+import { Sections } from '@/client/components/sections'
 import { api } from '@/client/editor/useProject'
 import { cn } from '@/client/lib/utils'
 import type { ProjectSummary } from '@/core/storage/workspace'
@@ -123,12 +122,8 @@ export default function Projects({
 
   return (
     <main className="mx-auto grid max-w-5xl gap-6 px-4 py-12">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Commercials</h1>
-        <TooltipProvider>
-          <ThemeToggle />
-        </TooltipProvider>
-      </header>
+      <Sections current="commercials" />
+      <h1 className="sr-only">Commercials</h1>
       <Tabs value={tab} onValueChange={(t) => show({ tab: t as Tab })} className="gap-6">
         <TabsList>
           <TabsTrigger value="projects">Projects ({projects.length})</TabsTrigger>
