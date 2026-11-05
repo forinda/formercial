@@ -480,6 +480,56 @@ const RUN_FRAMES = 4
  * of radius h/2, so the ends keep their shape however long the ring is and never
  * cut into the text. The pen runs on past where it started, like a real one.
  */
+/**
+ * Which frame of a GIF shows `t` seconds in, given each frame's start time and the total length.
+ * Looping wraps around; otherwise the last frame holds.
+ */
+export function gifFrame(starts: number[], total: number, t: number, loop: boolean): number {
+  if (!starts.length || t <= 0 || total <= 0) return 0
+  const at = loop ? t % total : Math.min(t, total)
+  let lo = 0
+  let hi = starts.length - 1
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1
+    if (starts[mid] <= at) lo = mid
+    else hi = mid - 1
+  }
+  return lo
+}
+
+// The parts of WebCodecs' ImageDecoder this uses; TypeScript's DOM types don't include it yet.
+type GifDecoderClass = new (init: { data: ArrayBuffer; type: string }) => {
+  tracks: { ready: Promise<void>; selectedTrack: { frameCount: number } | null }
+  decode(o: { frameIndex: number }): Promise<{ image: VideoFrame }>
+  close(): void
+}
+// Browsers play a GIF frame with almost no delay at 100 ms, so the timing here matches theirs.
+const gifDelay = (micros: number | null) => (micros && micros >= 20_000 ? micros / 1e6 : 0.1)
+
+async function decodeGif(Decoder: GifDecoderClass, url: string) {
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(`can't load ${url}`)
+  const decoder = new Decoder({ data: await res.arrayBuffer(), type: 'image/gif' })
+  try {
+    await decoder.tracks.ready
+    const count = decoder.tracks.selectedTrack?.frameCount ?? 0
+    if (!count) throw new Error(`no frames in ${url}`)
+    const frames: ImageBitmap[] = []
+    const starts: number[] = []
+    let total = 0
+    for (let i = 0; i < count; i++) {
+      const { image } = await decoder.decode({ frameIndex: i })
+      starts.push(total)
+      total += gifDelay(image.duration)
+      frames.push(await createImageBitmap(image))
+      image.close()
+    }
+    return { frames, starts, total }
+  } finally {
+    decoder.close()
+  }
+}
+
 export function ringPath(w: number, h: number) {
   const r = Math.min(h, w) / 2
   const k = r * 1.33 // a cubic with its controls this far out bulges about r: a round end
@@ -1108,6 +1158,53 @@ export const BLOCKS: { [T in Block['type']]: BlockDef<Of<T>> } = {
       })
       root.append(box)
       return (local) => items.forEach((fig, i) => reveal(fig, local - (b.at ?? 0) - i * 0.3))
+    },
+  },
+  gif: {
+    needs: (b) => (b.at ?? 0) + REVEAL,
+    mount(root, b, ctx) {
+      const fig = el('div', 'icon gif')
+      const height = `calc(${b.size} * var(--u))`
+      let draw = (_t: number) => {}
+      const Decoder = (globalThis as { ImageDecoder?: GifDecoderClass }).ImageDecoder
+      if (Decoder) {
+        // Frames decoded up front and picked by scene time, so a render never depends on the clock.
+        const canvas = document.createElement('canvas')
+        canvas.style.height = height
+        fig.append(canvas)
+        ctx.wait(
+          b.path,
+          decodeGif(Decoder, ctx.fileUrl(b.path)).then(({ frames, starts, total }) => {
+            canvas.width = frames[0].width
+            canvas.height = frames[0].height
+            const g = canvas.getContext('2d')
+            let shown = -1
+            draw = (t) => {
+              const i = gifFrame(starts, total, t * b.speed, b.loop)
+              if (i === shown || !g) return
+              shown = i
+              g.clearRect(0, 0, canvas.width, canvas.height)
+              g.drawImage(frames[i], 0, 0)
+            }
+            ctx.onDestroy(() => frames.forEach((f) => f.close()))
+          }),
+        )
+      } else {
+        // ponytail: without ImageDecoder (some browsers' previews) the GIF plays on its own clock.
+        const img = document.createElement('img')
+        img.alt = b.label ?? ''
+        img.src = ctx.fileUrl(b.path)
+        img.style.height = height
+        ctx.load(b.path, img)
+        fig.append(img)
+      }
+      if (b.label) fig.append(el('span', '', esc(b.label)))
+      root.append(fig)
+      return (local) => {
+        const since = local - (b.at ?? 0)
+        reveal(fig, since)
+        draw(Math.max(0, since))
+      }
     },
   },
   doodle: {

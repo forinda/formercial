@@ -18,6 +18,7 @@ const TYPES: Record<string, string> = {
   jpg: 'image/jpeg',
   jpeg: 'image/jpeg',
   webp: 'image/webp',
+  gif: 'image/gif',
   woff2: 'font/woff2',
   glb: 'model/gltf-binary',
   txt: 'text/plain; charset=utf-8',
