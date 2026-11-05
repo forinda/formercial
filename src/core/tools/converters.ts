@@ -1,6 +1,6 @@
 // The converters: media through ffmpeg, office documents through LibreOffice,
 // HTML through pandoc or Chromium. Each writes into `${dir}/out`.
-import { readFile, readdir, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import { basename, extname, join } from 'node:path'
 import { z } from 'zod'
 import { launchChrome } from '@/core/render/cdp'
@@ -110,9 +110,33 @@ export const mediaConvert = defineTool<MediaOptions>({
 // ─── Documents (LibreOffice) ──────────────────────────────────────────────────
 
 /** LibreOffice headless, with a profile of its own in the job's folder. */
+/**
+ * Settings for LibreOffice's own profile, so a document can't reach outside
+ * itself even where there is no sandbox: no linked pictures or sections from the
+ * web or this machine, no macros, no OLE or DDE. Tested in tools.test.ts.
+ */
+export const SAFE_PROFILE = `<?xml version="1.0" encoding="UTF-8"?>
+<oor:items xmlns:oor="http://openoffice.org/2001/registry" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+${[
+  ['BlockUntrustedRefererLinks', 'true'],
+  ['DisableActiveContent', 'true'],
+  ['DisableMacrosExecution', 'true'],
+  ['MacroSecurityLevel', '3'],
+]
+  .map(
+    ([name, value]) =>
+      `<item oor:path="/org.openoffice.Office.Common/Security/Scripting"><prop oor:name="${name}" oor:op="fuse"><value>${value}</value></prop></item>`,
+  )
+  .join('\n')}
+</oor:items>
+`
+
 async function soffice(job: ToolRun<unknown>, convertTo: string, infilter?: string) {
+  const profile = join(job.dir, 'lo-profile')
+  await mkdir(join(profile, 'user'), { recursive: true })
+  await writeFile(join(profile, 'user', 'registrymodifications.xcu'), SAFE_PROFILE)
   await job.exec('soffice', [
-    `-env:UserInstallation=file://${join(job.dir, 'lo-profile')}`,
+    `-env:UserInstallation=file://${profile}`,
     '--headless',
     '--norestore',
     '--nolockcheck',

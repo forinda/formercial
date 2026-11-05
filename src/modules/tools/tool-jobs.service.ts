@@ -9,6 +9,7 @@ import { HttpException, Service } from '@forinda/kickjs'
 import { findChrome } from '@/core/render/cdp'
 import { hasCommand } from '@/core/media/media'
 import { exec } from '@/core/tools/exec'
+import { sandboxed } from '@/core/tools/sandbox'
 import { TOOLS } from '@/core/tools'
 import type { AnyTool } from '@/core/tools/tool'
 import { sniff } from '@/core/tools/sniff'
@@ -156,7 +157,8 @@ export class ToolJobs {
         dir,
         options: job.options,
         signal,
-        exec: (cmd, args, opts) => exec(cmd, args, { cwd: opts?.cwd ?? dir, signal }),
+        exec: async (cmd, args, opts) =>
+          exec(...(await sandboxed(cmd, args, dir)), { cwd: opts?.cwd ?? dir, signal }),
       })
       // What's really in out/, not what the tool said: nothing outside it is ever offered.
       job.outputs = (await readdir(join(dir, 'out'))).filter((n) => !n.startsWith('.')).sort()

@@ -4,6 +4,7 @@ import { FORMATS, type Format } from '@/core/project/project'
 import type { Trust } from '@/core/storage/trust'
 import { summaryOf, type Workspace } from '@/core/storage/workspace'
 import { clipLengths } from '@/core/voice/voice-project'
+import { canSandbox } from '@/core/tools/sandbox'
 import { CODE } from '@/fun/rooms'
 import { FunRooms } from '@/modules/fun/fun-rooms.service'
 import { MemeStore } from '@/modules/memes/meme-store.service'
@@ -126,7 +127,7 @@ export class PagesController {
   async utilitiesPage() {
     return inertia(
       'Utilities',
-      { tools: await this.tools.list() },
+      { tools: await this.tools.list(), sandboxed: await canSandbox() },
       { meta: { title: 'Utilities' } },
     )
   }
