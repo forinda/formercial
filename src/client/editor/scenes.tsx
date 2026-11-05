@@ -407,19 +407,28 @@ function DoodleDraw(props: {
   )
 }
 
-/** Upload a GIF into the project's media/ and point the block at it. */
-function GifUpload(props: { id: string; slug: string; path: string; onPath(path: string): void }) {
+/** Upload a picture into the project's media/ and point the block or scene at it. */
+function MediaUpload(props: {
+  id: string
+  slug: string
+  path: string | undefined
+  accept: string
+  label: string
+  onPath(path: string): void
+}) {
   const [error, setError] = useState('')
   const pick = async (file: File | undefined) => {
     if (!file) return
     setError('')
     try {
-      const name = file.name.replace(/\.gif$/i, '').replace(/[^\w-]+/g, '-') || 'animation'
-      const path = `media/${name}.gif`
+      const ext = (file.name.split('.').pop() ?? '').toLowerCase()
+      if (!/^(gif|png|jpe?g|webp)$/.test(ext)) throw new Error('pick a GIF, PNG, JPEG or WebP file')
+      const name = file.name.replace(/\.[^.]+$/, '').replace(/[^\w-]+/g, '-') || 'picture'
+      const path = `media/${name}.${ext}`
       await api(`/api/v1/projects/${props.slug}/file?path=${encodeURIComponent(path)}`, {
         method: 'PUT',
         body: file,
-        headers: { 'content-type': 'image/gif' },
+        headers: { 'content-type': file.type || 'application/octet-stream' },
       })
       props.onPath(path)
     } catch (err) {
@@ -427,11 +436,11 @@ function GifUpload(props: { id: string; slug: string; path: string; onPath(path:
     }
   }
   return (
-    <Field id={`${props.id}-gif`} label={`GIF (${props.path})`}>
+    <Field id={`${props.id}-media`} label={`${props.label} (${props.path ?? 'none yet'})`}>
       <input
-        id={`${props.id}-gif`}
+        id={`${props.id}-media`}
         type="file"
-        accept="image/gif"
+        accept={props.accept}
         className="w-full text-xs text-muted-foreground"
         onChange={(e) => void pick(e.target.files?.[0])}
       />
@@ -868,7 +877,14 @@ function BlockForm({
     case 'gif':
       return (
         <>
-          <GifUpload id={id} slug={slug} path={block.path} onPath={(path) => set({ path })} />
+          <MediaUpload
+            id={id}
+            slug={slug}
+            path={block.path}
+            accept="image/gif"
+            label="GIF"
+            onPath={(path) => set({ path })}
+          />
           {text('label', 'Label (optional)')}
           <div className="flex gap-2">
             <Field id={`${id}-size`} label="Size">

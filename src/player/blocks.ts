@@ -506,6 +506,12 @@ type GifDecoderClass = new (init: { data: ArrayBuffer; type: string }) => {
 // Browsers play a GIF frame with almost no delay at 100 ms, so the timing here matches theirs.
 const gifDelay = (micros: number | null) => (micros && micros >= 20_000 ? micros / 1e6 : 0.1)
 
+/** A GIF's frames and timing, or null where the browser has no ImageDecoder. */
+export function loadGif(url: string) {
+  const Decoder = (globalThis as { ImageDecoder?: GifDecoderClass }).ImageDecoder
+  return Decoder ? decodeGif(Decoder, url) : Promise.resolve(null)
+}
+
 async function decodeGif(Decoder: GifDecoderClass, url: string) {
   const res = await fetch(url)
   if (!res.ok) throw new Error(`can't load ${url}`)
@@ -528,6 +534,43 @@ async function decodeGif(Decoder: GifDecoderClass, url: string) {
   } finally {
     decoder.close()
   }
+}
+
+/**
+ * A GIF as an element and a draw(t) that shows its frame `t` seconds in. Frames are decoded
+ * up front and picked by scene time, so a render never depends on the clock.
+ */
+export function gifView(path: string, ctx: BlockCtx, o: { loop: boolean; speed?: number }) {
+  const speed = o.speed ?? 1
+  const Decoder = (globalThis as { ImageDecoder?: GifDecoderClass }).ImageDecoder
+  if (!Decoder) {
+    // ponytail: without ImageDecoder (some browsers' previews) the GIF plays on its own clock.
+    const img = document.createElement('img')
+    img.alt = ''
+    img.src = ctx.fileUrl(path)
+    ctx.load(path, img)
+    return { view: img as HTMLElement, draw: (_t: number) => {} }
+  }
+  const canvas = document.createElement('canvas')
+  let paint = (_t: number) => {}
+  ctx.wait(
+    path,
+    decodeGif(Decoder, ctx.fileUrl(path)).then(({ frames, starts, total }) => {
+      canvas.width = frames[0].width
+      canvas.height = frames[0].height
+      const g = canvas.getContext('2d')
+      let shown = -1
+      paint = (t) => {
+        const i = gifFrame(starts, total, t * speed, o.loop)
+        if (i === shown || !g) return
+        shown = i
+        g.clearRect(0, 0, canvas.width, canvas.height)
+        g.drawImage(frames[i], 0, 0)
+      }
+      ctx.onDestroy(() => frames.forEach((f) => f.close()))
+    }),
+  )
+  return { view: canvas as HTMLElement, draw: (t: number) => paint(t) }
 }
 
 export function ringPath(w: number, h: number) {
@@ -1164,40 +1207,9 @@ export const BLOCKS: { [T in Block['type']]: BlockDef<Of<T>> } = {
     needs: (b) => (b.at ?? 0) + REVEAL,
     mount(root, b, ctx) {
       const fig = el('div', 'icon gif')
-      const height = `calc(${b.size} * var(--u))`
-      let draw = (_t: number) => {}
-      const Decoder = (globalThis as { ImageDecoder?: GifDecoderClass }).ImageDecoder
-      if (Decoder) {
-        // Frames decoded up front and picked by scene time, so a render never depends on the clock.
-        const canvas = document.createElement('canvas')
-        canvas.style.height = height
-        fig.append(canvas)
-        ctx.wait(
-          b.path,
-          decodeGif(Decoder, ctx.fileUrl(b.path)).then(({ frames, starts, total }) => {
-            canvas.width = frames[0].width
-            canvas.height = frames[0].height
-            const g = canvas.getContext('2d')
-            let shown = -1
-            draw = (t) => {
-              const i = gifFrame(starts, total, t * b.speed, b.loop)
-              if (i === shown || !g) return
-              shown = i
-              g.clearRect(0, 0, canvas.width, canvas.height)
-              g.drawImage(frames[i], 0, 0)
-            }
-            ctx.onDestroy(() => frames.forEach((f) => f.close()))
-          }),
-        )
-      } else {
-        // ponytail: without ImageDecoder (some browsers' previews) the GIF plays on its own clock.
-        const img = document.createElement('img')
-        img.alt = b.label ?? ''
-        img.src = ctx.fileUrl(b.path)
-        img.style.height = height
-        ctx.load(b.path, img)
-        fig.append(img)
-      }
+      const { view, draw } = gifView(b.path, ctx, b)
+      view.style.height = `calc(${b.size} * var(--u))`
+      fig.append(view)
       if (b.label) fig.append(el('span', '', esc(b.label)))
       root.append(fig)
       return (local) => {
