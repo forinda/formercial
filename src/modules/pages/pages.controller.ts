@@ -7,6 +7,7 @@ import { clipLengths } from '@/core/voice/voice-project'
 import { CODE } from '@/fun/rooms'
 import { FunRooms } from '@/modules/fun/fun-rooms.service'
 import { MemeStore } from '@/modules/memes/meme-store.service'
+import { ToolJobs } from '@/modules/tools/tool-jobs.service'
 import { ProjectHistory } from '@/modules/projects/services/project-history.service'
 import { TRUST, WORKSPACE } from '@/modules/projects/tokens'
 import { PRESETS } from '@/presets'
@@ -21,6 +22,7 @@ export class PagesController {
     private readonly history: ProjectHistory,
     private readonly memes: MemeStore,
     private readonly fun: FunRooms,
+    private readonly tools: ToolJobs,
   ) {}
 
   // Each page loads the project from the workspace; a missing or invalid one
@@ -118,5 +120,21 @@ export class PagesController {
       return notFound(`No meme called "${ctx.params.id}".`)
     }
     return inertia('Meme', { id: ctx.params.id, meme }, { meta: { title: meme.name } })
+  }
+
+  @Get('/utilities')
+  async utilitiesPage() {
+    return inertia(
+      'Utilities',
+      { tools: await this.tools.list() },
+      { meta: { title: 'Utilities' } },
+    )
+  }
+
+  @Get('/utilities/:id')
+  async utilityPage(ctx: RequestContext) {
+    const tool = (await this.tools.list()).find((t) => t.id === ctx.params.id)
+    if (!tool) return notFound('No such utility.')
+    return inertia('Utility', { tool }, { meta: { title: tool.title } })
   }
 }
