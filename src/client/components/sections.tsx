@@ -8,6 +8,7 @@ const SECTIONS = [
   { id: 'commercials', href: '/', label: 'Commercials' },
   { id: 'fun', href: '/fun', label: 'Fun Club' },
   { id: 'memes', href: '/memes', label: 'Memes' },
+  { id: 'utilities', href: '/utilities', label: 'Utilities' },
 ] as const
 export type Section = (typeof SECTIONS)[number]['id']
 
