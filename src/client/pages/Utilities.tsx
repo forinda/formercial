@@ -25,8 +25,10 @@ export default function Utilities({
       </p>
       {!sandboxed && (
         <p role="note" className="rounded-md border border-destructive/40 p-3 text-sm">
-          Install bubblewrap (<code>bwrap</code>) so documents are converted with no network and no
-          view of your other files. Until then only the converters' own safeguards apply.
+          Install bubblewrap (<code>bwrap</code>) so files are converted with no network and no view
+          of your other files. Until then the document tools are off, unless{' '}
+          <code>TOOLS_ALLOW_UNSANDBOXED=true</code> is set, and the rest rely on their own
+          safeguards.
         </p>
       )}
       {GROUPS.map((g) => {

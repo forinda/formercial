@@ -28,10 +28,24 @@ const fodt = (local: string, web: string) => `<?xml version="1.0" encoding="UTF-
 </office:text></office:body></office:document>
 `
 
+const fodtWith = (inner: string) => `<?xml version="1.0" encoding="UTF-8"?>
+<office:document xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:xlink="http://www.w3.org/1999/xlink" office:version="1.3" office:mimetype="application/vnd.oasis.opendocument.text">
+<office:body><office:text><text:p>Before.</text:p>${inner}<text:p>After.</text:p></office:text></office:body></office:document>
+`
+
+const cell = (shown: string, formula?: string) =>
+  `<table:table-cell${formula ? ` table:formula="${formula}"` : ''} office:value-type="string"><text:p>${shown}</text:p></table:table-cell>`
+
+const fods = (cells: string) => `<?xml version="1.0" encoding="UTF-8"?>
+<office:document xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:of="urn:oasis:names:tc:opendocument:xmlns:of:1.2" office:version="1.3" office:mimetype="application/vnd.oasis.opendocument.spreadsheet">
+<office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row>${cells}</table:table-row></table:table></office:spreadsheet></office:body></office:document>
+`
+
 const images = (pdf: Buffer) => (pdf.toString('latin1').match(/\/Subtype\s*\/Image/g) ?? []).length
 
 const hasSoffice = await hasCommand('soffice', ['--version'])
 const hasBwrap = hasSoffice && (await canSandbox())
+const hasPdftotext = hasSoffice && (await hasCommand('pdftotext', ['-v']))
 
 describe.runIf(hasSoffice)('LibreOffice on untrusted documents', () => {
   let root = ''
@@ -52,11 +66,14 @@ describe.runIf(hasSoffice)('LibreOffice on untrusted documents', () => {
   afterAll(() => new Promise((r) => server.close(r)))
 
   /** Convert the test document in a fresh job folder: its PDF, and how many fetches it caused. */
-  async function convert(how: { profile: boolean; sandbox: boolean }) {
+  async function convert(
+    how: { profile: boolean; sandbox: boolean },
+    doc = { name: 'in-1.fodt', body: fodt(`file://${join(root, 'outside', 'secret.png')}`, web) },
+  ) {
     const dir = await mkdtemp(join(root, 'job-'))
     await mkdir(join(dir, 'out'))
-    const input = join(dir, 'in-1.fodt')
-    await writeFile(input, fodt(`file://${join(root, 'outside', 'secret.png')}`, web))
+    const input = join(dir, doc.name)
+    await writeFile(input, doc.body)
     const profile = join(dir, 'lo-profile')
     if (how.profile) {
       await mkdir(join(profile, 'user'), { recursive: true })
@@ -100,6 +117,50 @@ describe.runIf(hasSoffice)('LibreOffice on untrusted documents', () => {
       const { pdf, fetches } = await convert({ profile: false, sandbox: true })
       expect(images(pdf)).toBe(0)
       expect(fetches).toBe(0)
+    },
+    120_000,
+  )
+
+  /** The PDF's text, through pdftotext. */
+  async function text(pdf: Buffer) {
+    const file = join(await mkdtemp(join(root, 'text-')), 'out.pdf')
+    await writeFile(file, pdf)
+    return exec('pdftotext', [file, '-'])
+  }
+
+  test.runIf(hasPdftotext)(
+    'a spreadsheet fetches nothing and pulls in no other workbook',
+    async () => {
+      const other = join(root, 'outside', 'other.fods')
+      await writeFile(other, fods(cell('CALCSECRET-7')))
+      const body = fods(
+        cell('ws-cached', `of:=COM.MICROSOFT.WEBSERVICE(&quot;${web}&quot;)`) +
+          cell('ref-cached', `of:=['file://${other}'#$Sheet1.A1]`),
+      )
+      const { pdf, fetches } = await convert(
+        { profile: true, sandbox: false },
+        { name: 'in-1.fods', body },
+      )
+      expect(fetches).toBe(0)
+      expect(await text(pdf)).not.toContain('CALCSECRET')
+    },
+    120_000,
+  )
+
+  test.runIf(hasPdftotext)(
+    'a text document pulls in no linked file',
+    async () => {
+      const secret = join(root, 'outside', 'secret.txt')
+      await writeFile(secret, 'TEXTSECRET-42')
+      const body = fodtWith(
+        `<text:section text:name="S1"><text:section-source xlink:href="file://${secret}" xlink:type="simple" text:filter-name="Text"/><text:p>cached-section</text:p></text:section>`,
+      )
+      const { pdf, fetches } = await convert(
+        { profile: true, sandbox: false },
+        { name: 'in-1.fodt', body },
+      )
+      expect(fetches).toBe(0)
+      expect(await text(pdf)).not.toContain('TEXTSECRET')
     },
     120_000,
   )

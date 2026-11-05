@@ -22,6 +22,10 @@ const envSchema = fromZod(
     PORT: z.coerce.number().default(3000),
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
     LOG_LEVEL: z.string().default('info'),
+    // Document tools (LibreOffice) open files that can link outside themselves,
+    // so they run only where the bubblewrap sandbox works. Set to true to allow
+    // them without it (macOS, containers), on LibreOffice's own safe settings.
+    TOOLS_ALLOW_UNSANDBOXED: z.stringbool().default(false),
     // DATABASE_URL: z.url(),
     // Signs the session cookie. The public dev-only default is accepted only when
     // NODE_ENV is 'development' (kick dev) or 'test' (vitest); anywhere else,

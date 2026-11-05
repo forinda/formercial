@@ -49,6 +49,8 @@ async function boot(tools: AnyTool[] = [shout]) {
   const jobs = container.resolve(ToolJobs)
   jobs.tools = tools
   jobs.root = await mkdtemp(join(tmpdir(), 'tools-test-'))
+  // The real programs below run sandboxed where they can; elsewhere, allowed without.
+  jobs.allowUnsandboxed = () => true
   return { http: request(app.handle.bind(app)), jobs }
 }
 
@@ -145,6 +147,32 @@ describe('tool jobs over HTTP', () => {
     await jobs.idle()
     const failed = await http.get(`/api/v1/tools/jobs/${job.id}`).expect(200)
     expect(failed.body).toMatchObject({ state: 'failed', error: 'it broke' })
+  })
+})
+
+describe('tools that need the sandbox', () => {
+  const guarded = defineTool<{ fail: boolean }>({ ...shout, id: 'guarded', needsSandbox: true })
+
+  test('are off without it, unless the owner allows them', async () => {
+    const { http, jobs } = await boot([guarded, shout])
+    jobs.canSandbox = async () => false
+    jobs.allowUnsandboxed = () => false
+    const list = (await http.get('/api/v1/tools').expect(200)).body
+    expect(list.map((t: { missing: string[] }) => t.missing)).toEqual([['bubblewrap'], []])
+    const refused = await http.post('/api/v1/tools/guarded/jobs').send({}).expect(400)
+    expect(JSON.stringify(refused.body)).toContain('bubblewrap')
+    await http.post('/api/v1/tools/shout/jobs').send({}).expect(201)
+
+    jobs.allowUnsandboxed = () => true
+    await http.post('/api/v1/tools/guarded/jobs').send({}).expect(201)
+  })
+
+  test('are on where the sandbox works', async () => {
+    const { http, jobs } = await boot([guarded])
+    jobs.canSandbox = async () => true
+    jobs.allowUnsandboxed = () => false
+    expect((await http.get('/api/v1/tools').expect(200)).body[0].missing).toEqual([])
+    await http.post('/api/v1/tools/guarded/jobs').send({}).expect(201)
   })
 })
 
