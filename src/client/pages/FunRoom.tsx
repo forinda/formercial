@@ -44,10 +44,13 @@ export default function FunRoom({ code }: { code: string }) {
   async function join(e: React.FormEvent) {
     e.preventDefault()
     try {
-      const { player } = await api<{ player: Seat }>(`/api/v1/fun/rooms/${code}/join`, {
-        method: 'POST',
-        json: { name },
-      })
+      const { player } = await api<{ player: Seat }>(
+        `/api/v1/fun/rooms/${encodeURIComponent(code)}/join`,
+        {
+          method: 'POST',
+          json: { name },
+        },
+      )
       saveSeat(code, player)
       setSeat(player)
     } catch (err) {

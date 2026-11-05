@@ -4,6 +4,7 @@ import { FORMATS, type Format } from '@/core/project/project'
 import type { Trust } from '@/core/storage/trust'
 import { summaryOf, type Workspace } from '@/core/storage/workspace'
 import { clipLengths } from '@/core/voice/voice-project'
+import { CODE } from '@/fun/rooms'
 import { FunRooms } from '@/modules/fun/fun-rooms.service'
 import { MemeStore } from '@/modules/memes/meme-store.service'
 import { ProjectHistory } from '@/modules/projects/services/project-history.service'
@@ -89,7 +90,9 @@ export class PagesController {
   /** A room's page; the browser brings its own player token, kept from making or joining it. */
   @Get('/fun/:code')
   funRoom(ctx: RequestContext) {
+    // Only a real room code reaches the page: it ends up in request paths there.
     const code = String(ctx.params.code).toUpperCase()
+    if (!CODE.test(code)) return notFound('That is not a room code.')
     return inertia('FunRoom', { code }, { meta: { title: `Room ${code}` } })
   }
 

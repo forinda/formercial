@@ -46,6 +46,16 @@ describe('PagesController', () => {
     ])
   })
 
+  it('GET /fun/<code> renders a room only for a real room code', async () => {
+    const http = await boot()
+    const res = await http.get('/fun/abc234').set(visit).expect(200)
+    expect(res.body.component).toBe('FunRoom')
+    expect(res.body.props.code).toBe('ABC234')
+    // A code ends up in request paths on that page: anything else is a 404.
+    for (const bad of ['..%2F..%2Fprojects%2Fdemo%2Ftrust', 'ABC23', 'ABCDEFG', 'IL0O1Q'])
+      await http.get(`/fun/${bad}`).set(visit).expect(404)
+  })
+
   it('GET /p/demo renders Editor with the project', async () => {
     const res = await (await boot()).get('/p/demo').set(visit).expect(200)
     expect(res.body.component).toBe('Editor')
