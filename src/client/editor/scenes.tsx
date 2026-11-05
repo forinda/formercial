@@ -225,6 +225,7 @@ const BLANK: { [T in Block['type']]: Extract<Block, { type: T }> } = {
   cards: { type: 'cards', items: [{ title: 'Title', sub: 'detail' }] },
   chips: { type: 'chips', label: 'Works with', items: ['One', 'Two'] },
   icon: { type: 'icon', size: 8, items: [] },
+  gif: { type: 'gif', path: 'media/animation.gif', size: 30, loop: true, speed: 1 },
   doodle: {
     type: 'doodle',
     viewBox: '0 0 1600 720',
@@ -403,6 +404,39 @@ function DoodleDraw(props: {
         />
       )}
     </div>
+  )
+}
+
+/** Upload a GIF into the project's media/ and point the block at it. */
+function GifUpload(props: { id: string; slug: string; path: string; onPath(path: string): void }) {
+  const [error, setError] = useState('')
+  const pick = async (file: File | undefined) => {
+    if (!file) return
+    setError('')
+    try {
+      const name = file.name.replace(/\.gif$/i, '').replace(/[^\w-]+/g, '-') || 'animation'
+      const path = `media/${name}.gif`
+      await api(`/api/v1/projects/${props.slug}/file?path=${encodeURIComponent(path)}`, {
+        method: 'PUT',
+        body: file,
+        headers: { 'content-type': 'image/gif' },
+      })
+      props.onPath(path)
+    } catch (err) {
+      setError((err as Error).message)
+    }
+  }
+  return (
+    <Field id={`${props.id}-gif`} label={`GIF (${props.path})`}>
+      <input
+        id={`${props.id}-gif`}
+        type="file"
+        accept="image/gif"
+        className="w-full text-xs text-muted-foreground"
+        onChange={(e) => void pick(e.target.files?.[0])}
+      />
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </Field>
   )
 }
 
@@ -826,6 +860,53 @@ function BlockForm({
                   if (size > 0 && size <= 40) set({ size })
                 }}
               />
+            </Field>
+            {number('at', 'Appears at (s)')}
+          </div>
+        </>
+      )
+    case 'gif':
+      return (
+        <>
+          <GifUpload id={id} slug={slug} path={block.path} onPath={(path) => set({ path })} />
+          {text('label', 'Label (optional)')}
+          <div className="flex gap-2">
+            <Field id={`${id}-size`} label="Size">
+              <Input
+                id={`${id}-size`}
+                type="number"
+                min={1}
+                max={80}
+                value={block.size}
+                onChange={(e) => {
+                  const size = Number(e.target.value)
+                  if (size > 0 && size <= 80) set({ size })
+                }}
+              />
+            </Field>
+            <Field id={`${id}-speed`} label="Speed">
+              <Input
+                id={`${id}-speed`}
+                type="number"
+                min={0.1}
+                max={10}
+                step={0.1}
+                value={block.speed}
+                onChange={(e) => {
+                  const speed = Number(e.target.value)
+                  if (speed > 0 && speed <= 10) set({ speed })
+                }}
+              />
+            </Field>
+            <Field id={`${id}-loop`} label="Playback">
+              <Select
+                id={`${id}-loop`}
+                value={block.loop ? 'loop' : 'once'}
+                onChange={(e) => set({ loop: e.target.value === 'loop' })}
+              >
+                <option value="loop">loop</option>
+                <option value="once">play once</option>
+              </Select>
             </Field>
             {number('at', 'Appears at (s)')}
           </div>

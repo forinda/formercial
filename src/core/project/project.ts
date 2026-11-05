@@ -612,6 +612,21 @@ const BlockSchema = z.discriminatedUnion('type', [
     ),
   }),
   z.object({
+    type: z.literal('gif'),
+    at,
+    path: z
+      .string()
+      .regex(/^media\/[\w./-]+\.gif$/, { error: 'a .gif under media/' })
+      .refine((p) => !p.includes('..'), { error: 'a .gif under media/' }),
+    /** Height, in the same units as the scene's text. */
+    size: z.number().positive().max(80).default(30),
+    /** Play again from the start after the last frame; off holds the last frame. */
+    loop: z.boolean().default(true),
+    /** 2 plays twice as fast, 0.5 at half speed. */
+    speed: z.number().positive().max(10).default(1),
+    label: z.string().optional(),
+  }),
+  z.object({
     type: z.literal('doodle'),
     at,
     /** The drawing's own coordinates. Paths and labels are placed in them. */
