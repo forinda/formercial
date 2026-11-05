@@ -1,4 +1,5 @@
 import { defineModules } from '@forinda/kickjs'
+import { FunModule } from './fun/fun.module'
 import { MemesModule } from './memes/memes.module'
 import { PagesModule } from './pages/pages.module'
 import { ProjectsModule } from './projects/projects.module'
@@ -9,5 +10,6 @@ import { SeoModule } from './seo/seo.module'
 export const modules = defineModules()
   .mount(ProjectsModule())
   .mount(MemesModule())
+  .mount(FunModule())
   .mount(PagesModule())
   .mount(SeoModule())

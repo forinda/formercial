@@ -21,7 +21,6 @@ import {
   type MemeSize,
   type MemeText,
 } from '@/core/meme/meme'
-import { GIFEncoder, applyPalette, quantize } from 'gifenc'
 import { gifFrame, loadGif } from '@/player/blocks'
 
 // Anton ships with the app (public/fonts, SIL Open Font License), so memes look the same everywhere.
@@ -228,6 +227,8 @@ export default function MemeEditor({ id, meme: first }: { id: string; meme: Meme
     const animated = pic && pic.total > 0 ? pic : null
     const starts = animated ? animated.starts : stillFrames(meme.seconds)
     const delays = gifDelays(starts, animated ? animated.total : meme.seconds)
+    // Loaded here, on click: gifenc is CommonJS, and the server render can't import it by name.
+    const { GIFEncoder, applyPalette, quantize } = await import('gifenc')
     const gif = GIFEncoder()
     for (let i = 0; i < starts.length; i++) {
       const t = starts[i]
