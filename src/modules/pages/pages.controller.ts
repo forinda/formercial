@@ -141,6 +141,13 @@ export class PagesController {
     return inertia('SignWorkspace', { tool }, { meta: { title: tool.title } })
   }
 
+  @Get('/utilities/sign/:doc')
+  async signDocPage(ctx: RequestContext) {
+    const tool = (await this.tools.list()).find((t) => t.id === SIGN_TOOL)
+    if (!tool || !/^[0-9a-f]{16}$/.test(ctx.params.doc)) return notFound('No such document.')
+    return inertia('SignWorkspace', { tool, id: ctx.params.doc }, { meta: { title: tool.title } })
+  }
+
   @Get('/utilities/:id')
   async utilityPage(ctx: RequestContext) {
     // The workspace has its own page; the corner-picking signer it replaced led here too.

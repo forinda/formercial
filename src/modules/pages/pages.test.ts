@@ -58,6 +58,15 @@ describe('PagesController', () => {
       )
   })
 
+  it('a stored signing document opens in the workspace', async () => {
+    const http = await boot()
+    const res = await http.get('/utilities/sign/0123456789abcdef').set(visit).expect(200)
+    expect(res.body.component).toBe('SignWorkspace')
+    expect(res.body.props.id).toBe('0123456789abcdef')
+    for (const bad of ['..%2F_signatures', 'ABCDEF0123456789', 'x'])
+      await http.get(`/utilities/sign/${bad}`).set(visit).expect(404)
+  })
+
   it('GET /fun/<code> renders a room only for a real room code', async () => {
     const http = await boot()
     const res = await http.get('/fun/abc234').set(visit).expect(200)

@@ -58,4 +58,3 @@ export const placedItem = z.object({
 })
 export const placedItems = z.array(placedItem).max(500)
 export type Placed = z.infer<typeof placedItem>
-

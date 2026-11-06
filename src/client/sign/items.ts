@@ -100,6 +100,8 @@ export function useHistory<T>(initial: T) {
     set: (next: T) => setH((cur) => history.set(cur, next)),
     undo: () => setH(history.undo<T>),
     redo: () => setH(history.redo<T>),
+    /** Starts over from `value`, with nothing to undo (a document just opened). */
+    reset: (value: T) => setH(history.start(value)),
     canUndo: h.past.length > 0,
     canRedo: h.future.length > 0,
   }
