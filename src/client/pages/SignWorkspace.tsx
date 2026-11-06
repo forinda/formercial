@@ -6,6 +6,8 @@ import {
   CalendarDays,
   Check,
   Minus,
+  PanelLeftClose,
+  PanelLeftOpen,
   MousePointer2,
   PenLine,
   Plus,
@@ -38,6 +40,8 @@ import { loadPdf, type LoadedPdf } from '@/client/sign/pdf'
 import type { ToolSummary } from '@/modules/tools/tool-jobs.service'
 
 type Tool = 'select' | Label
+
+const RAIL_KEY = 'formercial:sign-rail'
 
 const TOOLS: { id: Tool; name: string; icon: LucideIcon }[] = [
   { id: 'select', name: 'Select and move', icon: MousePointer2 },
@@ -94,6 +98,22 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
   const [fit, setFit] = useState(1)
   const [current, setCurrent] = useState(1)
   const work = useRef<HTMLDivElement>(null)
+  // The tool rail shows names beside the icons, or just icons; remembered on this device.
+  const [railOpen, setRailOpen] = useState(() => {
+    try {
+      return localStorage.getItem(RAIL_KEY) !== 'closed'
+    } catch {
+      return true
+    }
+  })
+  const toggleRail = (open: boolean) => {
+    setRailOpen(open)
+    try {
+      localStorage.setItem(RAIL_KEY, open ? 'open' : 'closed')
+    } catch {
+      // A browser that won't store it just forgets it.
+    }
+  }
   const job = useToolJob(tool.id)
 
   // Open the chosen PDF.
@@ -345,20 +365,42 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
       )}
 
       <div className="flex min-h-0 flex-1">
-        <nav aria-label="Tools" className="flex w-12 flex-col items-center gap-1 border-r py-2">
+        <nav
+          aria-label="Tools"
+          className={cn(
+            'flex flex-col gap-1 border-r p-2 transition-[width]',
+            railOpen ? 'w-44' : 'w-14 items-center',
+          )}
+        >
           {TOOLS.map((t) => (
             <Button
               key={t.id}
               variant={active === t.id ? 'default' : 'ghost'}
-              size="icon"
-              aria-label={t.name}
-              title={t.name}
+              size={railOpen ? 'default' : 'icon'}
+              // Named on screen when open; when closed, the name is its label and its tooltip.
+              aria-label={railOpen ? undefined : t.name}
+              title={railOpen ? undefined : t.name}
               aria-pressed={active === t.id}
               onClick={() => setActive(t.id)}
+              className={cn(railOpen && 'justify-start')}
             >
               <t.icon />
+              {railOpen && t.name}
             </Button>
           ))}
+          <span className="flex-1" />
+          <Button
+            variant="ghost"
+            size={railOpen ? 'default' : 'icon'}
+            aria-expanded={railOpen}
+            aria-label={railOpen ? undefined : 'Show tool names'}
+            title={railOpen ? undefined : 'Show tool names'}
+            onClick={() => toggleRail(!railOpen)}
+            className={cn('text-muted-foreground', railOpen && 'justify-start')}
+          >
+            {railOpen ? <PanelLeftClose /> : <PanelLeftOpen />}
+            {railOpen && 'Hide names'}
+          </Button>
         </nav>
 
         <nav aria-label="Pages" className="hidden w-28 overflow-y-auto border-r p-2 md:block">
