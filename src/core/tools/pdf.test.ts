@@ -223,6 +223,20 @@ describe.runIf(hasPoppler)('signing workspace', () => {
     expect(await readFile(text, 'utf8')).toContain('6 Nov 2026')
   }, 60_000)
 
+  test("says so when text has letters the standard font can't draw", async () => {
+    const name: SignItem = {
+      kind: 'text',
+      pages: [1],
+      box: { x: 0.1, y: 0.1, w: 0.5, h: 0.05 },
+      text: '王小明',
+      size: 12,
+      color: 'black',
+    }
+    await expect(stamp(await blankPdf(1), [name], [])).rejects.toThrow(
+      'the text can only use Latin letters for now; use a typed signature for other scripts',
+    )
+  }, 60_000)
+
   test('a tick is drawn in its box', async () => {
     const tick: SignItem = {
       kind: 'tick',

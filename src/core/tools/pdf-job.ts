@@ -101,6 +101,16 @@ async function stamp(job: Extract<PdfJob, { kind: 'stamp' }>) {
     if (item.pages.some((p) => p > pages.length))
       throw new Error(`it has only ${pages.length} pages`)
   const font = await doc.embedFont(StandardFonts.Helvetica)
+  for (const item of job.items)
+    if (item.kind === 'text')
+      try {
+        font.encodeText(item.text)
+      } catch {
+        // ponytail: Helvetica only (WinAnsi); embed a wider font if other scripts are wanted as text.
+        throw new Error(
+          'the text can only use Latin letters for now; use a typed signature for other scripts',
+        )
+      }
   const pictures = await Promise.all(
     job.pictures.map(async (path) => {
       const bytes = await readFile(path)
