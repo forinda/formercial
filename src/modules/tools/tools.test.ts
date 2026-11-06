@@ -12,7 +12,7 @@ import { hasCommand } from '@/core/media/media'
 import { findChrome } from '@/core/render/cdp'
 import { htmlToPdf, mediaArgs, mediaConvert, officeToPdf } from '@/core/tools/converters'
 import { exec } from '@/core/tools/exec'
-import { pdfCompress, pdfToImages } from '@/core/tools/pdf'
+import { pdfCompress, pdfMerge, pdfSplit, pdfToImages, pdfToText } from '@/core/tools/pdf'
 import { sniff } from '@/core/tools/sniff'
 import { defineTool, type AnyTool } from '@/core/tools/tool'
 import { localOnly } from '@/middleware/local-only'
@@ -176,6 +176,15 @@ describe('tools that need the sandbox', () => {
 
     jobs.allowUnsandboxed = () => true
     await http.post('/api/v1/tools/guarded/jobs').send({}).expect(201)
+  })
+
+  test('PDF program tools are refused without a working sandbox', async () => {
+    const { http, jobs } = await boot([pdfMerge, pdfSplit, pdfCompress, pdfToImages, pdfToText])
+    jobs.canSandbox = async () => false
+    jobs.allowUnsandboxed = () => false
+    jobs.hasBwrap = async () => false
+    const list = (await http.get('/api/v1/tools').expect(200)).body
+    for (const tool of list) expect(tool.missing).toContain('bubblewrap')
   })
 
   test('are on where the sandbox works', async () => {

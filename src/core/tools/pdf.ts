@@ -40,6 +40,7 @@ export const pdfMerge = defineTool<Record<string, never>>({
   fields: [],
   options: z.object({}),
   needs: ['gs'],
+  needsSandbox: true,
   async run({ inputs, dir, exec }) {
     const out = `${stem(inputs[0])}-merged.pdf`
     await exec('gs', GS.concat('-o', join(dir, 'out', out), inputs))
@@ -68,6 +69,7 @@ export const pdfSplit = defineTool<{ mode: 'each' | 'range'; from: number; to: n
   ],
   options: z.object({ mode: z.enum(['each', 'range']).default('each'), ...range }),
   needs: ['gs'],
+  needsSandbox: true,
   async run({ inputs, dir, options, exec }) {
     const { mode, from, to } = options
     checkRange(from, to)
@@ -114,6 +116,7 @@ export const pdfCompress = defineTool<{ quality: (typeof QUALITY)[number] }>({
   ],
   options: z.object({ quality: z.enum(QUALITY).default('ebook') }),
   needs: ['gs'],
+  needsSandbox: true,
   note: 'Text stays sharp. A PDF that is mostly text may hardly shrink.',
   async run({ inputs, dir, options, exec }) {
     const outs = []
@@ -171,6 +174,7 @@ export const pdfToImages = defineTool<{
     ...range,
   }),
   needs: ['pdftoppm'],
+  needsSandbox: true,
   async run({ inputs, dir, options, exec }) {
     const { format, dpi, from, to } = options
     checkRange(from, to)
@@ -194,6 +198,7 @@ export const pdfToText = defineTool<Record<string, never>>({
   fields: [],
   options: z.object({}),
   needs: ['pdftotext'],
+  needsSandbox: true,
   note: 'Scanned pages are pictures of text, so they come out empty.',
   async run({ inputs, dir, exec }) {
     const outs = []
