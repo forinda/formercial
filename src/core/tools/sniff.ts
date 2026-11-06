@@ -34,6 +34,9 @@ export function sniff(bytes: Uint8Array): string | null {
   if (ascii(b, 0, 6) === 'GIF87a' || ascii(b, 0, 6) === 'GIF89a') return 'gif'
   if (starts(b, [0x89, 0x50, 0x4e, 0x47])) return 'png'
   if (starts(b, [0xff, 0xd8, 0xff])) return 'jpg'
+  // PKCS#12 (.p12, .pfx): an ASN.1 SEQUENCE whose first field is version 3.
+  if (b[0] === 0x30 && b[1] >= 0x80 && b[1] <= 0x84 && starts(b, [2, 1, 3], 2 + (b[1] & 0x7f)))
+    return 'p12'
   // Text: HTML if it looks like markup, after an optional byte-order mark and spaces.
   const text = ascii(b, starts(b, [0xef, 0xbb, 0xbf]) ? 3 : 0, 1024)
     .trimStart()

@@ -1,16 +1,18 @@
-import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import { mkdtemp, readFile, readdir, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { errorHandler, expressRuntime } from '@forinda/kickjs'
 import { createTestApp } from '@forinda/kickjs-testing'
 import express from 'express'
 import request from 'supertest'
+import { PDFDocument } from 'pdf-lib'
 import { describe, expect, test } from 'vitest'
 import { z } from 'zod'
 import { hasCommand } from '@/core/media/media'
 import { findChrome } from '@/core/render/cdp'
 import { htmlToPdf, mediaArgs, mediaConvert, officeToPdf } from '@/core/tools/converters'
 import { exec } from '@/core/tools/exec'
+import { pdfCompress, pdfToImages } from '@/core/tools/pdf'
 import { sniff } from '@/core/tools/sniff'
 import { defineTool, type AnyTool } from '@/core/tools/tool'
 import { localOnly } from '@/middleware/local-only'
@@ -80,6 +82,9 @@ describe('tool jobs over HTTP', () => {
       state: 'done',
       outputs: [{ file: 'in-1.txt', name: 'My_report.txt' }],
     })
+    // Once it ends, the upload and the options are gone; only what it made is kept.
+    expect(await readdir(join(jobs.root, job.id))).toEqual(['out'])
+    expect(jobs.status(job.id).options).toBeUndefined()
     const file = await http
       .get(`/api/v1/tools/jobs/${job.id}/files/in-1.txt`)
       .buffer(true)
@@ -257,5 +262,30 @@ describe.runIf(findChrome() !== null)('Chromium', () => {
   test('HTML prints to PDF', async () => {
     const pdf = await convert(htmlToPdf, bytes('<!doctype html><h1>Hello</h1>'))
     expect(sniff(pdf)).toBe('pdf')
+  }, 60_000)
+})
+
+// Through the runner, so in the sandbox where this machine has one.
+async function twoPages() {
+  const doc = await PDFDocument.create()
+  doc.addPage([200, 200])
+  doc.addPage([200, 200])
+  return doc.save()
+}
+
+describe.runIf(await hasCommand('gs', ['--version']))('Ghostscript', () => {
+  test('a PDF is compressed', async () => {
+    const pdf = await convert(pdfCompress, await twoPages())
+    expect(sniff(pdf)).toBe('pdf')
+  }, 60_000)
+})
+
+describe.runIf(await hasCommand('pdftoppm', ['-v']))('Poppler', () => {
+  test('a page becomes a PNG', async () => {
+    const png = await convert(pdfToImages, await twoPages(), {
+      to: 1,
+      dpi: 50,
+    })
+    expect(sniff(png)).toBe('png')
   }, 60_000)
 })
