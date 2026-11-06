@@ -84,10 +84,10 @@ export function SignatureDialog({ kind, name, onPick, onCancel }: Props) {
       role="dialog"
       aria-modal="true"
       aria-label={`Your ${kind}`}
-      className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4 max-md:p-0"
       onKeyDown={(e) => e.key === 'Escape' && onCancel()}
     >
-      <div className="grid max-h-full w-full max-w-xl gap-4 overflow-y-auto rounded-lg bg-background p-4">
+      <div className="grid max-h-full w-full max-w-xl gap-4 overflow-y-auto rounded-lg bg-background p-4 max-md:h-dvh max-md:max-w-none max-md:content-start max-md:rounded-none">
         <h2 className="font-semibold">Your {kind}</h2>
 
         {saved && saved.length > 0 && (
@@ -218,7 +218,7 @@ function DrawPad({ color, bind }: Bind & { color: string }) {
       <canvas
         ref={canvas}
         aria-label="Signing pad: draw with a mouse, pen or finger"
-        className="h-48 w-full touch-none rounded-md border bg-white"
+        className="h-48 w-full touch-none rounded-md border bg-white max-md:h-[45dvh]"
         onPointerDown={(e) => {
           e.currentTarget.setPointerCapture(e.pointerId)
           strokes.current.push([at(e)])
