@@ -20,13 +20,17 @@ const EXTS: Record<string, string[]> = {
   ooxml: ['docx', 'xlsx', 'pptx'],
   jpg: ['jpg', 'jpeg'],
   html: ['html', 'htm'],
+  p12: ['p12', 'pfx'],
 }
 /** Extensions to offer for the kinds a tool takes (as the server sniffs them). */
 const accepts = (kinds: string[]) => [...new Set(kinds.flatMap((k) => EXTS[k] ?? [k]))]
 
 const defaults = (tool: ToolSummary) =>
   Object.fromEntries(
-    tool.fields.map((f) => [f.key, f.kind === 'select' ? f.choices[0].value : 0]),
+    tool.fields.map((f) => [
+      f.key,
+      f.kind === 'select' ? f.choices[0].value : f.kind === 'text' ? '' : 0,
+    ]),
   ) as Record<string, string | number>
 
 export default function Utility({ tool }: { tool: ToolSummary }) {
@@ -117,6 +121,13 @@ export default function Utility({ tool }: { tool: ToolSummary }) {
                     </option>
                   ))}
                 </select>
+              ) : f.kind === 'text' ? (
+                <Input
+                  type={f.secret ? 'password' : 'text'}
+                  autoComplete={f.secret ? 'off' : undefined}
+                  value={options[f.key]}
+                  onChange={(e) => setOptions({ ...options, [f.key]: e.target.value })}
+                />
               ) : (
                 <Input
                   type="number"
@@ -130,7 +141,7 @@ export default function Utility({ tool }: { tool: ToolSummary }) {
             </label>
           ))}
           <Button type="submit" disabled={busy || files.length < tool.minFiles}>
-            {step || (busy ? 'Working…' : 'Convert')}
+            {step || (busy ? 'Working…' : tool.action)}
           </Button>
         </form>
       )}

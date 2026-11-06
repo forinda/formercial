@@ -99,6 +99,7 @@ export class ToolJobs {
         title: tool.title,
         description: tool.description,
         group: tool.group,
+        action: tool.action ?? 'Convert',
         accepts: tool.accepts,
         minFiles: tool.minFiles ?? 1,
         maxFiles: tool.maxFiles ?? 1,
@@ -185,6 +186,11 @@ export class ToolJobs {
     } catch (err) {
       job.state = 'failed'
       job.error = signal.aborted ? 'it took too long, so it was stopped' : (err as Error).message
+    } finally {
+      // Uploads and options (a certificate's password, say) aren't needed once it ends.
+      job.options = undefined
+      for (const name of await readdir(dir).catch(() => []))
+        if (name.startsWith('in-')) await rm(join(dir, name), { force: true })
     }
   }
 

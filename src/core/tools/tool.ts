@@ -8,6 +8,8 @@ import type { z } from 'zod'
 export type ToolField =
   | { key: string; label: string; kind: 'select'; choices: { value: string; label: string }[] }
   | { key: string; label: string; kind: 'number'; min?: number; max?: number; step?: number }
+  /** `secret`: typed in a password box, and never shown back. */
+  | { key: string; label: string; kind: 'text'; secret?: boolean }
 
 export type ToolRun<Options> = {
   /** Absolute paths of the uploaded files, in the order they were given. */
@@ -25,6 +27,8 @@ export interface ToolDef<Options> {
   title: string
   description: string
   group: 'media' | 'documents' | 'pdf'
+  /** The run button's word, if not "Convert". */
+  action?: string
   /** File kinds it takes, as sniff() names them. */
   accepts: string[]
   minFiles?: number

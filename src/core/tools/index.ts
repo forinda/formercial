@@ -7,6 +7,15 @@ import {
   officeToPdf,
   pdfToWord,
 } from './converters'
+import {
+  pdfCompress,
+  pdfMerge,
+  pdfSignDigital,
+  pdfSignVisual,
+  pdfSplit,
+  pdfToImages,
+  pdfToText,
+} from './pdf'
 import type { AnyTool } from './tool'
 
 export const TOOLS: AnyTool[] = [
@@ -16,4 +25,11 @@ export const TOOLS: AnyTool[] = [
   pdfToWord,
   htmlToWord,
   htmlToPdf,
+  pdfMerge,
+  pdfSplit,
+  pdfCompress,
+  pdfToImages,
+  pdfToText,
+  pdfSignVisual,
+  pdfSignDigital,
 ]

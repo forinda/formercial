@@ -1,13 +1,20 @@
 // Each utility's icon, by its id; a new tool without one gets its group's.
 import {
   Clapperboard,
+  Combine,
   FileCode,
+  FileImage,
+  FileKey,
   FileOutput,
   FilePen,
   FileStack,
   FileText,
   Printer,
   Repeat,
+  ScanText,
+  Shrink,
+  Signature,
+  Split,
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/client/lib/utils'
@@ -19,6 +26,13 @@ const BY_ID: Record<string, LucideIcon> = {
   'pdf-to-docx': FilePen,
   'html-to-docx': FileCode,
   'html-to-pdf': Printer,
+  'pdf-merge': Combine,
+  'pdf-split': Split,
+  'pdf-compress': Shrink,
+  'pdf-to-images': FileImage,
+  'pdf-to-text': ScanText,
+  'pdf-sign': Signature,
+  'pdf-sign-digital': FileKey,
 }
 
 const BY_GROUP: Record<string, LucideIcon> = {

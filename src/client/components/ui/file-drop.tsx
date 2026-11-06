@@ -49,7 +49,9 @@ export function FilePreview({
   const kind = kindOf(name)
   const box = cn('w-full rounded-md border bg-secondary/40', className)
   if (kind === 'image')
-    return <img src={url} alt={name} className={cn(box, 'max-h-64 object-contain')} />
+    return (
+      <img src={url} alt={name} loading="lazy" className={cn(box, 'max-h-64 object-contain')} />
+    )
   if (kind === 'video') return <video src={url} controls muted className={cn(box, 'max-h-64')} />
   if (kind === 'audio') return <audio src={url} controls className="w-full" />
   if (kind === 'pdf') return <iframe src={url} title={name} className={cn(box, 'h-80')} />
