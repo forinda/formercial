@@ -109,28 +109,40 @@ export const mediaConvert = defineTool<MediaOptions>({
 
 // ─── Documents (LibreOffice) ──────────────────────────────────────────────────
 
-/** LibreOffice headless, with a profile of its own in the job's folder. */
+const SCRIPTING = '/org.openoffice.Office.Common/Security/Scripting'
+
 /**
  * Settings for LibreOffice's own profile, so a document can't reach outside
  * itself even where there is no sandbox: no linked pictures or sections from the
- * web or this machine, no macros, no OLE or DDE. Tested in tools.test.ts.
+ * web or this machine, no macros, no OLE or DDE, and links never updated
+ * (LibreOffice's "never": Writer 0, Calc 1).
+ *
+ * Formulas are always recalculated on load (0), so a spreadsheet saved with
+ * stale or missing results still prints the right totals; formulas that reach
+ * outside (WEBSERVICE, links to other workbooks) are refused by LibreOffice as
+ * external content even then. Both tested in office-safety.test.ts.
  */
+const SAFE_SETTINGS: [path: string, name: string, value: string][] = [
+  [SCRIPTING, 'BlockUntrustedRefererLinks', 'true'],
+  [SCRIPTING, 'DisableActiveContent', 'true'],
+  [SCRIPTING, 'DisableMacrosExecution', 'true'],
+  [SCRIPTING, 'MacroSecurityLevel', '3'],
+  ['/org.openoffice.Office.Writer/Content/Update', 'Link', '0'],
+  ['/org.openoffice.Office.Calc/Content/Update', 'Link', '1'],
+  ['/org.openoffice.Office.Calc/Formula/Load', 'ODFRecalcMode', '0'],
+  ['/org.openoffice.Office.Calc/Formula/Load', 'OOXMLRecalcMode', '0'],
+]
+
 export const SAFE_PROFILE = `<?xml version="1.0" encoding="UTF-8"?>
 <oor:items xmlns:oor="http://openoffice.org/2001/registry" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-${[
-  ['BlockUntrustedRefererLinks', 'true'],
-  ['DisableActiveContent', 'true'],
-  ['DisableMacrosExecution', 'true'],
-  ['MacroSecurityLevel', '3'],
-]
-  .map(
-    ([name, value]) =>
-      `<item oor:path="/org.openoffice.Office.Common/Security/Scripting"><prop oor:name="${name}" oor:op="fuse"><value>${value}</value></prop></item>`,
-  )
-  .join('\n')}
+${SAFE_SETTINGS.map(
+  ([path, name, value]) =>
+    `<item oor:path="${path}"><prop oor:name="${name}" oor:op="fuse"><value>${value}</value></prop></item>`,
+).join('\n')}
 </oor:items>
 `
 
+/** LibreOffice headless, with a safe profile of its own in the job's folder. */
 async function soffice(job: ToolRun<unknown>, convertTo: string, infilter?: string) {
   const profile = join(job.dir, 'lo-profile')
   await mkdir(join(profile, 'user'), { recursive: true })
@@ -162,6 +174,7 @@ export const officeToPdf = defineTool<Record<string, never>>({
   fields: [],
   options: z.object({}),
   needs: ['soffice'],
+  needsSandbox: true,
   run: (job) => soffice(job, 'pdf'),
 })
 
@@ -186,6 +199,7 @@ export const officeConvert = defineTool<{ to: 'docx' | 'odt' | 'rtf' }>({
   ],
   options: z.object({ to: z.enum(['docx', 'odt', 'rtf']).default('docx') }),
   needs: ['soffice'],
+  needsSandbox: true,
   run: (job) => soffice(job, job.options.to),
 })
 
@@ -198,6 +212,7 @@ export const pdfToWord = defineTool<Record<string, never>>({
   fields: [],
   options: z.object({}),
   needs: ['soffice'],
+  needsSandbox: true,
   note: 'Simple documents come out well; complex layouts, columns and scans lose their shape.',
   run: (job) => soffice(job, 'docx:MS Word 2007 XML', 'writer_pdf_import'),
 })

@@ -33,6 +33,11 @@ export interface ToolDef<Options> {
   options: z.ZodType<Options>
   /** Programs it needs on this machine; missing ones show as unavailable, not as a failure. */
   needs: string[]
+  /**
+   * Opens documents that can link outside themselves: only offered where the
+   * sandbox works, unless TOOLS_ALLOW_UNSANDBOXED is set.
+   */
+  needsSandbox?: boolean
   /** A note shown with the tool, like how well it keeps layouts. */
   note?: string
   /** Returns the names of the files it wrote into `${dir}/out`. */

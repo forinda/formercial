@@ -89,7 +89,7 @@ export default function Utility({ tool }: { tool: ToolSummary }) {
       </div>
       {tool.missing.length > 0 ? (
         <p className="text-destructive">
-          This machine needs {tool.missing.join(', ')} installed for this one.
+          This machine is missing {tool.missing.join(', ')} for this one.
         </p>
       ) : (
         <form onSubmit={run} className="grid gap-4">

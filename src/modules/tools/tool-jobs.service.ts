@@ -5,11 +5,11 @@ import { randomBytes } from 'node:crypto'
 import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { HttpException, Service } from '@forinda/kickjs'
+import { getEnv, HttpException, Service } from '@forinda/kickjs'
 import { findChrome } from '@/core/render/cdp'
 import { hasCommand } from '@/core/media/media'
 import { exec } from '@/core/tools/exec'
-import { sandboxed } from '@/core/tools/sandbox'
+import { canSandbox, sandboxed } from '@/core/tools/sandbox'
 import { TOOLS } from '@/core/tools'
 import type { AnyTool } from '@/core/tools/tool'
 import { sniff } from '@/core/tools/sniff'
@@ -69,32 +69,50 @@ export class ToolJobs {
 
   private dir = (id: string) => join(this.root, id)
 
-  /** Every tool, with any programs it needs that this machine lacks (checked once). */
-  async list() {
+  /** Whether programs can run in the sandbox; tests swap it. */
+  canSandbox = canSandbox
+  /** Whether the owner lets document tools run without the sandbox; tests swap it. */
+  allowUnsandboxed = () => getEnv('TOOLS_ALLOW_UNSANDBOXED') === true
+  /** Whether bwrap is installed at all, working or not; tests swap it. */
+  hasBwrap = () => hasCommand('bwrap', ['--version'])
+
+  /** What a tool lacks on this machine: programs (checked once), or the sandbox it needs. */
+  private async missing(tool: AnyTool): Promise<string[]> {
     this.available ??= Promise.all(
       [...new Set(this.tools.flatMap((t) => t.needs))].map(
         async (n) => [n, await present(n)] as const,
       ),
     ).then(Object.fromEntries)
     const have = await this.available
-    return this.tools.map(
-      ({ id, title, description, group, accepts, minFiles, maxFiles, fields, needs, note }) => ({
-        id,
-        title,
-        description,
-        group,
-        accepts,
-        minFiles: minFiles ?? 1,
-        maxFiles: maxFiles ?? 1,
-        fields,
-        note,
-        missing: needs.filter((n) => !have[n]),
-      }),
+    const lacks = tool.needs.filter((n) => !have[n])
+    if (tool.needsSandbox && !this.allowUnsandboxed() && !(await this.canSandbox()))
+      // Installed but refused (some containers and kernels block it) isn't fixed by installing it.
+      lacks.push((await this.hasBwrap()) ? 'a working bubblewrap sandbox' : 'bubblewrap')
+    return lacks
+  }
+
+  /** Every tool, with whatever it lacks on this machine. */
+  async list() {
+    return Promise.all(
+      this.tools.map(async (tool) => ({
+        id: tool.id,
+        title: tool.title,
+        description: tool.description,
+        group: tool.group,
+        accepts: tool.accepts,
+        minFiles: tool.minFiles ?? 1,
+        maxFiles: tool.maxFiles ?? 1,
+        fields: tool.fields,
+        note: tool.note,
+        missing: await this.missing(tool),
+      })),
     )
   }
 
   async create(toolId: unknown, options: unknown): Promise<ToolJob> {
     const tool = this.tool(toolId)
+    const lacks = await this.missing(tool)
+    if (lacks.length) throw HttpException.badRequest(`this machine is missing ${lacks.join(', ')}`)
     const parsed = tool.options.safeParse(options ?? {})
     if (!parsed.success) throw HttpException.badRequest('those options are not right for this tool')
     await this.sweep()
