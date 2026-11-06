@@ -119,6 +119,14 @@ describe('tool jobs over HTTP', () => {
     expect(String(viewed.headers['content-disposition'])).toMatch(/^inline/)
   })
 
+  test("a tool's own size cap is enforced", async () => {
+    const small = defineTool<{ fail: boolean }>({ ...shout, id: 'small', maxSize: 10 })
+    const { http } = await boot([small])
+    expect((await http.get('/api/v1/tools').expect(200)).body[0].maxSize).toBe(10)
+    const { body: job } = await http.post('/api/v1/tools/small/jobs').send({}).expect(201)
+    await upload(http, job.id, 'big.pdf', bytes('%PDF-1.4 twenty bytes')).expect(413)
+  })
+
   test('a file is judged by its contents, not its name', async () => {
     const { http } = await boot()
     const { body: job } = await http.post('/api/v1/tools/shout/jobs').send({}).expect(201)

@@ -103,6 +103,7 @@ export class ToolJobs {
         accepts: tool.accepts,
         minFiles: tool.minFiles ?? 1,
         maxFiles: tool.maxFiles ?? 1,
+        maxSize: tool.maxSize ?? MAX_FILE,
         fields: tool.fields,
         note: tool.note,
         missing: await this.missing(tool),
@@ -131,6 +132,11 @@ export class ToolJobs {
     await mkdir(join(this.dir(job.id), 'out'), { recursive: true })
     this.jobs.set(job.id, job)
     return job
+  }
+
+  /** The largest file this job's tool takes. */
+  sizeLimit(id: string): number {
+    return this.tool(this.job(id).tool).maxSize ?? MAX_FILE
   }
 
   /** Add one file. Its kind comes from its contents, and must be one the tool takes. */

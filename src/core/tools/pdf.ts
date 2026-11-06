@@ -3,11 +3,9 @@
 // through pdf-lib and @signpdf in this process. Each writes into `${dir}/out`.
 import { readFile, readdir, rename, writeFile } from 'node:fs/promises'
 import { basename, extname, join } from 'node:path'
-import { pdflibAddPlaceholder } from '@signpdf/placeholder-pdf-lib'
-import { SignPdf } from '@signpdf/signpdf'
-import { P12Signer } from '@signpdf/signer-p12'
-import { PDFDocument } from 'pdf-lib'
 import { z } from 'zod'
+import type { Corner, PdfJob } from './pdf-job'
+import { runPdfJob } from './pdf-worker'
 import { defineTool, type ToolField } from './tool'
 
 const stem = (path: string) => basename(path, extname(path))
@@ -221,27 +219,14 @@ function pair(inputs: string[], other: string[], what: string) {
   return [pdf[0], rest[0]] as const
 }
 
-// ponytail: pdf-lib runs in this process, so a huge PDF holds the server up while it loads; a worker if that bites.
-async function open(path: string) {
-  try {
-    return await PDFDocument.load(await readFile(path), { updateMetadata: false })
-  } catch (err) {
-    if ((err as Error).name === 'EncryptedPDFError')
-      throw new Error('this PDF has a password; take it off first')
-    throw err
-  }
-}
-
+/** Signing reads the whole PDF into memory, so it takes smaller files than the programs do. */
+const SIGN_MAX = 50 * 1024 * 1024
 const CORNERS = ['bottom-right', 'bottom-left', 'top-right', 'top-left'] as const
-type Corner = (typeof CORNERS)[number]
 
-/** Where a picture w×h goes on a page W×H: in a corner, half an inch in. */
-export function place(corner: Corner, W: number, H: number, w: number, h: number) {
-  const m = 36
-  return {
-    x: corner.endsWith('left') ? m : W - w - m,
-    y: corner.startsWith('top') ? H - h - m : m,
-  }
+/** Signing runs in a worker, so the job's time limit stops it; the files stay in the job's folder. */
+async function signed(job: PdfJob, signal: AbortSignal) {
+  await runPdfJob(job, signal)
+  return [basename(job.out)]
 }
 
 export const pdfSignVisual = defineTool<{ page: number; corner: Corner; width: number }>({
@@ -251,6 +236,7 @@ export const pdfSignVisual = defineTool<{ page: number; corner: Corner; width: n
   group: 'pdf',
   action: 'Sign',
   accepts: ['pdf', 'png', 'jpg'],
+  maxSize: SIGN_MAX,
   minFiles: 2,
   maxFiles: 2,
   fields: [
@@ -280,22 +266,10 @@ export const pdfSignVisual = defineTool<{ page: number; corner: Corner; width: n
   }),
   needs: [],
   note: `Add the PDF and a PNG or JPG of your signature (a transparent PNG looks best). This is a picture, not a digital signature. ${RESIGN}`,
-  async run({ inputs, dir, options }) {
-    const [pdfPath, picPath] = pair(inputs, ['png', 'jpg'], 'one PNG or JPG of your signature')
-    const doc = await open(pdfPath)
-    const bytes = await readFile(picPath)
-    const pic = picPath.endsWith('.png') ? await doc.embedPng(bytes) : await doc.embedJpg(bytes)
-    const all = doc.getPages()
-    const n = options.page || all.length
-    if (n > all.length) throw new Error(`it has only ${all.length} pages`)
-    const page = all[n - 1]
-    const [W, H] = [page.getWidth(), page.getHeight()]
-    const w = Math.min(options.width, W - 72)
-    const h = (pic.height / pic.width) * w
-    page.drawImage(pic, { ...place(options.corner, W, H, w, h), width: w, height: h })
-    const out = `${stem(pdfPath)}-signed.pdf`
-    await writeFile(join(dir, 'out', out), await doc.save())
-    return [out]
+  async run({ inputs, dir, options, signal }) {
+    const [pdf, picture] = pair(inputs, ['png', 'jpg'], 'one PNG or JPG of your signature')
+    const out = join(dir, 'out', `${stem(pdf)}-signed.pdf`)
+    return signed({ kind: 'visual', pdf, picture, out, ...options }, signal)
   },
 })
 
@@ -307,6 +281,7 @@ export const pdfSignDigital = defineTool<{ password: string; reason: string }>({
   group: 'pdf',
   action: 'Sign',
   accepts: ['pdf', 'p12'],
+  maxSize: SIGN_MAX,
   minFiles: 2,
   maxFiles: 2,
   fields: [
@@ -319,26 +294,9 @@ export const pdfSignDigital = defineTool<{ password: string; reason: string }>({
   }),
   needs: [],
   note: `Add the PDF and your certificate (.p12 or .pfx). Uploads and the password are forgotten as soon as the job ends. ${RESIGN}`,
-  async run({ inputs, dir, options }) {
-    const [pdfPath, p12Path] = pair(inputs, ['p12'], 'one certificate (.p12 or .pfx)')
-    const doc = await open(pdfPath)
-    pdflibAddPlaceholder({
-      pdfDoc: doc,
-      reason: options.reason || 'Signed',
-      contactInfo: '',
-      name: '',
-      location: '',
-    })
-    // The signature covers exact byte ranges, so the file is written without object streams.
-    const unsigned = await doc.save({ useObjectStreams: false })
-    const signer = new P12Signer(await readFile(p12Path), { passphrase: options.password })
-    const signed = await new SignPdf().sign(unsigned, signer).catch((err: Error) => {
-      throw new Error(
-        /password|MAC/i.test(err.message) ? "that isn't the certificate's password" : err.message,
-      )
-    })
-    const out = `${stem(pdfPath)}-signed.pdf`
-    await writeFile(join(dir, 'out', out), signed)
-    return [out]
+  async run({ inputs, dir, options, signal }) {
+    const [pdf, p12] = pair(inputs, ['p12'], 'one certificate (.p12 or .pfx)')
+    const out = join(dir, 'out', `${stem(pdf)}-signed.pdf`)
+    return signed({ kind: 'digital', pdf, p12, out, ...options }, signal)
   },
 })

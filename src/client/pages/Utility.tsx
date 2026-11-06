@@ -15,7 +15,6 @@ type Job = {
   error?: string
 }
 
-const MAX_FILE = 200 * 1024 * 1024
 const EXTS: Record<string, string[]> = {
   ooxml: ['docx', 'xlsx', 'pptx'],
   jpg: ['jpg', 'jpeg'],
@@ -102,7 +101,7 @@ export default function Utility({ tool }: { tool: ToolSummary }) {
             onChange={setFiles}
             accept={accepts(tool.accepts)}
             max={max}
-            maxSize={MAX_FILE}
+            maxSize={tool.maxSize}
             disabled={busy}
             label={max > 1 ? 'Drop your files here' : 'Drop your file here'}
           />
