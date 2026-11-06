@@ -14,6 +14,8 @@ type Props = {
   onSelect(): void
   onChange(next: Placed): void
   onDelete(): void
+  /** Whether two fingers are zooming the work area. */
+  pinching(): boolean
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v))
@@ -27,6 +29,7 @@ export function ItemBox({
   onSelect,
   onChange,
   onDelete,
+  pinching,
 }: Props) {
   // While dragging, the box moves here; it's committed (one undo step) on release.
   const [live, setLive] = useState<Placed | null>(null)
@@ -35,7 +38,9 @@ export function ItemBox({
   const { x, y, w, h } = shown.box
 
   function down(e: PointerEvent, resize: boolean) {
-    e.stopPropagation()
+    // Not stopped: the work area needs every finger to see a pinch. A press on the
+    // handle is the handle's, not the item's.
+    if (!resize && (e.target as Element).closest('[data-handle]')) return
     e.preventDefault()
     onSelect()
     ;(e.currentTarget as Element).setPointerCapture(e.pointerId)
@@ -45,6 +50,12 @@ export function ItemBox({
   function move(e: PointerEvent) {
     const s = start.current
     if (!s) return
+    // A second finger makes it a pinch: the item goes back where it was.
+    if (pinching()) {
+      setLive(null)
+      start.current = null
+      return
+    }
     const dx = (e.clientX - s.x) / px.width
     const dy = (e.clientY - s.y) / px.height
     const b = s.item.box
@@ -140,6 +151,7 @@ export function ItemBox({
       {selected && (
         <span
           aria-hidden
+          data-handle
           onPointerDown={(e) => down(e, true)}
           className="absolute -right-2 -bottom-2 size-4 cursor-nwse-resize rounded-sm border-2 border-background bg-primary touch:size-6"
         />

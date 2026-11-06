@@ -18,14 +18,7 @@ import {
   UserRound,
   type LucideIcon,
 } from 'lucide-react'
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type PointerEvent as ReactPointerEvent,
-} from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Button } from '@/client/components/ui/button'
 import { FileDrop, RemotePreview } from '@/client/components/ui/file-drop'
 import { cn } from '@/client/lib/utils'
@@ -44,6 +37,7 @@ import {
   type Placed,
 } from '@/client/sign/items'
 import { PdfPage } from '@/client/sign/Page'
+import { usePinch } from '@/client/sign/pinch'
 import { SignatureDialog } from '@/client/sign/SignatureDialog'
 import { loadPdf, type LoadedPdf } from '@/client/sign/pdf'
 import type { ToolSummary } from '@/modules/tools/tool-jobs.service'
@@ -527,6 +521,7 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
                         onSelect={() => setSelected({ id: i.id, page: n })}
                         onChange={(next) => changed(next, n)}
                         onDelete={() => remove(i.id)}
+                        pinching={pinch.active}
                       />
                     ))}
                 </PdfPage>
@@ -641,32 +636,4 @@ function useWide() {
     return () => q.removeEventListener('change', on)
   }, [])
   return wide
-}
-
-/** Two fingers on the work area zoom it, from where they started. */
-function usePinch(scale: number, setZoom: (zoom: number) => void) {
-  const fingers = useRef(new Map<number, { x: number; y: number }>())
-  const start = useRef<{ apart: number; scale: number } | null>(null)
-  const apart = () => {
-    const [a, b] = [...fingers.current.values()]
-    return Math.hypot(a.x - b.x, a.y - b.y)
-  }
-  return {
-    down(e: ReactPointerEvent) {
-      if (e.pointerType !== 'touch') return
-      fingers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
-      if (fingers.current.size === 2) start.current = { apart: apart(), scale }
-    },
-    move(e: ReactPointerEvent) {
-      if (!fingers.current.has(e.pointerId)) return
-      fingers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
-      const s = start.current
-      if (s && fingers.current.size === 2 && s.apart > 0)
-        setZoom(Math.min(6, Math.max(0.2, (s.scale * apart()) / s.apart)))
-    },
-    up(e: ReactPointerEvent) {
-      fingers.current.delete(e.pointerId)
-      if (fingers.current.size < 2) start.current = null
-    },
-  }
 }
