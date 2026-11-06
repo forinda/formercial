@@ -1,9 +1,9 @@
 // The signing workspace's items, as the page keeps them, and turning them into
 // what the server stamps (src/core/tools/sign-items.ts).
 import { useState } from 'react'
-import type { Box, SignItem } from '@/core/tools/sign-items'
+import type { Placed, SignItem } from '@/core/tools/sign-items'
 
-export type Label = 'signature' | 'initials' | 'date' | 'name' | 'text' | 'tick'
+export type Label = Placed['label']
 /** An ink: a #rrggbb colour. */
 export type Ink = string
 
@@ -19,17 +19,8 @@ export const INKS = [
 ]
 export const DEFAULT_INK = INKS[1].color
 
-/** One placed thing. Signatures and initials are drawn from the workspace's picture for that label. */
-export type Placed = {
-  id: string
-  label: Label
-  pages: number[]
-  box: Box
-  color: Ink
-  /** Date, name and text: the words, and their size in points. */
-  text?: string
-  size?: number
-}
+/** One placed thing (checked by the server when a document is saved). */
+export type { Placed }
 
 export const isPicture = (label: Label) => label === 'signature' || label === 'initials'
 export const isText = (label: Label) => label === 'date' || label === 'name' || label === 'text'
