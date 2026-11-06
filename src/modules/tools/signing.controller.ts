@@ -1,7 +1,6 @@
 // Signing documents kept on this machine: list, open, save what's placed,
 // keep signed copies as versions, delete.
 import { Controller, Delete, Get, Post, Put, reply, type RequestContext } from '@forinda/kickjs'
-import { HttpException } from '@forinda/kickjs'
 import { readBody } from '@/modules/projects/http/read-body'
 import { MAX_SIGNING_PDF, SigningStore } from './signing-store.service'
 import { ToolJobs } from './tool-jobs.service'
@@ -78,18 +77,25 @@ export class SigningController {
     )
   }
 
-  /** Keeps a finished signing job's output as this document's next version. */
-  @Post('/:id/versions')
-  async addVersion(ctx: RequestContext) {
-    const { job, file, digital } = (ctx.body ?? {}) as Record<string, unknown>
-    if (typeof job !== 'string' || typeof file !== 'string')
-      throw HttpException.notFound('no such job')
-    const status = this.jobs.status(job)
-    // Only the workspace's own tool, finished: nothing else can become a version.
-    if (status.tool !== 'pdf-workspace-sign' || status.state !== 'done')
-      throw HttpException.notFound('no such finished signing job')
-    const { bytes } = await this.jobs.output(job, file)
-    return reply.created(await this.store.addVersion(ctx.params.id, bytes, digital === true))
+  /**
+   * Binds a signing job, before it starts, to this document: when it finishes
+   * the server keeps its output as the next version, whether or not the page is
+   * still open. Digitally signed only if a certificate went in (and the copy
+   * carries a signature).
+   */
+  @Post('/:id/jobs/:job')
+  async bind(ctx: RequestContext) {
+    const id = ctx.params.id
+    await this.store.read(id)
+    this.jobs.whenDone(ctx.params.job, 'pdf-workspace-sign', async (job) => {
+      const { bytes } = await this.jobs.output(job.id, job.outputs[0])
+      await this.store.addVersion(
+        id,
+        bytes,
+        job.files.some((f) => f.kind === 'p12'),
+      )
+    })
+    return reply.noContent()
   }
 
   @Get('/:id/versions/:n')

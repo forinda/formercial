@@ -176,24 +176,21 @@ function Workspace({ tool, id }: { tool: ToolSummary; id: string }) {
   // Why Finish can't go ahead yet, if it can't.
   const [finishError, setFinishError] = useState('')
 
-  // Each Finish is kept with the document as its next version.
-  const digital = useRef(false)
+  // Each Finish is kept by the server as the document's next version (even if
+  // this page is closed first); once done, the document's versions are reloaded.
   const kept = useRef<string | null>(null)
   const [version, setVersion] = useState<SigningVersion | null>(null)
   const [keepError, setKeepError] = useState('')
   useEffect(() => {
     const j = job.job
-    if (j?.state !== 'done' || kept.current === j.id || !j.outputs[0]) return
+    if (j?.state !== 'done' || kept.current === j.id) return
     kept.current = j.id
     setVersion(null)
     setKeepError('')
-    api<SigningVersion>(`${DOC}/versions`, {
-      method: 'POST',
-      json: { job: j.id, file: j.outputs[0].file, digital: digital.current },
-    }).then(
-      (v) => {
-        setVersion(v)
-        setDoc((d) => d && { ...d, versions: d.versions.concat([v]) })
+    api<SigningDoc>(DOC).then(
+      (d) => {
+        setVersion(d.versions.at(-1) ?? null)
+        setDoc((old) => old && { ...old, versions: d.versions })
       },
       (err: Error) => setKeepError(err.message),
     )
@@ -372,8 +369,9 @@ function Workspace({ tool, id }: { tool: ToolSummary; id: string }) {
     }
     // The certificate goes last; the server signs the stamped copy with it.
     if (certificate) files.push({ name: certificate.file.name, body: certificate.file })
-    digital.current = !!certificate
-    await job.run({ items: signItems, password: certificate?.password ?? '' }, files)
+    await job.run({ items: signItems, password: certificate?.password ?? '' }, files, (id) =>
+      api(`${DOC}/jobs/${id}`, { method: 'POST' }),
+    )
   }
 
   if (!pdf)

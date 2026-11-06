@@ -10,15 +10,20 @@ export type Job = {
   error?: string
 }
 
-/** Makes the job, sends the files in order, and starts it; `step` hears what it's doing. */
+/**
+ * Makes the job, sends the files in order, and starts it; `step` hears what
+ * it's doing. `bind` runs once the job exists, before anything is sent.
+ */
 export async function startJob(
   tool: string,
   options: unknown,
   files: { name: string; body: Blob }[],
   step: (words: string) => void = () => {},
+  bind?: (id: string) => Promise<unknown>,
 ): Promise<Job> {
   step('Starting…')
   const made = await api<Job>(`/api/v1/tools/${tool}/jobs`, { method: 'POST', json: { options } })
+  await bind?.(made.id)
   for (const [i, file] of files.entries()) {
     step(`Sending ${files.length > 1 ? `file ${i + 1} of ${files.length}` : 'the file'}…`)
     await api(`/api/v1/tools/jobs/${made.id}/files?name=${encodeURIComponent(file.name)}`, {
@@ -49,11 +54,15 @@ export function useToolJob(tool: string) {
     return () => clearTimeout(timer)
   }, [job])
 
-  async function run(options: unknown, files: { name: string; body: Blob }[]) {
+  async function run(
+    options: unknown,
+    files: { name: string; body: Blob }[],
+    bind?: (id: string) => Promise<unknown>,
+  ) {
     setError('')
     setJob(null)
     try {
-      setJob(await startJob(tool, options, files, setStep))
+      setJob(await startJob(tool, options, files, setStep, bind))
     } catch (err) {
       setError((err as Error).message)
     } finally {

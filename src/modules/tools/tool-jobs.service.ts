@@ -48,6 +48,8 @@ export class ToolJobs {
   /** The tools on offer; tests swap in their own. */
   tools: AnyTool[] = TOOLS
   private readonly jobs = new Map<string, ToolJob>()
+  /** What to do with a job's outputs once made, before it counts as done. */
+  private readonly after = new Map<string, (job: ToolJob) => Promise<void>>()
   private queue: Promise<unknown> = Promise.resolve()
   private available?: Promise<Record<string, boolean>>
 
@@ -167,6 +169,18 @@ export class ToolJobs {
     return job
   }
 
+  /**
+   * Has `then` run with a job's outputs once it makes them, whether or not
+   * anyone is still watching; the job is done only after it. Set before it starts.
+   */
+  whenDone(id: string, tool: string, then: (job: ToolJob) => Promise<void>) {
+    const job = this.job(id)
+    if (job.tool !== tool) throw HttpException.notFound('no such job')
+    if (job.state !== 'waiting') throw HttpException.badRequest('this job has started')
+    if (this.after.has(id)) throw HttpException.badRequest('this job is spoken for')
+    this.after.set(id, then)
+  }
+
   /** Resolves once every job started so far has finished. For tests. */
   idle() {
     return this.queue
@@ -188,6 +202,11 @@ export class ToolJobs {
       // What's really in out/, not what the tool said: nothing outside it is ever offered.
       job.outputs = (await readdir(join(dir, 'out'))).filter((n) => !n.startsWith('.')).sort()
       if (!job.outputs.length) throw new Error('it finished without making anything')
+      await this.after
+        .get(job.id)?.(job)
+        .catch((err: Error) => {
+          throw new Error(`it was made, but couldn't be kept: ${err.message}`)
+        })
       job.state = 'done'
     } catch (err) {
       job.state = 'failed'
@@ -195,6 +214,7 @@ export class ToolJobs {
     } finally {
       // Uploads and options (a certificate's password, say) aren't needed once it ends.
       job.options = undefined
+      this.after.delete(job.id)
       for (const name of await readdir(dir).catch(() => []))
         if (name.startsWith('in-')) await rm(join(dir, name), { force: true })
     }
