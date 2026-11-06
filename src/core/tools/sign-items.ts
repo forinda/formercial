@@ -56,5 +56,8 @@ export const placedItem = z.object({
   text: z.string().max(2000).optional(),
   size: z.number().min(6).max(72).optional(),
 })
-export const placedItems = z.array(placedItem).max(500)
+export const placedItems = z
+  .array(placedItem)
+  .max(500)
+  .refine((list) => new Set(list.map((i) => i.id)).size === list.length, 'two items share an id')
 export type Placed = z.infer<typeof placedItem>

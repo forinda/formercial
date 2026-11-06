@@ -53,6 +53,17 @@ const cleanName = (name: unknown) =>
 export class SigningStore {
   constructor(@Inject(STORAGE) private readonly storage: Storage) {}
 
+  // One change at a time per document, so two saves never read the same
+  // doc.json and the second overwrite the first.
+  private locks = new Map<string, Promise<unknown>>()
+  private locked<T>(id: string, change: () => Promise<T>): Promise<T> {
+    const run = (this.locks.get(id) ?? Promise.resolve()).then(change, change)
+    const tail = run.catch(() => {})
+    this.locks.set(id, tail)
+    void tail.then(() => this.locks.get(id) === tail && this.locks.delete(id))
+    return run
+  }
+
   private key(id: string, file: string) {
     if (!ID.test(id)) throw notFound()
     return checkKey(`${ROOT}/${id}/${file}`)
@@ -108,13 +119,17 @@ export class SigningStore {
     return value
   }
 
-  async saveItems(id: string, items: unknown): Promise<SigningDoc> {
+  saveItems(id: string, items: unknown): Promise<SigningDoc> {
     const parsed = placedItems.safeParse(items)
     if (!parsed.success) throw HttpException.badRequest('those items are not right')
-    const current = await this.read(id)
-    const value = { ...current, items: parsed.data, updatedAt: new Date().toISOString() }
-    await this.write(value)
-    return value
+    return this.locked(id, async () => {
+      const current = await this.read(id)
+      if (parsed.data.some((i) => i.pages.some((p) => p > current.pages)))
+        throw HttpException.badRequest(`it has only ${current.pages} pages`)
+      const value = { ...current, items: parsed.data, updatedAt: new Date().toISOString() }
+      await this.write(value)
+      return value
+    })
   }
 
   async original(id: string): Promise<Uint8Array> {
@@ -134,14 +149,16 @@ export class SigningStore {
     const which = this.label(label)
     if (bytes.length > MAX_PICTURE) throw new HttpException(413, 'larger than 2 MB')
     if (sniff(bytes) !== 'png') throw HttpException.badRequest('a picture is kept as a PNG')
-    const current = await this.read(id)
-    await this.storage.put(this.key(id, `pictures/${which}.png`), bytes)
-    const pictures = current.pictures.includes(which)
-      ? current.pictures
-      : current.pictures.concat([which])
-    const value = { ...current, pictures, updatedAt: new Date().toISOString() }
-    await this.write(value)
-    return value
+    return this.locked(id, async () => {
+      const current = await this.read(id)
+      await this.storage.put(this.key(id, `pictures/${which}.png`), bytes)
+      const pictures = current.pictures.includes(which)
+        ? current.pictures
+        : current.pictures.concat([which])
+      const value = { ...current, pictures, updatedAt: new Date().toISOString() }
+      await this.write(value)
+      return value
+    })
   }
 
   async picture(id: string, label: string): Promise<Uint8Array> {
@@ -152,16 +169,20 @@ export class SigningStore {
     return bytes
   }
 
-  /** A signed copy, kept as the next version. */
-  async addVersion(id: string, bytes: Uint8Array, digital: boolean): Promise<SigningVersion> {
+  /** A signed copy, kept as the next version. Digitally signed only if it carries a signature. */
+  addVersion(id: string, bytes: Uint8Array, digital: boolean): Promise<SigningVersion> {
     if (sniff(bytes) !== 'pdf') throw HttpException.badRequest('that is not a PDF')
-    const current = await this.read(id)
-    const n = Math.max(0, ...current.versions.map((v) => v.n)) + 1
-    const made: SigningVersion = { n, createdAt: new Date().toISOString(), digital }
-    await this.storage.put(this.key(id, `v${n}.pdf`), bytes)
-    const versions = current.versions.concat([made])
-    await this.write({ ...current, versions, updatedAt: made.createdAt })
-    return made
+    // ponytail: looks for a signature dictionary's byte range, not a verified signature.
+    const signed = digital && Buffer.from(bytes).includes('/ByteRange')
+    return this.locked(id, async () => {
+      const current = await this.read(id)
+      const n = Math.max(0, ...current.versions.map((v) => v.n)) + 1
+      const made: SigningVersion = { n, createdAt: new Date().toISOString(), digital: signed }
+      await this.storage.put(this.key(id, `v${n}.pdf`), bytes)
+      const versions = current.versions.concat([made])
+      await this.write({ ...current, versions, updatedAt: made.createdAt })
+      return made
+    })
   }
 
   async version(id: string, n: number): Promise<{ bytes: Uint8Array; name: string }> {
@@ -172,13 +193,20 @@ export class SigningStore {
     return { bytes, name: `${current.name.replace(/\.pdf$/i, '')}-v${n}.pdf` }
   }
 
-  async remove(id: string): Promise<void> {
-    await this.read(id)
-    let cursor: string | undefined
-    do {
-      const page = await this.storage.list({ prefix: `${ROOT}/${id}/`, cursor })
-      for (const f of page.files) await this.storage.delete(f.key)
-      cursor = page.cursor
-    } while (cursor)
+  remove(id: string): Promise<void> {
+    return this.locked(id, async () => {
+      await this.read(id)
+      const keys: string[] = []
+      let cursor: string | undefined
+      do {
+        const page = await this.storage.list({ prefix: `${ROOT}/${id}/`, cursor })
+        keys.push(...page.files.map((f) => f.key))
+        cursor = page.cursor
+      } while (cursor)
+      // doc.json last: if a delete fails part way, the document is still listed and can be deleted again.
+      const meta = this.key(id, 'doc.json')
+      for (const key of keys) if (key !== meta) await this.storage.delete(key)
+      await this.storage.delete(meta)
+    })
   }
 }

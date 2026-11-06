@@ -15,7 +15,8 @@ import { ToolJobs } from './tool-jobs.service'
 import { ToolsModule } from './tools.module'
 
 const PDF = Buffer.from('%PDF-1.7\n% the original\n')
-const SIGNED = Buffer.from('%PDF-1.7\n% signed\n')
+const SIGNED = Buffer.from('%PDF-1.7\n<< /Type /Sig /ByteRange [0 1 2 3] >>\n')
+const STAMPED = Buffer.from('%PDF-1.7\n% stamped, no certificate\n')
 const PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==',
   'base64',
@@ -32,8 +33,8 @@ const fakeSign = defineTool<Record<string, unknown>>({
   fields: [],
   options: z.record(z.string(), z.unknown()),
   needs: [],
-  async run({ dir }) {
-    await writeFile(join(dir, 'out', 'in-1-signed.pdf'), SIGNED)
+  async run({ dir, options }) {
+    await writeFile(join(dir, 'out', 'in-1-signed.pdf'), options.plain ? STAMPED : SIGNED)
     return ['in-1-signed.pdf']
   },
 })
@@ -126,10 +127,10 @@ describe('signing documents', () => {
   test('every Finish is kept as a numbered version', async () => {
     const { http, jobs } = await boot()
     const doc = await newDoc(http)
-    const finish = async () => {
+    const finish = async (plain = false) => {
       const { body: job } = await http
         .post('/api/v1/tools/pdf-workspace-sign/jobs')
-        .send({})
+        .send({ options: plain ? { plain: true } : {} })
         .expect(201)
       await bytes(http, 'put', `/api/v1/tools/jobs/${job.id}/files?name=a.pdf`, PDF).expect(200)
       await http.post(`/api/v1/tools/jobs/${job.id}/start`).expect(200)
@@ -149,6 +150,46 @@ describe('signing documents', () => {
     expect(String(v1.headers['content-disposition'])).toContain('Lease-v1.pdf')
     await http.get(`/api/v1/tools/signing/${doc.id}/versions/3`).expect(404)
     expect((await http.get('/api/v1/tools/signing')).body[0].versions).toBe(2)
+    // Said to be digitally signed, but the copy carries no signature: kept as not.
+    expect((await finish(true)).body).toMatchObject({ n: 3, digital: false })
+  })
+
+  test('two signed copies kept at once get their own numbers', async () => {
+    const { http, jobs } = await boot()
+    const doc = await newDoc(http)
+    const jobIds: string[] = []
+    for (let i = 0; i < 2; i++) {
+      const { body: job } = await http.post('/api/v1/tools/pdf-workspace-sign/jobs').send({})
+      await bytes(http, 'put', `/api/v1/tools/jobs/${job.id}/files?name=a.pdf`, PDF).expect(200)
+      await http.post(`/api/v1/tools/jobs/${job.id}/start`).expect(200)
+      jobIds.push(job.id)
+    }
+    await jobs.idle()
+    const made = await Promise.all(
+      jobIds.map((job) =>
+        http
+          .post(`/api/v1/tools/signing/${doc.id}/versions`)
+          .send({ job, file: 'in-1-signed.pdf' })
+          .expect(201),
+      ),
+    )
+    expect(made.map((r) => r.body.n).sort()).toEqual([1, 2])
+    const read = (await http.get(`/api/v1/tools/signing/${doc.id}`)).body
+    expect(read.versions).toHaveLength(2)
+  })
+
+  test('items with the same id, or on pages the document lacks, are refused', async () => {
+    const { http } = await boot()
+    const doc = await newDoc(http)
+    const at = `/api/v1/tools/signing/${doc.id}/items`
+    await http
+      .put(at)
+      .send({ items: [tick, tick] })
+      .expect(400)
+    await http
+      .put(at)
+      .send({ items: [{ ...tick, pages: [4] }] })
+      .expect(400)
   })
 
   test("a version only comes from a finished signing job's own output", async () => {
@@ -157,6 +198,12 @@ describe('signing documents', () => {
     await http
       .post(`/api/v1/tools/signing/${doc.id}/versions`)
       .send({ job: '0'.repeat(32), file: 'in-1-signed.pdf' })
+      .expect(404)
+    // A signing job that hasn't run yet.
+    const { body: job } = await http.post('/api/v1/tools/pdf-workspace-sign/jobs').send({})
+    await http
+      .post(`/api/v1/tools/signing/${doc.id}/versions`)
+      .send({ job: job.id, file: 'in-1-signed.pdf' })
       .expect(404)
     await http
       .post(`/api/v1/tools/signing/${doc.id}/versions`)

@@ -41,6 +41,7 @@ import { PdfPage } from '@/client/sign/Page'
 import { usePinch } from '@/client/sign/pinch'
 import { SignatureDialog } from '@/client/sign/SignatureDialog'
 import { SigningDocs } from '@/client/sign/SigningDocs'
+import { useAutosave } from '@/client/sign/autosave'
 import { loadPdf, type LoadedPdf } from '@/client/sign/pdf'
 import type { SigningDoc, SigningVersion } from '@/modules/tools/signing-store.service'
 import type { ToolSummary } from '@/modules/tools/tool-jobs.service'
@@ -82,9 +83,12 @@ async function aspect(blob: Blob) {
 
 type Asking = { label: Label; then?: { page: number; at: { x: number; y: number } } }
 
+const TEXT_LABELS: Label[] = ['date', 'name', 'text']
+
 /** The documents kept on this machine, or one of them open. */
 export default function SignWorkspace({ tool, id }: { tool: ToolSummary; id?: string }) {
-  return id ? <Workspace tool={tool} id={id} /> : <SigningDocs maxSize={tool.maxSize} />
+  // Keyed by the document, so opening another starts clean.
+  return id ? <Workspace key={id} tool={tool} id={id} /> : <SigningDocs maxSize={tool.maxSize} />
 }
 
 function Workspace({ tool, id }: { tool: ToolSummary; id: string }) {
@@ -143,6 +147,7 @@ function Workspace({ tool, id }: { tool: ToolSummary; id: string }) {
         const pics: Partial<Record<Label, Blob>> = {}
         for (const label of d.pictures) {
           const pic = await fetch(`${DOC}/pictures/${label}`)
+          // One that won't load is asked for again at Finish.
           if (pic.ok) pics[label] = await pic.blob()
         }
         if (!live) return
@@ -162,30 +167,14 @@ function Workspace({ tool, id }: { tool: ToolSummary; id: string }) {
   }, [DOC])
 
   // What's placed is saved as it changes (a moment after the last change).
-  const [saved, setSaved] = useState<'saved' | 'saving' | 'failed'>('saved')
-  // Compared with what was last saved, not what was opened: undoing back to the
-  // start is a change too.
-  const lastSaved = useRef<Placed[] | null>(null)
-  useEffect(() => {
-    if (!doc) return
-    if (lastSaved.current === null) {
-      lastSaved.current = items.value
-      return
-    }
-    if (lastSaved.current === items.value) return
-    setSaved('saving')
-    const value = items.value
-    const timer = setTimeout(() => {
-      api(`${DOC}/items`, { method: 'PUT', json: { items: value } }).then(
-        () => {
-          lastSaved.current = value
-          setSaved('saved')
-        },
-        () => setSaved('failed'),
-      )
-    }, 800)
-    return () => clearTimeout(timer)
-  }, [items.value, doc, DOC])
+  const itemsSaved = useAutosave(doc && items.value, (value, leaving) =>
+    api(`${DOC}/items`, { method: 'PUT', json: { items: value }, keepalive: leaving }),
+  )
+  // A signature picture that didn't save shows too, until one does.
+  const [pictureFailed, setPictureFailed] = useState(false)
+  const saved = pictureFailed ? 'failed' : itemsSaved
+  // Why Finish can't go ahead yet, if it can't.
+  const [finishError, setFinishError] = useState('')
 
   // Each Finish is kept with the document as its next version.
   const digital = useRef(false)
@@ -215,9 +204,14 @@ function Workspace({ tool, id }: { tool: ToolSummary; id: string }) {
   useEffect(() => {
     if (!file) return
     let live = true
+    let opened: LoadedPdf | null = null
     setOpenError('')
     loadPdf(file).then(
-      (loaded) => live && setPdf(loaded),
+      (loaded) => {
+        opened = loaded
+        if (live) setPdf(loaded)
+        else void loaded.destroy()
+      },
       (err: Error) => {
         if (!live) return
         setOpenError(err.message)
@@ -226,6 +220,7 @@ function Workspace({ tool, id }: { tool: ToolSummary; id: string }) {
     )
     return () => {
       live = false
+      void opened?.destroy()
     }
   }, [file])
 
@@ -361,12 +356,19 @@ function Workspace({ tool, id }: { tool: ToolSummary; id: string }) {
 
   async function finish(certificate: Certificate | null) {
     setFinishing(false)
+    setFinishError('')
     if (!file) return
+    const empty = list.find((i) => TEXT_LABELS.includes(i.label) && !i.text?.trim())
+    if (empty) {
+      setSelected({ id: empty.id, page: empty.pages[0] })
+      return setFinishError('a text item is empty: type in it or delete it')
+    }
     const { items: signItems, pictures: order } = toSignItems(list)
     const files: { name: string; body: Blob }[] = [{ name: file.name, body: file }]
     for (const label of order) {
       const pic = pictures[label]
-      if (pic) files.push({ name: `${label}.png`, body: pic })
+      if (!pic) return setFinishError(`the ${label} picture is missing: pick it again`)
+      files.push({ name: `${label}.png`, body: pic })
     }
     // The certificate goes last; the server signs the stamped copy with it.
     if (certificate) files.push({ name: certificate.file.name, body: certificate.file })
@@ -495,6 +497,11 @@ function Workspace({ tool, id }: { tool: ToolSummary; id: string }) {
       {failed && (
         <p role="alert" className="border-b bg-destructive/10 px-3 py-2 text-sm text-destructive">
           It didn't work: {failed}
+        </p>
+      )}
+      {finishError && (
+        <p role="alert" className="border-b bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          Can't finish yet: {finishError}
         </p>
       )}
 
@@ -698,8 +705,9 @@ function Workspace({ tool, id }: { tool: ToolSummary; id: string }) {
           onCancel={() => setAsking(null)}
           onPick={(pic) => {
             setPictures({ ...pictures, [asking.label]: pic })
-            void api(`${DOC}/pictures/${asking.label}`, { method: 'PUT', body: pic }).catch(() =>
-              setSaved('failed'),
+            void api(`${DOC}/pictures/${asking.label}`, { method: 'PUT', body: pic }).then(
+              () => setPictureFailed(false),
+              () => setPictureFailed(true),
             )
             if (asking.then) void place(asking.label, asking.then.page, asking.then.at, pic)
             setAsking(null)

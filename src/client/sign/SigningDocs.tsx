@@ -27,8 +27,10 @@ export function SigningDocs({ maxSize }: { maxSize: number }) {
     try {
       // Read here first: a PDF with a password, or not a PDF, is turned away before it's kept.
       const pdf = await loadPdf(file)
+      const pages = pdf.pageCount
+      void pdf.destroy()
       const made = await api<{ id: string }>(
-        `${BASE}?name=${encodeURIComponent(file.name)}&pages=${pdf.pageCount}`,
+        `${BASE}?name=${encodeURIComponent(file.name)}&pages=${pages}`,
         { method: 'POST', body: file },
       )
       router.visit(`/utilities/sign/${made.id}`)
@@ -39,8 +41,13 @@ export function SigningDocs({ maxSize }: { maxSize: number }) {
   }
 
   async function remove(id: string) {
-    await api(`${BASE}/${id}`, { method: 'DELETE' })
-    setDocs((list) => list?.filter((d) => d.id !== id) ?? null)
+    setError('')
+    try {
+      await api(`${BASE}/${id}`, { method: 'DELETE' })
+      setDocs((list) => list?.filter((d) => d.id !== id) ?? null)
+    } catch (err) {
+      setError(`It wasn't deleted: ${(err as Error).message}. Try again.`)
+    }
     setDeleting(null)
   }
 
