@@ -21,6 +21,7 @@ import { Button } from '@/client/components/ui/button'
 import { FileDrop, RemotePreview } from '@/client/components/ui/file-drop'
 import { cn } from '@/client/lib/utils'
 import { outputUrl, useToolJob } from '@/client/lib/tool-job'
+import { api } from '@/client/editor/useProject'
 import { Inspector } from '@/client/sign/Inspector'
 import { ItemBox } from '@/client/sign/ItemBox'
 import {
@@ -32,6 +33,7 @@ import {
   type Placed,
 } from '@/client/sign/items'
 import { PdfPage } from '@/client/sign/Page'
+import { SignatureDialog } from '@/client/sign/SignatureDialog'
 import { loadPdf, type LoadedPdf } from '@/client/sign/pdf'
 import type { ToolSummary } from '@/modules/tools/tool-jobs.service'
 
@@ -77,7 +79,16 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
   const items = useHistory<Placed[]>([])
   const [selected, setSelected] = useState<{ id: string; page: number } | null>(null)
   const [active, setActive] = useState<Tool>('select')
-  const [pictures, setPictures] = useState<Partial<Record<Label, File>>>({})
+  const [pictures, setPictures] = useState<Partial<Record<Label, Blob>>>({})
+  // The name kept on this machine with the signatures, for the Name tool.
+  const [name, setName] = useState('')
+  const saveName = useRef<ReturnType<typeof setTimeout>>(undefined)
+  useEffect(() => {
+    api<{ name: string }>('/api/v1/tools/signatures').then(
+      (r) => setName(r.name),
+      () => {},
+    )
+  }, [])
   const [asking, setAsking] = useState<Asking | null>(null)
   const [zoom, setZoom] = useState<number | null>(null)
   const [fit, setFit] = useState(1)
@@ -133,7 +144,7 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
 
   /** Put a new item of this kind, centred where the page was clicked. */
   const place = useCallback(
-    async (label: Label, page: number, at: { x: number; y: number }, picture?: File) => {
+    async (label: Label, page: number, at: { x: number; y: number }, picture?: Blob) => {
       if (!pdf) return
       const size = pdf.size(page)
       let box: { w: number; h: number }
@@ -150,7 +161,7 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
           label === 'date'
             ? formatDate(new Date(), 'long')
             : label === 'name'
-              ? 'Your name'
+              ? name || 'Your name'
               : 'Text'
         extra = { text, size: START.text }
         box = textBox(text, START.text, size)
@@ -169,7 +180,7 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
       setSelected({ id: item.id, page })
       setActive('select')
     },
-    [pdf, pictures, items, list],
+    [pdf, pictures, items, list, name],
   )
 
   /** Text changed: its box follows its words and size, and stays on the page. */
@@ -179,6 +190,17 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
       box = { ...box, ...textBox(next.text, next.size, pdf.size(page)) }
     box = { ...box, x: Math.min(box.x, 1 - box.w), y: Math.min(box.y, 1 - box.h) }
     update({ ...next, box })
+    // A name typed in is remembered for next time.
+    if (next.label === 'name' && next.text && next.text !== 'Your name') {
+      const words = next.text
+      clearTimeout(saveName.current)
+      saveName.current = setTimeout(() => {
+        setName(words)
+        void api('/api/v1/tools/signatures/name', { method: 'PUT', json: { name: words } }).catch(
+          () => {},
+        )
+      }, 600)
+    }
   }
 
   function detach(item: Placed, page: number) {
@@ -226,7 +248,7 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
     const files: { name: string; body: Blob }[] = [{ name: file.name, body: file }]
     for (const label of order) {
       const pic = pictures[label]
-      if (pic) files.push({ name: pic.name, body: pic })
+      if (pic) files.push({ name: `${label}.png`, body: pic })
     }
     await job.run({ items: signItems }, files)
   }
@@ -436,8 +458,9 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
       </div>
 
       {asking && (
-        <PictureDialog
-          label={asking.label}
+        <SignatureDialog
+          kind={asking.label === 'initials' ? 'initials' : 'signature'}
+          name={name}
           onCancel={() => setAsking(null)}
           onPick={(pic) => {
             setPictures({ ...pictures, [asking.label]: pic })
@@ -473,49 +496,6 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
           </div>
         </div>
       )}
-    </div>
-  )
-}
-
-/** Choosing the picture of a signature or initials. Drawing and typing one come later. */
-function PictureDialog({
-  label,
-  onPick,
-  onCancel,
-}: {
-  label: Label
-  onPick(f: File): void
-  onCancel(): void
-}) {
-  const [files, setFiles] = useState<File[]>([])
-  return (
-    <div
-      role="dialog"
-      aria-label={`Your ${label}`}
-      className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4"
-    >
-      <div className="grid w-full max-w-md gap-3 rounded-lg bg-background p-4">
-        <h2 className="font-semibold">Your {label}</h2>
-        <p className="text-sm text-muted-foreground">
-          A PNG or JPG of it. A PNG with a see-through background looks best on the page.
-        </p>
-        <FileDrop
-          files={files}
-          onChange={setFiles}
-          accept={['png', 'jpg', 'jpeg']}
-          max={1}
-          maxSize={10 * 1024 * 1024}
-          label="Drop the picture here"
-        />
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button disabled={!files.length} onClick={() => onPick(files[0])}>
-            Use it
-          </Button>
-        </div>
-      </div>
     </div>
   )
 }
