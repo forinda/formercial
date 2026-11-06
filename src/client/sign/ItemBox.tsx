@@ -4,8 +4,6 @@ import { useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import { cn } from '@/client/lib/utils'
 import { isPicture, isText, type Placed } from './items'
 
-const INK = { black: '#111', blue: '#1a3d8f' }
-
 type Props = {
   item: Placed
   /** The page's size on screen, in pixels, and in points. */
@@ -122,7 +120,7 @@ export function ItemBox({
             top: size * 0.23,
             fontSize: size,
             fontFamily: 'Helvetica, Arial, sans-serif',
-            color: INK[shown.color],
+            color: shown.color,
           }}
         >
           {shown.text}
@@ -133,7 +131,7 @@ export function ItemBox({
           <polyline
             points="0.1,0.5 0.4,0.85 0.9,0.15"
             fill="none"
-            stroke={INK[shown.color]}
+            stroke={shown.color}
             strokeWidth={0.1}
             vectorEffect="none"
           />

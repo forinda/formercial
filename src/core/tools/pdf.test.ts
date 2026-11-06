@@ -215,7 +215,7 @@ describe.runIf(hasPoppler)('signing workspace', () => {
       box: { x: 0.1, y: 0.1, w: 0.5, h: 0.05 },
       text: '6 Nov 2026',
       size: 12,
-      color: 'blue',
+      color: '#1a3d8f',
     }
     const { out, files } = await stamp(await blankPdf(1), [date], [])
     const text = join(out, 'text.txt')
@@ -230,7 +230,7 @@ describe.runIf(hasPoppler)('signing workspace', () => {
       box: { x: 0.1, y: 0.1, w: 0.5, h: 0.05 },
       text: '王小明',
       size: 12,
-      color: 'black',
+      color: '#000000',
     }
     await expect(stamp(await blankPdf(1), [name], [])).rejects.toThrow(
       'the text can only use Latin letters for now; use a typed signature for other scripts',
@@ -242,12 +242,33 @@ describe.runIf(hasPoppler)('signing workspace', () => {
       kind: 'tick',
       pages: [1],
       box: { x: 0.2, y: 0.2, w: 0.1, h: 0.075 },
-      color: 'black',
+      color: '#000000',
     }
     const { out, files } = await stamp(await blankPdf(1), [tick], [])
     const ink = await inkBox(join(out, files[0]), 1)
     expect(ink!.x).toBeGreaterThanOrEqual(0.19)
     expect(ink!.x + ink!.w).toBeLessThanOrEqual(0.31)
+  }, 60_000)
+
+  test('ink comes out in the colour chosen', async () => {
+    const tick: SignItem = {
+      kind: 'tick',
+      pages: [1],
+      box: { x: 0.2, y: 0.2, w: 0.3, h: 0.2 },
+      color: '#c00000',
+    }
+    const { out, files } = await stamp(await blankPdf(1), [tick], [])
+    const base = join(out, 'red')
+    await exec('pdftoppm', ['-r', '36', '-singlefile', join(out, files[0]), base])
+    const ppm = await readFile(`${base}.ppm`)
+    const [, w, h] = /^P6\s+(\d+)\s+(\d+)\s+255\s/
+      .exec(ppm.subarray(0, 40).toString('latin1'))!
+      .map(Number)
+    const px = ppm.subarray(ppm.length - w * h * 3)
+    let red = 0
+    for (let i = 0; i < w * h; i++)
+      if (px[i * 3] > 150 && px[i * 3 + 1] < 60 && px[i * 3 + 2] < 60) red++
+    expect(red).toBeGreaterThan(20)
   }, 60_000)
 
   test('one item on several pages appears on each', async () => {

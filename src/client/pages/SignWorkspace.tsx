@@ -35,6 +35,7 @@ import { FinishDialog, type Certificate } from '@/client/sign/FinishDialog'
 import { Inspector } from '@/client/sign/Inspector'
 import { ItemBox } from '@/client/sign/ItemBox'
 import {
+  DEFAULT_INK,
   formatDate,
   isPicture,
   toSignItems,
@@ -205,7 +206,7 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
         label,
         pages: [page],
         box: { x, y, ...box },
-        color: 'blue',
+        color: DEFAULT_INK,
         ...extra,
       }
       items.set(list.concat([item]))
