@@ -9,6 +9,8 @@ import { Input } from '@/client/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/client/components/ui/tabs'
 import { api } from '@/client/editor/useProject'
 import type { SavedSignature } from '@/modules/tools/signature-store.service'
+import { InkPicker } from './InkPicker'
+import { DEFAULT_INK } from './items'
 import {
   HANDS,
   loadHand,
@@ -19,7 +21,6 @@ import {
   type Hand,
 } from './draw'
 
-const INK = { black: '#111111', blue: '#1a3d8f' }
 type Kind = 'signature' | 'initials'
 type Made = SavedSignature['made']
 
@@ -38,7 +39,7 @@ type Props = { kind: Kind; name: string; onPick(picture: Blob): void; onCancel()
 export function SignatureDialog({ kind, name, onPick, onCancel }: Props) {
   const [saved, setSaved] = useState<SavedSignature[] | null>(null)
   const [tab, setTab] = useState<Made>('drawn')
-  const [ink, setInk] = useState<keyof typeof INK>('blue')
+  const [ink, setInk] = useState(DEFAULT_INK)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const make = useRef<() => Promise<Blob | null>>(async () => null)
@@ -84,10 +85,10 @@ export function SignatureDialog({ kind, name, onPick, onCancel }: Props) {
       role="dialog"
       aria-modal="true"
       aria-label={`Your ${kind}`}
-      className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4 max-md:p-0"
       onKeyDown={(e) => e.key === 'Escape' && onCancel()}
     >
-      <div className="grid max-h-full w-full max-w-xl gap-4 overflow-y-auto rounded-lg bg-background p-4">
+      <div className="grid max-h-full w-full max-w-xl gap-4 overflow-y-auto rounded-lg bg-background p-4 max-md:h-dvh max-md:max-w-none max-md:content-start max-md:rounded-none">
         <h2 className="font-semibold">Your {kind}</h2>
 
         {saved && saved.length > 0 && (
@@ -128,26 +129,13 @@ export function SignatureDialog({ kind, name, onPick, onCancel }: Props) {
             <TabsTrigger value="uploaded">Upload</TabsTrigger>
             <TabsTrigger value="typed">Type</TabsTrigger>
           </TabsList>
-          <fieldset className="flex items-center gap-2 text-sm">
-            <legend className="sr-only">Ink</legend>
-            Ink
-            {(['blue', 'black'] as const).map((c) => (
-              <Button
-                key={c}
-                size="xs"
-                variant={ink === c ? 'default' : 'outline'}
-                aria-pressed={ink === c}
-                onClick={() => setInk(c)}
-              >
-                {c === 'blue' ? 'Blue' : 'Black'}
-              </Button>
-            ))}
-            {tab === 'uploaded' && (
-              <span className="text-muted-foreground">(uploads keep their own)</span>
-            )}
-          </fieldset>
+          {tab === 'uploaded' ? (
+            <p className="text-sm text-muted-foreground">Uploads keep their own ink.</p>
+          ) : (
+            <InkPicker value={ink} onChange={setInk} />
+          )}
           <TabsContent value="drawn">
-            <DrawPad color={INK[ink]} bind={(f) => (make.current = f)} />
+            <DrawPad color={ink} bind={(f) => (make.current = f)} />
           </TabsContent>
           <TabsContent value="uploaded">
             <UploadPicture bind={(f) => (make.current = f)} />
@@ -155,7 +143,7 @@ export function SignatureDialog({ kind, name, onPick, onCancel }: Props) {
           <TabsContent value="typed">
             <TypeIt
               start={kind === 'initials' ? initialsOf(name) : name}
-              color={INK[ink]}
+              color={ink}
               bind={(f) => (make.current = f)}
             />
           </TabsContent>
@@ -202,7 +190,7 @@ function DrawPad({ color, bind }: Bind & { color: string }) {
         ctx,
         s.map((p) => ({ x: p.x * ratio, y: p.y * ratio })),
         color,
-        3 * ratio,
+        5 * ratio,
       )
   }
   useEffect(paint)
@@ -218,7 +206,7 @@ function DrawPad({ color, bind }: Bind & { color: string }) {
       <canvas
         ref={canvas}
         aria-label="Signing pad: draw with a mouse, pen or finger"
-        className="h-48 w-full touch-none rounded-md border bg-white"
+        className="h-48 w-full touch-none rounded-md border bg-white max-md:h-[45dvh]"
         onPointerDown={(e) => {
           e.currentTarget.setPointerCapture(e.pointerId)
           strokes.current.push([at(e)])

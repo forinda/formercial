@@ -31,6 +31,14 @@ describe('signing items', () => {
     )
   })
 
+  test('ink is any #rrggbb colour, and nothing else', () => {
+    const tick = { kind: 'tick', pages: [1], box }
+    for (const ok of ['#000000', '#b3261e', '#1A3D8F'])
+      expect(signItems.safeParse([{ ...tick, color: ok }]).success).toBe(true)
+    for (const bad of ['blue', '#fff', 'red; x', 'url(#a)', '#12345g'])
+      expect(signItems.safeParse([{ ...tick, color: bad }]).success).toBe(false)
+  })
+
   test('refuses more than 500 items', () => {
     const many = Array.from({ length: 501 }, () => signature)
     expect(signItems.safeParse(many).success).toBe(false)
@@ -38,7 +46,7 @@ describe('signing items', () => {
   })
 
   test('text has bounds on its length and size', () => {
-    const text = { kind: 'text', pages: [1], box, text: '6 Nov 2026', size: 12, color: 'blue' }
+    const text = { kind: 'text', pages: [1], box, text: '6 Nov 2026', size: 12, color: '#1a3d8f' }
     expect(signItems.safeParse([text]).success).toBe(true)
     expect(signItems.safeParse([{ ...text, size: 100 }]).success).toBe(false)
     expect(signItems.safeParse([{ ...text, text: 'x'.repeat(2001) }]).success).toBe(false)

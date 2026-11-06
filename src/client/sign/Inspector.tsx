@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/client/components/ui/button'
 import { Input } from '@/client/components/ui/input'
+import { InkPicker } from './InkPicker'
 import {
   DATE_FORMATS,
   formatDate,
@@ -109,22 +110,7 @@ export function Inspector({
       )}
 
       {!isPicture(item.label) && (
-        <fieldset className="grid gap-1">
-          <legend className="mb-1">Ink</legend>
-          <div className="flex gap-2">
-            {(['black', 'blue'] as const).map((c) => (
-              <Button
-                key={c}
-                size="sm"
-                variant={item.color === c ? 'default' : 'outline'}
-                aria-pressed={item.color === c}
-                onClick={() => onChange({ ...item, color: c })}
-              >
-                {c === 'black' ? 'Black' : 'Blue'}
-              </Button>
-            ))}
-          </div>
-        </fieldset>
+        <InkPicker value={item.color} onChange={(color) => onChange({ ...item, color })} />
       )}
 
       <fieldset className="grid gap-1.5">

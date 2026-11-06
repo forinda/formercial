@@ -48,7 +48,8 @@ export function PdfPage({ pdf, page, scale, onClick, onSeen, thumb, className, c
       ref={box}
       id={thumb ? undefined : `page-${page}`}
       data-drawn={near || undefined}
-      onPointerDown={(e) => {
+      // A tap or click, not the start of a scroll: click doesn't fire when a finger moves.
+      onClick={(e) => {
         if (!onClick || e.target !== e.currentTarget.firstChild) return
         const r = e.currentTarget.getBoundingClientRect()
         onClick({ x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height })

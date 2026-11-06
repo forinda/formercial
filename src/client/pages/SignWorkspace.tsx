@@ -28,6 +28,7 @@ import { FinishDialog, type Certificate } from '@/client/sign/FinishDialog'
 import { Inspector } from '@/client/sign/Inspector'
 import { ItemBox } from '@/client/sign/ItemBox'
 import {
+  DEFAULT_INK,
   formatDate,
   isPicture,
   toSignItems,
@@ -36,6 +37,7 @@ import {
   type Placed,
 } from '@/client/sign/items'
 import { PdfPage } from '@/client/sign/Page'
+import { usePinch } from '@/client/sign/pinch'
 import { SignatureDialog } from '@/client/sign/SignatureDialog'
 import { loadPdf, type LoadedPdf } from '@/client/sign/pdf'
 import type { ToolSummary } from '@/modules/tools/tool-jobs.service'
@@ -117,6 +119,7 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
     }
   }
   const job = useToolJob(tool.id)
+  const wide = useWide()
 
   // Open the chosen PDF.
   useEffect(() => {
@@ -142,13 +145,15 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
     if (!el || !pdf) return
     const widths = Array.from({ length: pdf.pageCount }, (_, i) => pdf.size(i + 1).width)
     const widest = Math.max(...widths)
-    const measure = () => setFit(Math.max(0.2, (el.clientWidth - 48) / widest))
+    const pad = () => 2 * parseFloat(getComputedStyle(el).paddingLeft || '0')
+    const measure = () => setFit(Math.max(0.2, (el.clientWidth - pad()) / widest))
     measure()
     const watch = new ResizeObserver(measure)
     watch.observe(el)
     return () => watch.disconnect()
   }, [pdf])
   const scale = zoom ?? fit
+  const pinch = usePinch(scale, setZoom)
 
   const urls = useMemo(
     () => Object.fromEntries(Object.entries(pictures).map(([k, f]) => [k, URL.createObjectURL(f)])),
@@ -195,7 +200,7 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
         label,
         pages: [page],
         box: { x, y, ...box },
-        color: 'blue',
+        color: DEFAULT_INK,
         ...extra,
       }
       items.set(list.concat([item]))
@@ -339,6 +344,21 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
           <Redo2 />
         </Button>
         <span className="flex-1" />
+        {/* Phones have no page strip: pick the page here. */}
+        <select
+          aria-label="Go to page"
+          value={current}
+          onChange={(e) =>
+            document.getElementById(`page-${e.target.value}`)?.scrollIntoView({ block: 'start' })
+          }
+          className="h-8 rounded-md border bg-background px-2 text-sm md:hidden"
+        >
+          {pages.map((n) => (
+            <option key={n} value={n}>
+              Page {n} of {pages.length}
+            </option>
+          ))}
+        </select>
         <Button
           variant="ghost"
           size="icon-sm"
@@ -369,11 +389,29 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
         </p>
       )}
 
-      <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 flex-1 flex-col-reverse md:flex-row">
+        {/* Phones: the tools along the bottom, each named under its icon. */}
+        <nav aria-label="Tools" className="flex justify-around border-t px-1 py-1 md:hidden">
+          {TOOLS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              aria-pressed={active === t.id}
+              onClick={() => setActive(t.id)}
+              className={cn(
+                'grid min-h-12 min-w-11 justify-items-center gap-0.5 rounded-md px-1 py-1 text-[10px]',
+                active === t.id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground',
+              )}
+            >
+              <t.icon className="size-5" aria-hidden />
+              {t.name === 'Select and move' ? 'Select' : t.name}
+            </button>
+          ))}
+        </nav>
         <nav
           aria-label="Tools"
           className={cn(
-            'flex flex-col gap-1 border-r p-2 transition-[width]',
+            'hidden flex-col gap-1 border-r p-2 transition-[width] md:flex',
             railOpen ? 'w-44' : 'w-14 items-center',
           )}
         >
@@ -440,10 +478,18 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
         <div
           ref={work}
           className={cn(
-            'flex-1 overflow-auto bg-muted/60 p-6',
+            'flex-1 overflow-auto bg-muted/60 p-3 md:p-6',
             active !== 'select' && 'cursor-crosshair',
           )}
-          onPointerDown={(e) => e.target === e.currentTarget && setSelected(null)}
+          // One finger scrolls; two pinch (handled here, not by the browser).
+          style={{ touchAction: 'pan-x pan-y' }}
+          onPointerDown={(e) => {
+            pinch.down(e)
+            if (e.target === e.currentTarget) setSelected(null)
+          }}
+          onPointerMove={pinch.move}
+          onPointerUp={pinch.up}
+          onPointerCancel={pinch.up}
         >
           <div className="mx-auto grid w-max gap-6">
             {pages.map((n) => {
@@ -475,6 +521,7 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
                         onSelect={() => setSelected({ id: i.id, page: n })}
                         onChange={(next) => changed(next, n)}
                         onDelete={() => remove(i.id)}
+                        pinching={pinch.active}
                       />
                     ))}
                 </PdfPage>
@@ -484,7 +531,7 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
         </div>
 
         <aside aria-label="Settings" className="hidden w-64 overflow-y-auto border-l md:block">
-          {chosen && selected ? (
+          {wide && chosen && selected ? (
             <Inspector
               key={chosen.id}
               item={chosen}
@@ -503,6 +550,29 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
           )}
         </aside>
       </div>
+
+      {!wide && chosen && selected && (
+        <section
+          aria-label="Settings"
+          className="fixed inset-x-0 bottom-0 z-40 max-h-[60dvh] overflow-y-auto rounded-t-xl border-t bg-background shadow-2xl"
+        >
+          <div className="sticky top-0 flex justify-end bg-background p-1">
+            <Button variant="ghost" size="sm" onClick={() => setSelected(null)}>
+              Done
+            </Button>
+          </div>
+          <Inspector
+            key={chosen.id}
+            item={chosen}
+            page={selected.page}
+            pageCount={pdf.pageCount}
+            onChange={(next) => changed(next, selected.page)}
+            onDetach={() => detach(chosen, selected.page)}
+            onDelete={() => remove(chosen.id)}
+            onReplacePicture={() => setAsking({ label: chosen.label })}
+          />
+        </section>
+      )}
 
       {finishing && (
         <FinishDialog
@@ -553,4 +623,17 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
       )}
     </div>
   )
+}
+
+/** Whether the screen is wide enough for the side panels (Tailwind's md, 768px). */
+function useWide() {
+  const [wide, setWide] = useState(true)
+  useEffect(() => {
+    const q = window.matchMedia('(min-width: 768px)')
+    const on = () => setWide(q.matches)
+    on()
+    q.addEventListener('change', on)
+    return () => q.removeEventListener('change', on)
+  }, [])
+  return wide
 }

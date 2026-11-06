@@ -19,9 +19,9 @@ export type StampItem =
       box: StampBox
       text: string
       size: number
-      color: 'black' | 'blue'
+      color: string
     }
-  | { kind: 'tick'; pages: number[]; box: StampBox; color: 'black' | 'blue' }
+  | { kind: 'tick'; pages: number[]; box: StampBox; color: string }
 
 export type PdfJob =
   | {
@@ -92,7 +92,11 @@ function within(b: ReturnType<typeof toPdfBox>, ox: number, oy: number) {
   return { x: b.x + ox * ex[0] + oy * ey[0], y: b.y + ox * ex[1] + oy * ey[1] }
 }
 
-const INK = { black: rgb(0, 0, 0), blue: rgb(0.1, 0.24, 0.56) }
+/** A #rrggbb ink (checked before the job starts) as pdf-lib's colour. */
+const ink = (hex: string) => {
+  const n = Number.parseInt(hex.slice(1), 16)
+  return rgb(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255)
+}
 
 async function stamp(job: Extract<PdfJob, { kind: 'stamp' }>) {
   const doc = await open(job.pdf)
@@ -130,7 +134,7 @@ async function stamp(job: Extract<PdfJob, { kind: 'stamp' }>) {
           ...within(b, 0, Math.max(0, (b.height - item.size) / 2) + item.size * 0.2),
           size: item.size,
           font,
-          color: INK[item.color],
+          color: ink(item.color),
           rotate,
           lineHeight: item.size * 1.2,
         })
@@ -141,8 +145,8 @@ async function stamp(job: Extract<PdfJob, { kind: 'stamp' }>) {
           within(b, b.width * 0.9, b.height * 0.85),
         ]
         const thickness = Math.max(1, Math.min(b.width, b.height) * 0.1)
-        page.drawLine({ start: p, end: q, thickness, color: INK[item.color] })
-        page.drawLine({ start: q, end: r, thickness, color: INK[item.color] })
+        page.drawLine({ start: p, end: q, thickness, color: ink(item.color) })
+        page.drawLine({ start: q, end: r, thickness, color: ink(item.color) })
       }
     }
   if (!job.sign) return writeFile(job.out, await doc.save())

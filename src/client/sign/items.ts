@@ -4,7 +4,20 @@ import { useState } from 'react'
 import type { Box, SignItem } from '@/core/tools/sign-items'
 
 export type Label = 'signature' | 'initials' | 'date' | 'name' | 'text' | 'tick'
-export type Ink = 'black' | 'blue'
+/** An ink: a #rrggbb colour. */
+export type Ink = string
+
+/** The usual inks; any other colour can be picked too. */
+export const INKS = [
+  { name: 'Black', color: '#111111' },
+  { name: 'Blue', color: '#1a3d8f' },
+  { name: 'Bright blue', color: '#2563eb' },
+  { name: 'Red', color: '#b3261e' },
+  { name: 'Green', color: '#1e6b3a' },
+  { name: 'Purple', color: '#5b2a86' },
+  { name: 'Brown', color: '#6b3e1e' },
+]
+export const DEFAULT_INK = INKS[1].color
 
 /** One placed thing. Signatures and initials are drawn from the workspace's picture for that label. */
 export type Placed = {

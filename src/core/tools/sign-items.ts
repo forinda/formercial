@@ -6,7 +6,8 @@ import { z } from 'zod'
 const fraction = z.number().min(0).max(1)
 const box = z.object({ x: fraction, y: fraction, w: fraction, h: fraction })
 const pages = z.array(z.number().int().min(1).max(5000)).min(1).max(5000)
-const color = z.enum(['black', 'blue'])
+// Ink: a #rrggbb colour, and nothing else (it reaches the PDF and the page's styles).
+const color = z.string().regex(/^#[0-9a-f]{6}$/i)
 
 const item = z.discriminatedUnion('kind', [
   // A signature or initials, as one of the pictures sent with the job.
