@@ -4,8 +4,9 @@
 import { readFile, readdir, rename, writeFile } from 'node:fs/promises'
 import { basename, extname, join } from 'node:path'
 import { z } from 'zod'
-import type { Corner, PdfJob } from './pdf-job'
+import type { PdfJob } from './pdf-job'
 import { runPdfJob } from './pdf-worker'
+import { checkItems, signItems, type SignItem } from './sign-items'
 import { defineTool, type ToolField } from './tool'
 
 const stem = (path: string) => basename(path, extname(path))
@@ -221,55 +222,37 @@ function pair(inputs: string[], other: string[], what: string) {
 
 /** Signing reads the whole PDF into memory, so it takes smaller files than the programs do. */
 const SIGN_MAX = 50 * 1024 * 1024
-const CORNERS = ['bottom-right', 'bottom-left', 'top-right', 'top-left'] as const
-
-/** Signing runs in a worker, so the job's time limit stops it; the files stay in the job's folder. */
 async function signed(job: PdfJob, signal: AbortSignal) {
   await runPdfJob(job, signal)
   return [basename(job.out)]
 }
 
-export const pdfSignVisual = defineTool<{ page: number; corner: Corner; width: number }>({
-  id: 'pdf-sign',
+export const pdfWorkspaceSign = defineTool<{ items: SignItem[]; password: string }>({
+  id: 'pdf-workspace-sign',
   title: 'Sign a PDF',
-  description: 'Put a picture of your signature on a page.',
+  description: 'Place your signature, initials, the date and your name anywhere on the pages.',
   group: 'pdf',
-  action: 'Sign',
-  accepts: ['pdf', 'png', 'jpg'],
+  action: 'Finish',
+  accepts: ['pdf', 'png', 'jpg', 'p12'],
   maxSize: SIGN_MAX,
-  minFiles: 2,
-  maxFiles: 2,
-  fields: [
-    {
-      key: 'corner',
-      label: 'Where',
-      kind: 'select',
-      choices: [
-        { value: 'bottom-right', label: 'Bottom right' },
-        { value: 'bottom-left', label: 'Bottom left' },
-        { value: 'top-right', label: 'Top right' },
-        { value: 'top-left', label: 'Top left' },
-      ],
-    },
-    { key: 'page', label: 'Page (0 for the last)', kind: 'number', min: 0 },
-    { key: 'width', label: 'Width in points (0 for 150)', kind: 'number', min: 0, max: 600 },
-  ],
-  options: z.object({
-    corner: z.enum(CORNERS).default('bottom-right'),
-    page: z.number().int().min(0).default(0),
-    width: z
-      .number()
-      .min(0)
-      .max(600)
-      .default(0)
-      .transform((n) => n || 150),
-  }),
+  minFiles: 1,
+  maxFiles: 22,
+  fields: [],
+  options: z.object({ items: signItems, password: z.string().max(1024).default('') }),
   needs: [],
-  note: `Add the PDF and a PNG or JPG of your signature (a transparent PNG looks best). This is a picture, not a digital signature. ${RESIGN}`,
+  note: RESIGN,
   async run({ inputs, dir, options, signal }) {
-    const [pdf, picture] = pair(inputs, ['png', 'jpg'], 'one PNG or JPG of your signature')
-    const out = join(dir, 'out', `${stem(pdf)}-signed.pdf`)
-    return signed({ kind: 'visual', pdf, picture, out, ...options }, signal)
+    const pdfs = inputs.filter((p) => p.endsWith('.pdf'))
+    const certs = inputs.filter((p) => p.endsWith('.p12'))
+    const pictures = inputs.filter((p) => p.endsWith('.png') || p.endsWith('.jpg'))
+    if (pdfs.length !== 1 || certs.length > 1)
+      throw new Error('add one PDF, your signature pictures, and at most one certificate')
+    // The page count waits for the worker, which is the one that opens the PDF.
+    checkItems(options.items, null, pictures.length)
+    const out = join(dir, 'out', `${stem(pdfs[0])}-signed.pdf`)
+    const sign = certs.length ? { p12: certs[0], password: options.password } : undefined
+    const job = { kind: 'stamp', pdf: pdfs[0], pictures, items: options.items, out, sign } as const
+    return signed(job, signal)
   },
 })
 

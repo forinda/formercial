@@ -11,7 +11,7 @@ import {
   pdfCompress,
   pdfMerge,
   pdfSignDigital,
-  pdfSignVisual,
+  pdfWorkspaceSign,
   pdfSplit,
   pdfToImages,
   pdfToText,
@@ -30,6 +30,6 @@ export const TOOLS: AnyTool[] = [
   pdfCompress,
   pdfToImages,
   pdfToText,
-  pdfSignVisual,
+  pdfWorkspaceSign,
   pdfSignDigital,
 ]

@@ -1,4 +1,5 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, expectTypeOf, test } from 'vitest'
+import type { StampItem } from './pdf-job'
 import { checkItems, signItems, type SignItem } from './sign-items'
 
 const box = { x: 0.6, y: 0.8, w: 0.3, h: 0.1 }
@@ -42,4 +43,9 @@ describe('signing items', () => {
     expect(signItems.safeParse([{ ...text, size: 100 }]).success).toBe(false)
     expect(signItems.safeParse([{ ...text, text: 'x'.repeat(2001) }]).success).toBe(false)
   })
+})
+
+test("the worker's copy of the item type matches", () => {
+  // pdf-job.ts can't import this module, so it declares the type again; the typecheck fails if they drift.
+  expectTypeOf<SignItem>().toEqualTypeOf<StampItem>()
 })
