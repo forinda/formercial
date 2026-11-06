@@ -24,6 +24,7 @@ import { FileDrop, RemotePreview } from '@/client/components/ui/file-drop'
 import { cn } from '@/client/lib/utils'
 import { outputUrl, useToolJob } from '@/client/lib/tool-job'
 import { api } from '@/client/editor/useProject'
+import { FinishDialog, type Certificate } from '@/client/sign/FinishDialog'
 import { Inspector } from '@/client/sign/Inspector'
 import { ItemBox } from '@/client/sign/ItemBox'
 import {
@@ -94,6 +95,7 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
     )
   }, [])
   const [asking, setAsking] = useState<Asking | null>(null)
+  const [finishing, setFinishing] = useState(false)
   const [zoom, setZoom] = useState<number | null>(null)
   const [fit, setFit] = useState(1)
   const [current, setCurrent] = useState(1)
@@ -262,7 +264,8 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
     [pdf],
   )
 
-  async function finish() {
+  async function finish(certificate: Certificate | null) {
+    setFinishing(false)
     if (!file) return
     const { items: signItems, pictures: order } = toSignItems(list)
     const files: { name: string; body: Blob }[] = [{ name: file.name, body: file }]
@@ -270,7 +273,9 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
       const pic = pictures[label]
       if (pic) files.push({ name: `${label}.png`, body: pic })
     }
-    await job.run({ items: signItems }, files)
+    // The certificate goes last; the server signs the stamped copy with it.
+    if (certificate) files.push({ name: certificate.file.name, body: certificate.file })
+    await job.run({ items: signItems, password: certificate?.password ?? '' }, files)
   }
 
   if (!pdf)
@@ -353,7 +358,7 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
         >
           <Plus />
         </Button>
-        <Button onClick={finish} disabled={job.busy || !list.length}>
+        <Button onClick={() => setFinishing(true)} disabled={job.busy || !list.length}>
           {job.step || (job.busy ? 'Working…' : 'Finish & download')}
         </Button>
       </header>
@@ -498,6 +503,14 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
           )}
         </aside>
       </div>
+
+      {finishing && (
+        <FinishDialog
+          maxSize={tool.maxSize}
+          onCancel={() => setFinishing(false)}
+          onFinish={(certificate) => void finish(certificate)}
+        />
+      )}
 
       {asking && (
         <SignatureDialog
