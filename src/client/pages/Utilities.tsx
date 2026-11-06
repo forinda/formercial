@@ -42,7 +42,8 @@ export default function Utilities({
               {list.map((t) => (
                 <li key={t.id}>
                   <Link
-                    href={`/utilities/${t.id}`}
+                    // The signing workspace has a page of its own.
+                    href={t.id === 'pdf-workspace-sign' ? '/utilities/sign' : `/utilities/${t.id}`}
                     className="flex h-full gap-3 rounded-lg border p-4 hover:border-primary"
                   >
                     <ToolIcon id={t.id} group={t.group} />

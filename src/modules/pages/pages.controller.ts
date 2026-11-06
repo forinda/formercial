@@ -15,6 +15,8 @@ import { PRESETS } from '@/presets'
 
 const notFound = (message: string) => inertia('Error', { status: 404, message }, { status: 404 })
 
+const SIGN_TOOL = 'pdf-workspace-sign'
+
 @Controller()
 export class PagesController {
   constructor(
@@ -132,8 +134,18 @@ export class PagesController {
     )
   }
 
+  @Get('/utilities/sign')
+  async signPage() {
+    const tool = (await this.tools.list()).find((t) => t.id === SIGN_TOOL)
+    if (!tool) return notFound('No such utility.')
+    return inertia('SignWorkspace', { tool }, { meta: { title: tool.title } })
+  }
+
   @Get('/utilities/:id')
   async utilityPage(ctx: RequestContext) {
+    // The workspace has its own page; the corner-picking signer it replaced led here too.
+    if (ctx.params.id === SIGN_TOOL || ctx.params.id === 'pdf-sign')
+      return ctx.redirect('/utilities/sign', 302)
     const tool = (await this.tools.list()).find((t) => t.id === ctx.params.id)
     if (!tool) return notFound('No such utility.')
     return inertia('Utility', { tool }, { meta: { title: tool.title } })

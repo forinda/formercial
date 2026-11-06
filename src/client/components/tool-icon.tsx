@@ -31,7 +31,7 @@ const BY_ID: Record<string, LucideIcon> = {
   'pdf-compress': Shrink,
   'pdf-to-images': FileImage,
   'pdf-to-text': ScanText,
-  'pdf-sign': Signature,
+  'pdf-workspace-sign': Signature,
   'pdf-sign-digital': FileKey,
 }
 

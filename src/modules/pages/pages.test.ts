@@ -46,6 +46,18 @@ describe('PagesController', () => {
     ])
   })
 
+  it('the signing workspace has its own page', async () => {
+    const http = await boot()
+    const res = await http.get('/utilities/sign').set(visit).expect(200)
+    expect(res.body.component).toBe('SignWorkspace')
+    expect(res.body.props.tool.id).toBe('pdf-workspace-sign')
+    // Its tool id, and the old corner-signing tool's page, lead there too.
+    for (const old of ['pdf-workspace-sign', 'pdf-sign'])
+      expect((await http.get(`/utilities/${old}`).expect(302)).headers.location).toBe(
+        '/utilities/sign',
+      )
+  })
+
   it('GET /fun/<code> renders a room only for a real room code', async () => {
     const http = await boot()
     const res = await http.get('/fun/abc234').set(visit).expect(200)

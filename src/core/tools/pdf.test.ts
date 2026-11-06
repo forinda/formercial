@@ -4,7 +4,7 @@
 import { mkdir, mkdtemp, readFile, readdir, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { PDFDict, PDFDocument, PDFName, StandardFonts } from 'pdf-lib'
+import { degrees, PDFDocument, type PDFPage, StandardFonts } from 'pdf-lib'
 import { describe, expect, test } from 'vitest'
 import { hasCommand } from '@/core/media/media'
 import { exec } from './exec'
@@ -12,12 +12,13 @@ import {
   pdfCompress,
   pdfMerge,
   pdfSignDigital,
-  pdfSignVisual,
+  pdfWorkspaceSign,
   pdfSplit,
   pdfToImages,
   pdfToText,
 } from './pdf'
-import { place } from './pdf-job'
+import type { PdfJob } from './pdf-job'
+import type { Box, SignItem } from './sign-items'
 import { runPdfJob } from './pdf-worker'
 import { sniff } from './sniff'
 import type { AnyTool } from './tool'
@@ -115,61 +116,178 @@ describe.runIf(hasPoppler)('Poppler', () => {
   }, 60_000)
 })
 
-describe('visual signing', () => {
-  test('puts the picture on the last page by default, whichever file came first', async () => {
-    const { out, files } = await run(pdfSignVisual, [
-      ['png', PNG],
-      ['pdf', await makePdf(3)],
-    ])
-    expect(files).toEqual(['in-2-signed.pdf'])
-    const doc = await PDFDocument.load(await readFile(join(out, files[0])))
-    const images = (i: number) =>
-      doc.getPage(i).node.Resources()?.lookupMaybe(PDFName.of('XObject'), PDFDict)?.keys().length ??
-      0
-    expect(images(2)).toBe(1)
-    expect(images(0)).toBe(0)
-  })
+/**
+ * Where the ink is on a page, as a box in fractions of the page as seen (rotation
+ * and crop box applied, as pdftoppm draws it), or null for a blank page.
+ */
+async function inkBox(pdf: string, page: number) {
+  const base = join(await mkdtemp(join(tmpdir(), 'ink-')), 'p')
+  await exec('pdftoppm', [
+    '-r',
+    '36',
+    '-gray',
+    // What readers see: the crop box, not the whole sheet.
+    '-cropbox',
+    '-f',
+    String(page),
+    '-l',
+    String(page),
+    '-singlefile',
+    pdf,
+    base,
+  ])
+  const pgm = await readFile(`${base}.pgm`)
+  // P5 header: "P5\n<w> <h>\n255\n", then one byte per pixel.
+  const [, w, h] = /^P5\s+(\d+)\s+(\d+)\s+255\s/
+    .exec(pgm.subarray(0, 40).toString('latin1'))!
+    .map(Number)
+  const data = pgm.subarray(pgm.length - w * h)
+  let [x0, y0, x1, y1] = [w, h, -1, -1]
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++)
+      if (data[y * w + x] < 128) {
+        x0 = Math.min(x0, x)
+        y0 = Math.min(y0, y)
+        x1 = Math.max(x1, x + 1)
+        y1 = Math.max(y1, y + 1)
+      }
+  return x1 < 0 ? null : { x: x0 / w, y: y0 / h, w: (x1 - x0) / w, h: (y1 - y0) / h }
+}
 
-  test('needs one PDF and one picture, and a page that exists', async () => {
-    await expect(
-      run(pdfSignVisual, [
-        ['pdf', await makePdf(1)],
-        ['pdf', await makePdf(1)],
-      ]),
-    ).rejects.toThrow('add one PDF and one PNG or JPG')
+const near = (got: Box | null, want: Box) => {
+  expect(got).not.toBeNull()
+  for (const k of ['x', 'y', 'w', 'h'] as const)
+    expect(Math.abs(got![k] - want[k])).toBeLessThan(0.03)
+}
+
+/** A blank PDF of `n` 300×400 pages, each changed by `edit` if given. */
+async function blankPdf(n: number, edit?: (page: PDFPage) => void) {
+  const doc = await PDFDocument.create()
+  for (let i = 0; i < n; i++) {
+    const page = doc.addPage([300, 400])
+    edit?.(page)
+  }
+  return doc.save()
+}
+
+const stamp = (
+  pdf: Uint8Array,
+  items: SignItem[],
+  extra: [string, Uint8Array][] = [['png', PNG]],
+) => run(pdfWorkspaceSign, [['pdf', pdf], ...extra], { items })
+
+const sig = (box: Box, pages = [1]): SignItem => ({ kind: 'picture', pages, box, picture: 0 })
+
+describe.runIf(hasPoppler)('signing workspace', () => {
+  const box = { x: 0.6, y: 0.8, w: 0.3, h: 0.1 }
+
+  test('stamps a picture where it was placed', async () => {
+    const { out, files } = await stamp(await blankPdf(3), [sig(box, [2])])
+    expect(files).toEqual(['in-1-signed.pdf'])
+    const signed = join(out, files[0])
+    near(await inkBox(signed, 2), box)
+    expect(await inkBox(signed, 1)).toBeNull()
+    expect(await inkBox(signed, 3)).toBeNull()
+  }, 60_000)
+
+  test.each([90, 180, 270])(
+    'stamps the right spot on a page rotated %i°',
+    async (angle) => {
+      const { out, files } = await stamp(await blankPdf(1, (p) => p.setRotation(degrees(angle))), [
+        sig(box),
+      ])
+      near(await inkBox(join(out, files[0]), 1), box)
+    },
+    60_000,
+  )
+
+  test('stamps relative to the crop box', async () => {
+    const { out, files } = await stamp(await blankPdf(1, (p) => p.setCropBox(50, 50, 200, 300)), [
+      sig(box),
+    ])
+    near(await inkBox(join(out, files[0]), 1), box)
+  }, 60_000)
+
+  test('text becomes real text', async () => {
+    const date: SignItem = {
+      kind: 'text',
+      pages: [1],
+      box: { x: 0.1, y: 0.1, w: 0.5, h: 0.05 },
+      text: '6 Nov 2026',
+      size: 12,
+      color: 'blue',
+    }
+    const { out, files } = await stamp(await blankPdf(1), [date], [])
+    const text = join(out, 'text.txt')
+    await exec('pdftotext', [join(out, files[0]), text])
+    expect(await readFile(text, 'utf8')).toContain('6 Nov 2026')
+  }, 60_000)
+
+  test("says so when text has letters the standard font can't draw", async () => {
+    const name: SignItem = {
+      kind: 'text',
+      pages: [1],
+      box: { x: 0.1, y: 0.1, w: 0.5, h: 0.05 },
+      text: '王小明',
+      size: 12,
+      color: 'black',
+    }
+    await expect(stamp(await blankPdf(1), [name], [])).rejects.toThrow(
+      'the text can only use Latin letters for now; use a typed signature for other scripts',
+    )
+  }, 60_000)
+
+  test('a tick is drawn in its box', async () => {
+    const tick: SignItem = {
+      kind: 'tick',
+      pages: [1],
+      box: { x: 0.2, y: 0.2, w: 0.1, h: 0.075 },
+      color: 'black',
+    }
+    const { out, files } = await stamp(await blankPdf(1), [tick], [])
+    const ink = await inkBox(join(out, files[0]), 1)
+    expect(ink!.x).toBeGreaterThanOrEqual(0.19)
+    expect(ink!.x + ink!.w).toBeLessThanOrEqual(0.31)
+  }, 60_000)
+
+  test('one item on several pages appears on each', async () => {
+    const { out, files } = await stamp(await blankPdf(3), [sig(box, [1, 2, 3])])
+    for (const page of [1, 2, 3]) near(await inkBox(join(out, files[0]), page), box)
+  }, 60_000)
+
+  test("refuses a page past the end, and items the browser shouldn't have sent", async () => {
+    await expect(stamp(await blankPdf(2), [sig(box, [3])])).rejects.toThrow('it has only 2 pages')
+    await expect(stamp(await blankPdf(2), [sig({ ...box, x: 0.9 })])).rejects.toThrow(
+      'an item runs off the page',
+    )
+    await expect(stamp(await blankPdf(2), [sig(box)], [])).rejects.toThrow(
+      'a signature picture is missing',
+    )
     await expect(
       run(
-        pdfSignVisual,
+        pdfWorkspaceSign,
         [
-          ['pdf', await makePdf(2)],
-          ['png', PNG],
+          ['pdf', await blankPdf(1)],
+          ['pdf', await blankPdf(1)],
         ],
-        { page: 5 },
+        { items: [] },
       ),
-    ).rejects.toThrow('it has only 2 pages')
-  })
+    ).rejects.toThrow('add one PDF, your signature pictures, and at most one certificate')
+  }, 60_000)
 
-  test('a signing job past its time limit is stopped', async () => {
+  test('a job past its time limit is stopped', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'pdf-worker-'))
-    await writeFile(join(dir, 'a.pdf'), await makePdf(1))
-    await writeFile(join(dir, 'a.png'), PNG)
-    const job = {
-      kind: 'visual',
+    await writeFile(join(dir, 'a.pdf'), await blankPdf(1))
+    const job: PdfJob = {
+      kind: 'stamp',
       pdf: join(dir, 'a.pdf'),
-      picture: join(dir, 'a.png'),
+      pictures: [],
+      items: [],
       out: join(dir, 'b.pdf'),
-      page: 0,
-      corner: 'bottom-right',
-      width: 150,
-    } as const
+    }
     await expect(runPdfJob(job, AbortSignal.timeout(1))).rejects.toThrow(
       'it took too long, so it was stopped',
     )
-  })
-
-  test('corners sit half an inch in', () => {
-    expect(place('bottom-right', 600, 800, 100, 50)).toEqual({ x: 464, y: 36 })
-    expect(place('top-left', 600, 800, 100, 50)).toEqual({ x: 36, y: 714 })
   })
 })
 
@@ -234,6 +352,27 @@ describe.runIf(hasOpenssl)('digital signing', async () => {
         expect(report).toContain('Formercial Test')
         expect(report).toContain('Signature is Valid')
       }
+    },
+    60_000,
+  )
+
+  test.runIf(hasPoppler)(
+    'signs after stamping when a certificate is added',
+    async () => {
+      const box = { x: 0.1, y: 0.1, w: 0.3, h: 0.1 }
+      const { out, files } = await run(
+        pdfWorkspaceSign,
+        [
+          ['pdf', await blankPdf(1)],
+          ['png', PNG],
+          ['p12', legacy],
+        ],
+        { items: [sig(box)], password: 'secret' },
+      )
+      const signed = join(out, files[0])
+      near(await inkBox(signed, 1), box)
+      const report = await exec('pdfsig', [signed]).catch((e: Error) => e.message)
+      expect(report).toContain('Signature is Valid')
     },
     60_000,
   )

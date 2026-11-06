@@ -1,19 +1,12 @@
 import { Link } from '@inertiajs/react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Sections } from '@/client/components/sections'
 import { ToolIcon } from '@/client/components/tool-icon'
 import { Button } from '@/client/components/ui/button'
 import { FileDrop, kindOf, RemotePreview } from '@/client/components/ui/file-drop'
 import { Input } from '@/client/components/ui/input'
-import { api } from '@/client/editor/useProject'
+import { outputUrl, useToolJob } from '@/client/lib/tool-job'
 import type { ToolSummary } from '@/modules/tools/tool-jobs.service'
-
-type Job = {
-  id: string
-  state: 'waiting' | 'queued' | 'running' | 'done' | 'failed'
-  outputs: { file: string; name: string }[]
-  error?: string
-}
 
 const EXTS: Record<string, string[]> = {
   ooxml: ['docx', 'xlsx', 'pptx'],
@@ -35,44 +28,14 @@ const defaults = (tool: ToolSummary) =>
 export default function Utility({ tool }: { tool: ToolSummary }) {
   const [options, setOptions] = useState(() => defaults(tool))
   const [files, setFiles] = useState<File[]>([])
-  const [job, setJob] = useState<Job | null>(null)
-  const [step, setStep] = useState('')
-  const [error, setError] = useState('')
-  const busy = !!step || job?.state === 'queued' || job?.state === 'running'
+  const { job, step, error, busy, run: start } = useToolJob(tool.id)
 
-  // Poll while it works.
-  useEffect(() => {
-    if (!job || (job.state !== 'queued' && job.state !== 'running')) return
-    const timer = setTimeout(
-      () => api<Job>(`/api/v1/tools/jobs/${job.id}`).then(setJob, (e) => setError(e.message)),
-      1000,
-    )
-    return () => clearTimeout(timer)
-  }, [job])
-
-  async function run(e: { preventDefault(): void }) {
+  function run(e: { preventDefault(): void }) {
     e.preventDefault()
-    setError('')
-    setJob(null)
-    try {
-      setStep('Starting…')
-      const made = await api<Job>(`/api/v1/tools/${tool.id}/jobs`, {
-        method: 'POST',
-        json: { options },
-      })
-      for (const [i, file] of files.entries()) {
-        setStep(`Sending ${files.length > 1 ? `file ${i + 1} of ${files.length}` : 'the file'}…`)
-        await api(`/api/v1/tools/jobs/${made.id}/files?name=${encodeURIComponent(file.name)}`, {
-          method: 'PUT',
-          body: file,
-        })
-      }
-      setJob(await api<Job>(`/api/v1/tools/jobs/${made.id}/start`, { method: 'POST' }))
-    } catch (err) {
-      setError((err as Error).message)
-    } finally {
-      setStep('')
-    }
+    void start(
+      options,
+      files.map((f) => ({ name: f.name, body: f })),
+    )
   }
 
   const max = tool.maxFiles
@@ -152,7 +115,7 @@ export default function Utility({ tool }: { tool: ToolSummary }) {
         {job?.state === 'done' && (
           <ul className="grid gap-3" aria-label="Results">
             {job.outputs.map(({ file, name }) => {
-              const url = `/api/v1/tools/jobs/${job.id}/files/${encodeURIComponent(file)}`
+              const url = outputUrl(job, file)
               return (
                 <li key={file} className="grid gap-2 rounded-lg border p-3">
                   <div className="flex items-center justify-between gap-2">
