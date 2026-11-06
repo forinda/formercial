@@ -32,6 +32,8 @@ export interface ToolDef<Options> {
   /** File kinds it takes, as sniff() names them. */
   accepts: string[]
   minFiles?: number
+  /** Largest upload it takes, in bytes; MAX_FILE (200 MB) if not set. */
+  maxSize?: number
   maxFiles?: number
   fields: ToolField[]
   options: z.ZodType<Options>

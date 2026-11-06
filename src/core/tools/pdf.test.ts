@@ -16,8 +16,9 @@ import {
   pdfSplit,
   pdfToImages,
   pdfToText,
-  place,
 } from './pdf'
+import { place } from './pdf-job'
+import { runPdfJob } from './pdf-worker'
 import { sniff } from './sniff'
 import type { AnyTool } from './tool'
 
@@ -146,6 +147,24 @@ describe('visual signing', () => {
         { page: 5 },
       ),
     ).rejects.toThrow('it has only 2 pages')
+  })
+
+  test('a signing job past its time limit is stopped', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'pdf-worker-'))
+    await writeFile(join(dir, 'a.pdf'), await makePdf(1))
+    await writeFile(join(dir, 'a.png'), PNG)
+    const job = {
+      kind: 'visual',
+      pdf: join(dir, 'a.pdf'),
+      picture: join(dir, 'a.png'),
+      out: join(dir, 'b.pdf'),
+      page: 0,
+      corner: 'bottom-right',
+      width: 150,
+    } as const
+    await expect(runPdfJob(job, AbortSignal.timeout(1))).rejects.toThrow(
+      'it took too long, so it was stopped',
+    )
   })
 
   test('corners sit half an inch in', () => {

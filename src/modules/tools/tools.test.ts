@@ -12,7 +12,7 @@ import { hasCommand } from '@/core/media/media'
 import { findChrome } from '@/core/render/cdp'
 import { htmlToPdf, mediaArgs, mediaConvert, officeToPdf } from '@/core/tools/converters'
 import { exec } from '@/core/tools/exec'
-import { pdfCompress, pdfToImages } from '@/core/tools/pdf'
+import { pdfCompress, pdfMerge, pdfSplit, pdfToImages, pdfToText } from '@/core/tools/pdf'
 import { sniff } from '@/core/tools/sniff'
 import { defineTool, type AnyTool } from '@/core/tools/tool'
 import { localOnly } from '@/middleware/local-only'
@@ -119,6 +119,14 @@ describe('tool jobs over HTTP', () => {
     expect(String(viewed.headers['content-disposition'])).toMatch(/^inline/)
   })
 
+  test("a tool's own size cap is enforced", async () => {
+    const small = defineTool<{ fail: boolean }>({ ...shout, id: 'small', maxSize: 10 })
+    const { http } = await boot([small])
+    expect((await http.get('/api/v1/tools').expect(200)).body[0].maxSize).toBe(10)
+    const { body: job } = await http.post('/api/v1/tools/small/jobs').send({}).expect(201)
+    await upload(http, job.id, 'big.pdf', bytes('%PDF-1.4 twenty bytes')).expect(413)
+  })
+
   test('a file is judged by its contents, not its name', async () => {
     const { http } = await boot()
     const { body: job } = await http.post('/api/v1/tools/shout/jobs').send({}).expect(201)
@@ -176,6 +184,15 @@ describe('tools that need the sandbox', () => {
 
     jobs.allowUnsandboxed = () => true
     await http.post('/api/v1/tools/guarded/jobs').send({}).expect(201)
+  })
+
+  test('PDF program tools are refused without a working sandbox', async () => {
+    const { http, jobs } = await boot([pdfMerge, pdfSplit, pdfCompress, pdfToImages, pdfToText])
+    jobs.canSandbox = async () => false
+    jobs.allowUnsandboxed = () => false
+    jobs.hasBwrap = async () => false
+    const list = (await http.get('/api/v1/tools').expect(200)).body
+    for (const tool of list) expect(tool.missing).toContain('bubblewrap')
   })
 
   test('are on where the sandbox works', async () => {

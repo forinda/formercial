@@ -1,7 +1,7 @@
 // Utilities: list them, make a job, add files, start it, poll it, download.
 import { Controller, Get, Post, Put, reply, type RequestContext } from '@forinda/kickjs'
 import { readBody } from '@/modules/projects/http/read-body'
-import { MAX_FILE, ToolJobs, type ToolJob } from './tool-jobs.service'
+import { ToolJobs, type ToolJob } from './tool-jobs.service'
 
 /** Kinds a browser may show in place; anything else only downloads. */
 const SHOWN: Record<string, string> = {
@@ -47,7 +47,7 @@ export class ToolsController {
 
   @Put('/jobs/:job/files')
   async upload(ctx: RequestContext) {
-    const bytes = await readBody(ctx, MAX_FILE)
+    const bytes = await readBody(ctx, this.jobs.sizeLimit(ctx.params.job))
     return this.view(
       await this.jobs.addFile(ctx.params.job, String(ctx.query.name ?? 'file'), bytes),
     )
