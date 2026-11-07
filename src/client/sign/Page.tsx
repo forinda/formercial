@@ -33,14 +33,26 @@ export function PdfPage({ pdf, page, scale, onClick, onSeen, thumb, className, c
         setNear(e.isIntersecting)
         onSeen?.(e.intersectionRatio)
       },
-      { rootMargin: '100% 0px', threshold: [0, 0.25, 0.5, 0.75, 1] },
+      // Watched within the scrolling area the pages sit in, so a page a screen
+      // away is drawn before it's reached.
+      {
+        root: el.closest('[data-pages]'),
+        rootMargin: '100% 0px',
+        threshold: [0, 0.25, 0.5, 0.75, 1],
+      },
     )
     watch.observe(el)
     return () => watch.disconnect()
   }, [onSeen])
 
   useEffect(() => {
-    if (near && canvas.current) void pdf.render(page, canvas.current, scale)
+    const c = canvas.current
+    if (!c) return
+    // Out of view, its drawing is let go: a long document doesn't pile up pictures.
+    if (!near) return pdf.release(c)
+    pdf.render(page, c, scale).catch(() => {
+      // A page that won't draw stays blank rather than stopping the others.
+    })
   }, [near, pdf, page, scale])
 
   return (

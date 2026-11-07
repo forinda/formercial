@@ -27,6 +27,7 @@ export function inkBounds({ data, width, height }: Pixels, pad: number) {
  * (taken from the corners) go, those a little further fade, the ink stays.
  */
 export function clearPaper({ data, width, height }: Pixels, threshold: number) {
+  if (threshold <= 0) return
   const corners = [0, width - 1, (height - 1) * width, height * width - 1]
   const paper = [0, 1, 2].map((c) => corners.reduce((sum, i) => sum + data[i * 4 + c], 0) / 4)
   for (let i = 0; i < width * height; i++) {

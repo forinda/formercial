@@ -125,6 +125,11 @@ describe('signing documents', () => {
   test('refuses what is not a PDF, and items that are not right', async () => {
     const { http } = await boot()
     await bytes(http, 'post', '/api/v1/tools/signing?name=x.pdf&pages=1', PNG).expect(400)
+    // Locked against changes (an owner password), even if it opens without one.
+    const locked = Buffer.from('%PDF-1.7\ntrailer\n<< /Root 1 0 R /Encrypt 5 0 R >>\n')
+    const res = await bytes(http, 'post', '/api/v1/tools/signing?name=x.pdf&pages=1', locked)
+    expect(res.status).toBe(400)
+    expect(res.body.detail ?? res.body.message).toMatch(/password|locked/)
     const doc = await newDoc(http)
     for (const bad of [
       { ...tick, color: 'url(#x)' },

@@ -560,7 +560,11 @@ function Workspace({ tool, id }: { tool: ToolSummary; id: string }) {
           </Button>
         </nav>
 
-        <nav aria-label="Pages" className="hidden w-28 overflow-y-auto border-r p-2 md:block">
+        <nav
+          aria-label="Pages"
+          data-pages
+          className="hidden w-28 overflow-y-auto border-r p-2 md:block"
+        >
           <ol className="grid gap-2">
             {pages.map((n) => (
               <li key={n}>
@@ -591,6 +595,7 @@ function Workspace({ tool, id }: { tool: ToolSummary; id: string }) {
 
         <div
           ref={work}
+          data-pages
           className={cn(
             'flex-1 overflow-auto bg-muted/60 p-3 md:p-6',
             active !== 'select' && 'cursor-crosshair',

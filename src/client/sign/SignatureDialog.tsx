@@ -250,17 +250,14 @@ function UploadPicture({ bind }: Bind) {
   const [threshold, setThreshold] = useState(40)
   const [preview, setPreview] = useState('')
 
-  useEffect(() =>
-    bind(async () =>
-      files[0] ? (threshold ? removeBackground(files[0], threshold) : files[0]) : null,
-    ),
-  )
+  // Always redrawn, even with clearing off: what's kept is a trimmed PNG of a sensible size.
+  useEffect(() => bind(async () => (files[0] ? removeBackground(files[0], threshold) : null)))
   useEffect(() => {
     const file = files[0]
     if (!file) return setPreview('')
     let url = ''
     let live = true
-    void (threshold ? removeBackground(file, threshold) : Promise.resolve(file)).then((b) => {
+    void removeBackground(file, threshold).then((b) => {
       if (!live || !b) return
       url = URL.createObjectURL(b)
       setPreview(url)
