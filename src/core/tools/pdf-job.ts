@@ -7,7 +7,7 @@ import { isMainThread, parentPort, workerData } from 'node:worker_threads'
 import { pdflibAddPlaceholder } from '@signpdf/placeholder-pdf-lib'
 import { SignPdf } from '@signpdf/signpdf'
 import { P12Signer } from '@signpdf/signer-p12'
-import { degrees, PDFDocument, rgb, StandardFonts } from 'pdf-lib'
+import { degrees, PDFDocument, type PDFPage, rgb, StandardFonts } from 'pdf-lib'
 
 /** A signing workspace item; the same shape as SignItem in sign-items.ts (kept in step by a test). */
 export type StampBox = { x: number; y: number; w: number; h: number }
@@ -69,6 +69,39 @@ export function toPdfBox(
   return { x, y, width: w, height: h, rotate: page.rotation }
 }
 
+/**
+ * A page as readers (and PDF.js) see it: turned by quarter turns only (any
+ * other /Rotate counts as none), and its crop box cut to the sheet.
+ */
+export function pageView(page: PDFPage) {
+  const angle = page.getRotation().angle
+  const rotation = (angle % 90 ? 0 : ((angle % 360) + 360) % 360) as Angle
+  const [c, m] = [page.getCropBox(), page.getMediaBox()]
+  const [x, y] = [Math.max(c.x, m.x), Math.max(c.y, m.y)]
+  const width = Math.min(c.x + c.width, m.x + m.width) - x
+  const height = Math.min(c.y + c.height, m.y + m.height) - y
+  return { rotation, crop: { x, y, width, height } }
+}
+
+/** A page's width and height as seen (turned a quarter, they swap). */
+const seen = (v: ReturnType<typeof pageView>) =>
+  v.rotation % 180 ? [v.crop.height, v.crop.width] : [v.crop.width, v.crop.height]
+
+/**
+ * A picture drawn in a box of another shape (initials put on every page, and a
+ * page of another size): its own shape kept, as large as fits, centred.
+ */
+export function fitPicture(b: ReturnType<typeof toPdfBox>, aspect: number) {
+  const [w, h] =
+    b.width / b.height > aspect ? [b.height * aspect, b.height] : [b.width, b.width / aspect]
+  return {
+    ...within(b, (b.width - w) / 2, (b.height - h) / 2),
+    width: w,
+    height: h,
+    rotate: b.rotate,
+  }
+}
+
 /** A point inside a drawn box (its own x across, y up), on the page. */
 function within(b: ReturnType<typeof toPdfBox>, ox: number, oy: number) {
   const [ex, ey]: [number, number][] = {
@@ -124,11 +157,19 @@ async function stamp(job: Extract<PdfJob, { kind: 'stamp' }>) {
   for (const item of job.items)
     for (const n of item.pages) {
       const page = pages[n - 1]
-      const rotation = (((page.getRotation().angle % 360) + 360) % 360) as Angle
-      const b = toPdfBox({ rotation, crop: page.getCropBox() }, item.box)
+      const view = pageView(page)
+      const b = toPdfBox(view, item.box)
       const rotate = degrees(b.rotate)
-      if (item.kind === 'picture') page.drawImage(pictures[item.picture], { ...b, rotate })
-      else if (item.kind === 'text')
+      // The page it was placed on (its first) draws it as placed; on a page of
+      // another shape it keeps the shape it has there instead of stretching.
+      const [W, H] = seen(pageView(pages[item.pages[0] - 1]))
+      const shaped = fitPicture(b, (item.box.w * W) / (item.box.h * H))
+      if (item.kind === 'picture') page.drawImage(pictures[item.picture], { ...shaped, rotate })
+      else if (item.kind === 'text') {
+        // Placed against one page, it may be on a narrower one too: refused rather than cut off.
+        const [across] = seen(view)
+        if (item.box.x * across + font.widthOfTextAtSize(item.text, item.size) > across + 0.5)
+          throw new Error(`"${item.text}" runs off page ${n}; move it left or make it smaller`)
         // Baseline a little above the box's foot, as the browser shows it.
         page.drawText(item.text, {
           ...within(b, 0, Math.max(0, (b.height - item.size) / 2) + item.size * 0.2),
@@ -138,13 +179,14 @@ async function stamp(job: Extract<PdfJob, { kind: 'stamp' }>) {
           rotate,
           lineHeight: item.size * 1.2,
         })
-      else {
+      } else {
+        const t = { ...b, ...shaped }
         const [p, q, r] = [
-          within(b, b.width * 0.1, b.height * 0.5),
-          within(b, b.width * 0.4, b.height * 0.15),
-          within(b, b.width * 0.9, b.height * 0.85),
+          within(t, t.width * 0.1, t.height * 0.5),
+          within(t, t.width * 0.4, t.height * 0.15),
+          within(t, t.width * 0.9, t.height * 0.85),
         ]
-        const thickness = Math.max(1, Math.min(b.width, b.height) * 0.1)
+        const thickness = Math.max(1, Math.min(t.width, t.height) * 0.1)
         page.drawLine({ start: p, end: q, thickness, color: ink(item.color) })
         page.drawLine({ start: q, end: r, thickness, color: ink(item.color) })
       }

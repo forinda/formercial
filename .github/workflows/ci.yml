@@ -21,8 +21,10 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-      - name: ffmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      # ffmpeg for media tests; Ghostscript and Poppler for the PDF tools and the
+      # signing workspace's stamping tests (CI fails rather than skips without them).
+      - name: ffmpeg, Ghostscript, Poppler
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg ghostscript poppler-utils
       - run: pnpm install --frozen-lockfile
       - name: Chromium for render tests
         run: pnpm dlx playwright install --with-deps chromium-headless-shell

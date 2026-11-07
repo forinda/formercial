@@ -36,6 +36,8 @@ export async function loadPdf(file: Blob): Promise<LoadedPdf> {
       throw new Error('this PDF has a password; take it off first')
     throw new Error("this file couldn't be read as a PDF")
   })
+  // ponytail: every page is read up front, for its size (the layout needs them all);
+  // slow near the 5000-page cap. Assume page 1's size and read the rest lazily if that bites.
   const pages = await Promise.all(
     Array.from({ length: doc.numPages }, (_, i) => doc.getPage(i + 1)),
   ).catch(() => {

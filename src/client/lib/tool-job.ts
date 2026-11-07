@@ -7,6 +7,8 @@ export type Job = {
   id: string
   state: 'waiting' | 'queued' | 'running' | 'done' | 'failed'
   outputs: { file: string; name: string }[]
+  /** What the server did with the outputs, for a tool that keeps them (signing: the version). */
+  result?: { version?: number }
   error?: string
 }
 

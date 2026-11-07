@@ -23,6 +23,7 @@ export function PdfPage({ pdf, page, scale, onClick, onSeen, thumb, className, c
   const box = useRef<HTMLDivElement>(null)
   const canvas = useRef<HTMLCanvasElement>(null)
   const [near, setNear] = useState(false)
+  const [broken, setBroken] = useState(false)
   const { width, height } = pdf.size(page)
 
   useEffect(() => {
@@ -50,9 +51,9 @@ export function PdfPage({ pdf, page, scale, onClick, onSeen, thumb, className, c
     if (!c) return
     // Out of view, its drawing is let go: a long document doesn't pile up pictures.
     if (!near) return pdf.release(c)
-    pdf.render(page, c, scale).catch(() => {
-      // A page that won't draw stays blank rather than stopping the others.
-    })
+    setBroken(false)
+    // A page that won't draw says so, and the others carry on.
+    pdf.render(page, c, scale).catch(() => setBroken(true))
   }, [near, pdf, page, scale])
 
   return (
@@ -75,6 +76,11 @@ export function PdfPage({ pdf, page, scale, onClick, onSeen, thumb, className, c
         className="absolute inset-0 size-full bg-white"
         style={{ visibility: near ? 'visible' : 'hidden' }}
       />
+      {broken && (
+        <p className="absolute inset-0 grid place-items-center p-2 text-center text-xs text-destructive">
+          This page couldn't be drawn
+        </p>
+      )}
       {children}
     </div>
   )

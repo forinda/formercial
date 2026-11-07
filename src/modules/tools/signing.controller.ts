@@ -89,11 +89,8 @@ export class SigningController {
     await this.store.read(id)
     this.jobs.whenDone(ctx.params.job, 'pdf-workspace-sign', async (job) => {
       const { bytes } = await this.jobs.output(job.id, job.outputs[0])
-      await this.store.addVersion(
-        id,
-        bytes,
-        job.files.some((f) => f.kind === 'p12'),
-      )
+      const p12 = job.files.some((f) => f.kind === 'p12')
+      return { version: (await this.store.addVersion(id, bytes, p12)).n }
     })
     return reply.noContent()
   }

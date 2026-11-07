@@ -30,9 +30,13 @@ export type ToolJob = {
   /** Uploaded files: their names as given (for the download names) and kinds. */
   files: { name: string; kind: string; size: number }[]
   outputs: string[]
+  /** What was done with the outputs once made (see whenDone), for the page to show. */
+  result?: Record<string, unknown>
   error?: string
   createdAt: number
 }
+
+type Result = Record<string, unknown>
 
 export type ToolSummary = Awaited<ReturnType<ToolJobs['list']>>[number]
 
@@ -51,7 +55,7 @@ export class ToolJobs {
   tools: AnyTool[] = TOOLS
   private readonly jobs = new Map<string, ToolJob>()
   /** What to do with a job's outputs once made, before it counts as done. */
-  private readonly after = new Map<string, (job: ToolJob) => Promise<void>>()
+  private readonly after = new Map<string, (job: ToolJob) => Promise<Result | void>>()
   private queue: Promise<unknown> = Promise.resolve()
   private available?: Promise<Record<string, boolean>>
 
@@ -175,7 +179,7 @@ export class ToolJobs {
    * Has `then` run with a job's outputs once it makes them, whether or not
    * anyone is still watching; the job is done only after it. Set before it starts.
    */
-  whenDone(id: string, tool: string, then: (job: ToolJob) => Promise<void>) {
+  whenDone(id: string, tool: string, then: (job: ToolJob) => Promise<Result | void>) {
     const job = this.job(id)
     if (job.tool !== tool) throw HttpException.notFound('no such job')
     if (job.state !== 'waiting') throw HttpException.badRequest('this job has started')
@@ -204,11 +208,12 @@ export class ToolJobs {
       // What's really in out/, not what the tool said: nothing outside it is ever offered.
       job.outputs = (await readdir(join(dir, 'out'))).filter((n) => !n.startsWith('.')).sort()
       if (!job.outputs.length) throw new Error('it finished without making anything')
-      await this.after
+      const result = await this.after
         .get(job.id)?.(job)
         .catch((err: Error) => {
           throw new Error(`it was made, but couldn't be kept: ${err.message}`)
         })
+      if (result) job.result = result
       job.state = 'done'
     } catch (err) {
       job.state = 'failed'
