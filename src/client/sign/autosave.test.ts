@@ -60,6 +60,16 @@ describe('autosave', () => {
     expect(seen.state).toBe('saved')
   })
 
+  test('undone before the save goes out: back to saved, nothing sent', () => {
+    const opened = ['a']
+    const { sent, seen, show } = mount(opened)
+    show(['a', 'b'])
+    show(opened)
+    act(() => vi.advanceTimersByTime(800))
+    expect(seen.state).toBe('saved')
+    expect(sent).toEqual([])
+  })
+
   test('leaving before the save sends it on the way out', () => {
     const { sent, show, unmount } = mount(['a'])
     show(['a', 'b'])

@@ -119,6 +119,33 @@ describe('tool jobs over HTTP', () => {
     expect(String(viewed.headers['content-disposition'])).toMatch(/^inline/)
   })
 
+  test('a job that never starts can be dropped, and an abandoned one is swept soon', async () => {
+    const { http, jobs } = await boot()
+    const make = async () =>
+      (await http.post('/api/v1/tools/shout/jobs').send({ options: {} }).expect(201)).body.id
+    const dropped = await make()
+    await upload(http, dropped, 'a.pdf', PDF).expect(200)
+    await http.delete(`/api/v1/tools/jobs/${dropped}`).expect(204)
+    await http.get(`/api/v1/tools/jobs/${dropped}`).expect(404)
+    await expect(readdir(join(jobs.root, dropped))).rejects.toThrow()
+
+    // Made, then left waiting: gone after ten minutes, not an hour.
+    const left = await make()
+    jobs.status(left).createdAt -= 11 * 60_000
+    await jobs.sweep()
+    await http.get(`/api/v1/tools/jobs/${left}`).expect(404)
+
+    // One that ran is kept for its hour, and can't be dropped while it runs.
+    const ran = await make()
+    await upload(http, ran, 'a.pdf', PDF).expect(200)
+    await http.post(`/api/v1/tools/jobs/${ran}/start`).expect(200)
+    await http.delete(`/api/v1/tools/jobs/${ran}`).expect(400)
+    await jobs.idle()
+    jobs.status(ran).createdAt -= 11 * 60_000
+    await jobs.sweep()
+    await http.get(`/api/v1/tools/jobs/${ran}`).expect(200)
+  })
+
   test("a tool's own size cap is enforced", async () => {
     const small = defineTool<{ fail: boolean }>({ ...shout, id: 'small', maxSize: 10 })
     const { http } = await boot([small])

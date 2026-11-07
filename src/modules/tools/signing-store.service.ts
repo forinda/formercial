@@ -173,7 +173,9 @@ export class SigningStore {
   addVersion(id: string, bytes: Uint8Array, digital: boolean): Promise<SigningVersion> {
     if (sniff(bytes) !== 'pdf') throw HttpException.badRequest('that is not a PDF')
     // ponytail: looks for a signature dictionary's byte range, not a verified signature.
-    const signed = digital && Buffer.from(bytes).includes('/ByteRange')
+    const signed =
+      digital &&
+      Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength).includes('/ByteRange')
     return this.locked(id, async () => {
       const current = await this.read(id)
       const n = Math.max(0, ...current.versions.map((v) => v.n)) + 1

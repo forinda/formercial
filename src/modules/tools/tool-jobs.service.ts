@@ -16,6 +16,8 @@ import { sniff } from '@/core/tools/sniff'
 
 export const MAX_FILE = 200 * 1024 * 1024
 const KEEP_MS = 60 * 60 * 1000
+/** A job made but never started (its page gave up part way) is let go sooner. */
+const KEEP_WAITING_MS = 10 * 60 * 1000
 const TIME_LIMIT_MS = 10 * 60 * 1000
 const MAX_JOBS = 200
 const ID = /^[0-9a-f]{32}$/
@@ -242,12 +244,24 @@ export class ToolJobs {
     return `${given}${suffix}${ext}`
   }
 
-  /** Forget finished jobs older than an hour, and their folders. */
+  /** Lets go of a job that isn't queued or running, and its folder. */
+  async drop(id: string) {
+    const job = this.job(id)
+    if (job.state === 'queued' || job.state === 'running')
+      throw HttpException.badRequest('this job is under way')
+    this.jobs.delete(id)
+    this.after.delete(id)
+    await rm(this.dir(id), { recursive: true, force: true })
+  }
+
+  /** Forget finished jobs older than an hour, never-started ones after ten minutes. */
   async sweep() {
-    const cutoff = Date.now() - KEEP_MS
+    const now = Date.now()
     for (const [id, job] of this.jobs) {
-      if (job.createdAt >= cutoff || job.state === 'running' || job.state === 'queued') continue
+      const keep = job.state === 'waiting' ? KEEP_WAITING_MS : KEEP_MS
+      if (job.createdAt >= now - keep || job.state === 'running' || job.state === 'queued') continue
       this.jobs.delete(id)
+      this.after.delete(id)
       await rm(this.dir(id), { recursive: true, force: true })
     }
   }

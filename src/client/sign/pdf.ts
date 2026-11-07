@@ -26,7 +26,11 @@ export async function loadPdf(file: Blob): Promise<LoadedPdf> {
   })
   const pages = await Promise.all(
     Array.from({ length: doc.numPages }, (_, i) => doc.getPage(i + 1)),
-  )
+  ).catch(() => {
+    // Opened, but a page won't load (a damaged page tree, say).
+    void task.destroy()
+    throw new Error("this file couldn't be read as a PDF")
+  })
   const sizes = pages.map((p) => p.getViewport({ scale: 1 }))
   // One drawing per canvas: a newer one (after zooming) cancels the old.
   const drawing = new WeakMap<HTMLCanvasElement, { cancel(): void }>()

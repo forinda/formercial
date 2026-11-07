@@ -23,15 +23,21 @@ export async function startJob(
 ): Promise<Job> {
   step('Starting…')
   const made = await api<Job>(`/api/v1/tools/${tool}/jobs`, { method: 'POST', json: { options } })
-  await bind?.(made.id)
-  for (const [i, file] of files.entries()) {
-    step(`Sending ${files.length > 1 ? `file ${i + 1} of ${files.length}` : 'the file'}…`)
-    await api(`/api/v1/tools/jobs/${made.id}/files?name=${encodeURIComponent(file.name)}`, {
-      method: 'PUT',
-      body: file.body,
-    })
+  try {
+    await bind?.(made.id)
+    for (const [i, file] of files.entries()) {
+      step(`Sending ${files.length > 1 ? `file ${i + 1} of ${files.length}` : 'the file'}…`)
+      await api(`/api/v1/tools/jobs/${made.id}/files?name=${encodeURIComponent(file.name)}`, {
+        method: 'PUT',
+        body: file.body,
+      })
+    }
+    return await api<Job>(`/api/v1/tools/jobs/${made.id}/start`, { method: 'POST' })
+  } catch (err) {
+    // Given up part way: let the job go rather than leave it taking a place.
+    void api(`/api/v1/tools/jobs/${made.id}`, { method: 'DELETE' }).catch(() => {})
+    throw err
   }
-  return api<Job>(`/api/v1/tools/jobs/${made.id}/start`, { method: 'POST' })
 }
 
 export const jobStatus = (id: string) => api<Job>(`/api/v1/tools/jobs/${id}`)

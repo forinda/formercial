@@ -1,5 +1,5 @@
 // Utilities: list them, make a job, add files, start it, poll it, download.
-import { Controller, Get, Post, Put, reply, type RequestContext } from '@forinda/kickjs'
+import { Controller, Delete, Get, Post, Put, reply, type RequestContext } from '@forinda/kickjs'
 import { readBody } from '@/modules/projects/http/read-body'
 import { ToolJobs, type ToolJob } from './tool-jobs.service'
 
@@ -51,6 +51,13 @@ export class ToolsController {
     return this.view(
       await this.jobs.addFile(ctx.params.job, String(ctx.query.name ?? 'file'), bytes),
     )
+  }
+
+  /** A job its page gave up on before starting it. */
+  @Delete('/jobs/:job')
+  async drop(ctx: RequestContext) {
+    await this.jobs.drop(ctx.params.job)
+    return reply.noContent()
   }
 
   @Post('/jobs/:job/start')

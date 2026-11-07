@@ -1,7 +1,7 @@
 // Saves a value a moment after it last changed. Compared with what was last
 // saved (undoing back to the start is a change too); saved again if it changed
 // while a save was out; and sent on the way out if it was never saved.
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 export type SaveState = 'saved' | 'saving' | 'failed'
 
@@ -13,11 +13,15 @@ export function useAutosave<T>(
 ): SaveState {
   const [state, setState] = useState<SaveState>('saved')
   const [again, setAgain] = useState(0)
+  // What's on screen and how to save it, as last committed (not a render React may drop).
   const latest = useRef(value)
-  latest.current = value
-  const lastSaved = useRef<T | null>(null)
   const send = useRef(save)
-  send.current = save
+  useLayoutEffect(() => {
+    latest.current = value
+    send.current = save
+  })
+  const lastSaved = useRef<T | null>(null)
+  const out = useRef(false)
 
   useEffect(() => {
     if (value === null) return
@@ -25,16 +29,25 @@ export function useAutosave<T>(
       lastSaved.current = value
       return
     }
-    if (lastSaved.current === value) return
+    if (lastSaved.current === value) {
+      // Undone back to what's saved before anything went out: nothing to do.
+      if (!out.current) setState('saved')
+      return
+    }
     setState('saving')
     const timer = setTimeout(() => {
+      out.current = true
       send.current(value, false).then(
         () => {
+          out.current = false
           lastSaved.current = value
           if (latest.current === value) setState('saved')
           else setAgain((n) => n + 1)
         },
-        () => setState('failed'),
+        () => {
+          out.current = false
+          setState('failed')
+        },
       )
     }, delay)
     return () => clearTimeout(timer)
