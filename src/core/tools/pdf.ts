@@ -1,7 +1,7 @@
 // PDF tools: merge, split, compress and pictures through Ghostscript and
 // Poppler (programs, so they run in the sandbox with a time limit), signing
 // through pdf-lib and @signpdf in this process. Each writes into `${dir}/out`.
-import { readFile, readdir, rename, writeFile } from 'node:fs/promises'
+import { readdir, rename } from 'node:fs/promises'
 import { basename, extname, join } from 'node:path'
 import { z } from 'zod'
 import type { PdfJob } from './pdf-job'

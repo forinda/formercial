@@ -27,6 +27,7 @@ export class ToolsController {
     state: job.state,
     files: job.files,
     outputs: job.outputs.map((file) => ({ file, name: this.jobs.nameFor(job, file) })),
+    result: job.result,
     error: job.error,
   })
 

@@ -10,6 +10,11 @@ type Props = {
   px: { width: number; height: number }
   scale: number
   picture?: string
+  /**
+   * The size, in points, of the page it was placed on (its first). On a page of
+   * another shape a picture or tick keeps the shape it has there, as the PDF draws it.
+   */
+  placedOn?: { width: number; height: number }
   selected: boolean
   onSelect(): void
   onChange(next: Placed): void
@@ -25,6 +30,7 @@ export function ItemBox({
   px,
   scale,
   picture,
+  placedOn,
   selected,
   onSelect,
   onChange,
@@ -102,6 +108,17 @@ export function ItemBox({
   }
 
   const size = (shown.size ?? 12) * scale
+  // A picture or tick: as large as fits in the box with the shape it was placed with, centred.
+  const [bw, bh] = [w * px.width, h * px.height]
+  const shape = placedOn ? (w * placedOn.width) / (h * placedOn.height) : bw / bh
+  const [fw, fh] = bw / bh > shape ? [bh * shape, bh] : [bw, bw / shape]
+  const fitted = {
+    position: 'absolute',
+    left: (bw - fw) / 2,
+    top: (bh - fh) / 2,
+    width: fw,
+    height: fh,
+  } as const
   return (
     <div
       role="button"
@@ -121,7 +138,7 @@ export function ItemBox({
       style={{ left: x * px.width, top: y * px.height, width: w * px.width, height: h * px.height }}
     >
       {isPicture(item.label) && picture && (
-        <img src={picture} alt="" draggable={false} className="size-full object-fill" />
+        <img src={picture} alt="" draggable={false} className="object-fill" style={fitted} />
       )}
       {isText(item.label) && (
         // Helvetica, as the PDF gets it, with the baseline where the server puts it.
@@ -138,7 +155,7 @@ export function ItemBox({
         </span>
       )}
       {item.label === 'tick' && (
-        <svg viewBox="0 0 1 1" preserveAspectRatio="none" className="size-full">
+        <svg viewBox="0 0 1 1" preserveAspectRatio="none" style={fitted}>
           <polyline
             points="0.1,0.5 0.4,0.85 0.9,0.15"
             fill="none"

@@ -4,7 +4,7 @@
 import { mkdir, mkdtemp, readFile, readdir, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { degrees, PDFDocument, type PDFPage, StandardFonts } from 'pdf-lib'
+import { degrees, PDFDocument, PDFName, PDFNumber, type PDFPage, StandardFonts } from 'pdf-lib'
 import { describe, expect, test } from 'vitest'
 import { hasCommand } from '@/core/media/media'
 import { exec } from './exec'
@@ -17,7 +17,7 @@ import {
   pdfToImages,
   pdfToText,
 } from './pdf'
-import type { PdfJob } from './pdf-job'
+import { fitPicture, pageView, type PdfJob } from './pdf-job'
 import type { Box, SignItem } from './sign-items'
 import { runPdfJob } from './pdf-worker'
 import { sniff } from './sniff'
@@ -178,6 +178,49 @@ const stamp = (
 
 const sig = (box: Box, pages = [1]): SignItem => ({ kind: 'picture', pages, box, picture: 0 })
 
+test.runIf(!!process.env.CI)('CI has poppler, so the stamping tests below really run', () => {
+  expect(hasPoppler).toBe(true)
+})
+
+describe('pages as readers see them', () => {
+  test('a rotation that is not a quarter turn counts as none, as PDF.js does', async () => {
+    const doc = await PDFDocument.create()
+    const page = doc.addPage([300, 400])
+    page.node.set(PDFName.of('Rotate'), PDFNumber.of(45))
+    expect(pageView(page).rotation).toBe(0)
+    page.setRotation(degrees(-90))
+    expect(pageView(page).rotation).toBe(270)
+  })
+
+  test('a crop box reaching past the sheet is cut to the sheet', async () => {
+    const doc = await PDFDocument.create()
+    const page = doc.addPage([300, 400])
+    page.setCropBox(-50, 100, 500, 500)
+    expect(pageView(page).crop).toEqual({ x: 0, y: 100, width: 300, height: 300 })
+  })
+
+  test('a picture keeps its shape in a box of another shape, centred', () => {
+    const box = { x: 10, y: 20, width: 100, height: 50, rotate: 0 as const }
+    expect(fitPicture(box, 1)).toEqual({ x: 35, y: 20, width: 50, height: 50, rotate: 0 })
+    expect(fitPicture(box, 4)).toEqual({ x: 10, y: 32.5, width: 100, height: 25, rotate: 0 })
+  })
+
+  test('text that would run off a narrower page is refused, naming the page', async () => {
+    const doc = await PDFDocument.create()
+    doc.addPage([600, 400])
+    doc.addPage([200, 400])
+    const text: SignItem = {
+      kind: 'text',
+      pages: [1, 2],
+      box: { x: 0.5, y: 0.5, w: 0.3, h: 0.06 },
+      text: 'A long line of words',
+      size: 18,
+      color: '#000000',
+    }
+    await expect(stamp(await doc.save(), [text], [])).rejects.toThrow(/runs off page 2/)
+  })
+})
+
 describe.runIf(hasPoppler)('signing workspace', () => {
   const box = { x: 0.6, y: 0.8, w: 0.3, h: 0.1 }
 
@@ -270,6 +313,20 @@ describe.runIf(hasPoppler)('signing workspace', () => {
       if (px[i * 3] > 150 && px[i * 3 + 1] < 60 && px[i * 3 + 2] < 60) red++
     expect(red).toBeGreaterThan(20)
   }, 60_000)
+
+  test('on a page of another shape, an item keeps the shape it was placed with', async () => {
+    const doc = await PDFDocument.create()
+    doc.addPage([300, 400])
+    doc.addPage([400, 300])
+    const box = { x: 0.2, y: 0.2, w: 0.4, h: 0.2 }
+    const { out } = await stamp(await doc.save(), [
+      { kind: 'tick', pages: [1, 2], box, color: '#000000' },
+    ])
+    const signed = join(out, 'in-1-signed.pdf')
+    const [one, two] = [await inkBox(signed, 1), await inkBox(signed, 2)]
+    const shape = (b: Box | null, w: number, h: number) => (b!.w * w) / (b!.h * h)
+    expect(shape(two, 400, 300)).toBeCloseTo(shape(one, 300, 400), 0)
+  })
 
   test('one item on several pages appears on each', async () => {
     const { out, files } = await stamp(await blankPdf(3), [sig(box, [1, 2, 3])])

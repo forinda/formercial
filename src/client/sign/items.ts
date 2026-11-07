@@ -98,6 +98,8 @@ export function useHistory<T>(initial: T) {
   return {
     value: h.present,
     set: (next: T) => setH((cur) => history.set(cur, next)),
+    /** A change worked out from the value as it is when applied. */
+    update: (change: (now: T) => T) => setH((cur) => history.set(cur, change(cur.present))),
     undo: () => setH(history.undo<T>),
     redo: () => setH(history.redo<T>),
     /** Starts over from `value`, with nothing to undo (a document just opened). */

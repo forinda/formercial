@@ -189,7 +189,9 @@ function Workspace({ tool, id }: { tool: ToolSummary; id: string }) {
     setKeepError('')
     api<SigningDoc>(DOC).then(
       (d) => {
-        setVersion(d.versions.at(-1) ?? null)
+        // The version this job became (another tab may have made one since).
+        const n = j.result?.version
+        setVersion(d.versions.find((v) => v.n === n) ?? null)
         setDoc((old) => old && { ...old, versions: d.versions })
       },
       (err: Error) => setKeepError(err.message),
@@ -285,7 +287,8 @@ function Workspace({ tool, id }: { tool: ToolSummary; id: string }) {
         color: DEFAULT_INK,
         ...extra,
       }
-      items.set(list.concat([item]))
+      // The list as it is now: something may have changed while the picture was measured.
+      items.update((now) => now.concat([item]))
       setSelected({ id: item.id, page })
       setActive('select')
     },
@@ -295,8 +298,13 @@ function Workspace({ tool, id }: { tool: ToolSummary; id: string }) {
   /** Text changed: its box follows its words and size, and stays on the page. */
   function changed(next: Placed, page: number) {
     let box = next.box
-    if (pdf && next.text !== undefined && next.size)
-      box = { ...box, ...textBox(next.text, next.size, pdf.size(page)) }
+    if (pdf && next.text !== undefined && next.size) {
+      // Measured on the narrowest page it's on, so it fits on every one.
+      const narrowest = [page, ...next.pages]
+        .map((p) => pdf.size(p))
+        .reduce((a, b) => (b.width < a.width ? b : a))
+      box = { ...box, ...textBox(next.text, next.size, narrowest) }
+    }
     box = { ...box, x: Math.min(box.x, 1 - box.w), y: Math.min(box.y, 1 - box.h) }
     update({ ...next, box })
     // A name typed in is remembered for next time.
@@ -636,6 +644,7 @@ function Workspace({ tool, id }: { tool: ToolSummary; id: string }) {
                         px={px}
                         scale={scale}
                         picture={urls[i.label]}
+                        placedOn={pdf.size(i.pages[0])}
                         selected={selected?.id === i.id && selected.page === n}
                         onSelect={() => setSelected({ id: i.id, page: n })}
                         onChange={(next) => changed(next, n)}

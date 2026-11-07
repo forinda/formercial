@@ -88,6 +88,7 @@ async function sign(
     await bytes(http, 'put', `/api/v1/tools/jobs/${job.id}/files?name=me.p12`, P12).expect(200)
   await http.post(`/api/v1/tools/jobs/${job.id}/start`).expect(200)
   await jobs.idle()
+  return (await http.get(`/api/v1/tools/jobs/${job.id}`).expect(200)).body
 }
 
 async function newDoc(http: Http, name = 'Lease.pdf') {
@@ -159,7 +160,8 @@ describe('signing documents', () => {
     const doc = await newDoc(http)
     // Started and left: nothing more is asked of the browser.
     await sign(http, jobs, doc.id)
-    await sign(http, jobs, doc.id)
+    // The job itself says which version it became (another tab may have made one too).
+    expect((await sign(http, jobs, doc.id)).result).toEqual({ version: 2 })
 
     const read = (await http.get(`/api/v1/tools/signing/${doc.id}`)).body
     expect(read.versions.map((v: { n: number }) => v.n)).toEqual([1, 2])
