@@ -42,3 +42,22 @@ export function checkItems(items: SignItem[], pageCount: number | null, pictureC
       throw new Error('a signature picture is missing')
   }
 }
+
+/**
+ * An item as the workspace keeps it (and a stored document saves it): what it
+ * is, rather than how it's drawn. Turned into SignItem at Finish.
+ */
+export const placedItem = z.object({
+  id: z.string().regex(/^[\w-]{1,32}$/),
+  label: z.enum(['signature', 'initials', 'date', 'name', 'text', 'tick']),
+  pages,
+  box,
+  color,
+  text: z.string().max(2000).optional(),
+  size: z.number().min(6).max(72).optional(),
+})
+export const placedItems = z
+  .array(placedItem)
+  .max(500)
+  .refine((list) => new Set(list.map((i) => i.id)).size === list.length, 'two items share an id')
+export type Placed = z.infer<typeof placedItem>

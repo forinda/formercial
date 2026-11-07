@@ -16,6 +16,8 @@ import { sniff } from '@/core/tools/sniff'
 
 export const MAX_FILE = 200 * 1024 * 1024
 const KEEP_MS = 60 * 60 * 1000
+/** A job made but never started (its page gave up part way) is let go sooner. */
+const KEEP_WAITING_MS = 10 * 60 * 1000
 const TIME_LIMIT_MS = 10 * 60 * 1000
 const MAX_JOBS = 200
 const ID = /^[0-9a-f]{32}$/
@@ -48,6 +50,8 @@ export class ToolJobs {
   /** The tools on offer; tests swap in their own. */
   tools: AnyTool[] = TOOLS
   private readonly jobs = new Map<string, ToolJob>()
+  /** What to do with a job's outputs once made, before it counts as done. */
+  private readonly after = new Map<string, (job: ToolJob) => Promise<void>>()
   private queue: Promise<unknown> = Promise.resolve()
   private available?: Promise<Record<string, boolean>>
 
@@ -167,6 +171,18 @@ export class ToolJobs {
     return job
   }
 
+  /**
+   * Has `then` run with a job's outputs once it makes them, whether or not
+   * anyone is still watching; the job is done only after it. Set before it starts.
+   */
+  whenDone(id: string, tool: string, then: (job: ToolJob) => Promise<void>) {
+    const job = this.job(id)
+    if (job.tool !== tool) throw HttpException.notFound('no such job')
+    if (job.state !== 'waiting') throw HttpException.badRequest('this job has started')
+    if (this.after.has(id)) throw HttpException.badRequest('this job is spoken for')
+    this.after.set(id, then)
+  }
+
   /** Resolves once every job started so far has finished. For tests. */
   idle() {
     return this.queue
@@ -188,6 +204,11 @@ export class ToolJobs {
       // What's really in out/, not what the tool said: nothing outside it is ever offered.
       job.outputs = (await readdir(join(dir, 'out'))).filter((n) => !n.startsWith('.')).sort()
       if (!job.outputs.length) throw new Error('it finished without making anything')
+      await this.after
+        .get(job.id)?.(job)
+        .catch((err: Error) => {
+          throw new Error(`it was made, but couldn't be kept: ${err.message}`)
+        })
       job.state = 'done'
     } catch (err) {
       job.state = 'failed'
@@ -195,6 +216,7 @@ export class ToolJobs {
     } finally {
       // Uploads and options (a certificate's password, say) aren't needed once it ends.
       job.options = undefined
+      this.after.delete(job.id)
       for (const name of await readdir(dir).catch(() => []))
         if (name.startsWith('in-')) await rm(join(dir, name), { force: true })
     }
@@ -222,12 +244,24 @@ export class ToolJobs {
     return `${given}${suffix}${ext}`
   }
 
-  /** Forget finished jobs older than an hour, and their folders. */
+  /** Lets go of a job that isn't queued or running, and its folder. */
+  async drop(id: string) {
+    const job = this.job(id)
+    if (job.state === 'queued' || job.state === 'running')
+      throw HttpException.badRequest('this job is under way')
+    this.jobs.delete(id)
+    this.after.delete(id)
+    await rm(this.dir(id), { recursive: true, force: true })
+  }
+
+  /** Forget finished jobs older than an hour, never-started ones after ten minutes. */
   async sweep() {
-    const cutoff = Date.now() - KEEP_MS
+    const now = Date.now()
     for (const [id, job] of this.jobs) {
-      if (job.createdAt >= cutoff || job.state === 'running' || job.state === 'queued') continue
+      const keep = job.state === 'waiting' ? KEEP_WAITING_MS : KEEP_MS
+      if (job.createdAt >= now - keep || job.state === 'running' || job.state === 'queued') continue
       this.jobs.delete(id)
+      this.after.delete(id)
       await rm(this.dir(id), { recursive: true, force: true })
     }
   }

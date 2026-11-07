@@ -4,6 +4,7 @@
 import { Link } from '@inertiajs/react'
 import {
   CalendarDays,
+  History,
   Check,
   Minus,
   PanelLeftClose,
@@ -39,7 +40,10 @@ import {
 import { PdfPage } from '@/client/sign/Page'
 import { usePinch } from '@/client/sign/pinch'
 import { SignatureDialog } from '@/client/sign/SignatureDialog'
+import { SigningDocs } from '@/client/sign/SigningDocs'
+import { useAutosave } from '@/client/sign/autosave'
 import { loadPdf, type LoadedPdf } from '@/client/sign/pdf'
+import type { SigningDoc, SigningVersion } from '@/modules/tools/signing-store.service'
 import type { ToolSummary } from '@/modules/tools/tool-jobs.service'
 
 type Tool = 'select' | Label
@@ -79,7 +83,16 @@ async function aspect(blob: Blob) {
 
 type Asking = { label: Label; then?: { page: number; at: { x: number; y: number } } }
 
-export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
+const TEXT_LABELS: Label[] = ['date', 'name', 'text']
+
+/** The documents kept on this machine, or one of them open. */
+export default function SignWorkspace({ tool, id }: { tool: ToolSummary; id?: string }) {
+  // Keyed by the document, so opening another starts clean.
+  return id ? <Workspace key={id} tool={tool} id={id} /> : <SigningDocs maxSize={tool.maxSize} />
+}
+
+function Workspace({ tool, id }: { tool: ToolSummary; id: string }) {
+  const DOC = `/api/v1/tools/signing/${id}`
   const [file, setFile] = useState<File | null>(null)
   const [pdf, setPdf] = useState<LoadedPdf | null>(null)
   const [openError, setOpenError] = useState('')
@@ -121,13 +134,81 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
   const job = useToolJob(tool.id)
   const wide = useWide()
 
+  // The stored document: its PDF, what was placed on it, and its pictures.
+  const [doc, setDoc] = useState<SigningDoc | null>(null)
+  useEffect(() => {
+    let live = true
+    void (async () => {
+      try {
+        const d = await api<SigningDoc>(DOC)
+        const res = await fetch(`${DOC}/original`)
+        if (!res.ok) throw new Error("this document's PDF is missing")
+        const original = await res.blob()
+        const pics: Partial<Record<Label, Blob>> = {}
+        for (const label of d.pictures) {
+          const pic = await fetch(`${DOC}/pictures/${label}`)
+          // One that won't load is asked for again at Finish.
+          if (pic.ok) pics[label] = await pic.blob()
+        }
+        if (!live) return
+        setPictures(pics)
+        items.reset(d.items)
+        setDoc(d)
+        setFile(new File([original], d.name, { type: 'application/pdf' }))
+      } catch (err) {
+        if (live) setOpenError((err as Error).message)
+      }
+    })()
+    return () => {
+      live = false
+    }
+    // Only when a different document is opened.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [DOC])
+
+  // What's placed is saved as it changes (a moment after the last change).
+  const itemsSaved = useAutosave(doc && items.value, (value, leaving) =>
+    api(`${DOC}/items`, { method: 'PUT', json: { items: value }, keepalive: leaving }),
+  )
+  // A signature picture that didn't save shows too, until one does.
+  const [pictureFailed, setPictureFailed] = useState(false)
+  const saved = pictureFailed ? 'failed' : itemsSaved
+  // Why Finish can't go ahead yet, if it can't.
+  const [finishError, setFinishError] = useState('')
+
+  // Each Finish is kept by the server as the document's next version (even if
+  // this page is closed first); once done, the document's versions are reloaded.
+  const kept = useRef<string | null>(null)
+  const [version, setVersion] = useState<SigningVersion | null>(null)
+  const [keepError, setKeepError] = useState('')
+  useEffect(() => {
+    const j = job.job
+    if (j?.state !== 'done' || kept.current === j.id) return
+    kept.current = j.id
+    setVersion(null)
+    setKeepError('')
+    api<SigningDoc>(DOC).then(
+      (d) => {
+        setVersion(d.versions.at(-1) ?? null)
+        setDoc((old) => old && { ...old, versions: d.versions })
+      },
+      (err: Error) => setKeepError(err.message),
+    )
+  }, [job.job, DOC])
+  const [showVersions, setShowVersions] = useState(false)
+
   // Open the chosen PDF.
   useEffect(() => {
     if (!file) return
     let live = true
+    let opened: LoadedPdf | null = null
     setOpenError('')
     loadPdf(file).then(
-      (loaded) => live && setPdf(loaded),
+      (loaded) => {
+        opened = loaded
+        if (live) setPdf(loaded)
+        else void loaded.destroy()
+      },
       (err: Error) => {
         if (!live) return
         setOpenError(err.message)
@@ -136,6 +217,7 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
     )
     return () => {
       live = false
+      void opened?.destroy()
     }
   }, [file])
 
@@ -271,41 +353,42 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
 
   async function finish(certificate: Certificate | null) {
     setFinishing(false)
+    setFinishError('')
     if (!file) return
+    const empty = list.find((i) => TEXT_LABELS.includes(i.label) && !i.text?.trim())
+    if (empty) {
+      setSelected({ id: empty.id, page: empty.pages[0] })
+      return setFinishError('a text item is empty: type in it or delete it')
+    }
     const { items: signItems, pictures: order } = toSignItems(list)
     const files: { name: string; body: Blob }[] = [{ name: file.name, body: file }]
     for (const label of order) {
       const pic = pictures[label]
-      if (pic) files.push({ name: `${label}.png`, body: pic })
+      if (!pic) return setFinishError(`the ${label} picture is missing: pick it again`)
+      files.push({ name: `${label}.png`, body: pic })
     }
     // The certificate goes last; the server signs the stamped copy with it.
     if (certificate) files.push({ name: certificate.file.name, body: certificate.file })
-    await job.run({ items: signItems, password: certificate?.password ?? '' }, files)
+    await job.run({ items: signItems, password: certificate?.password ?? '' }, files, (id) =>
+      api(`${DOC}/jobs/${id}`, { method: 'POST' }),
+    )
   }
 
   if (!pdf)
     return (
-      <main className="mx-auto grid max-w-2xl gap-6 px-4 py-12">
-        <Link href="/utilities" className="text-sm text-muted-foreground hover:text-foreground">
-          ← All utilities
+      <main className="mx-auto grid max-w-2xl gap-4 px-4 py-12">
+        <Link
+          href="/utilities/sign"
+          className="text-sm text-muted-foreground hover:text-foreground"
+        >
+          ← Your documents
         </Link>
-        <h1 className="text-2xl font-semibold">Sign a PDF</h1>
-        <p className="text-muted-foreground">
-          Open the document, then place your signature, initials, the date and your name wherever
-          they go, on any page. Nothing changes in the file until you press Finish.
-        </p>
-        <FileDrop
-          files={file ? [file] : []}
-          onChange={(f) => setFile(f[0] ?? null)}
-          accept={['pdf']}
-          max={1}
-          maxSize={tool.maxSize}
-          label="Drop the PDF to sign here"
-        />
-        {openError && (
+        {openError ? (
           <p role="alert" className="text-destructive">
             {openError}
           </p>
+        ) : (
+          <p className="text-muted-foreground">Opening…</p>
         )}
       </main>
     )
@@ -318,13 +401,18 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
     <div className="flex h-dvh flex-col bg-background">
       <header className="flex flex-wrap items-center gap-2 border-b px-3 py-2">
         <Link
-          href="/utilities"
-          aria-label="All utilities"
+          href="/utilities/sign"
+          aria-label="Your documents"
           className="text-sm text-muted-foreground hover:text-foreground"
         >
           ←
         </Link>
-        <span className="max-w-60 truncate text-sm font-medium">{file?.name}</span>
+        <span className="grid min-w-0 flex-1 md:max-w-72 md:flex-none">
+          <span className="truncate text-sm font-medium">{file?.name}</span>
+          <span className="text-[11px] text-muted-foreground" aria-live="polite">
+            {saved === 'saving' ? 'Saving…' : saved === 'failed' ? "Couldn't save" : 'Saved'}
+          </span>
+        </span>
         <Button
           variant="ghost"
           size="icon-sm"
@@ -343,7 +431,13 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
         >
           <Redo2 />
         </Button>
-        <span className="flex-1" />
+        <span className="hidden flex-1 md:block" />
+        {doc && doc.versions.length > 0 && (
+          <Button variant="ghost" size="sm" onClick={() => setShowVersions(true)}>
+            <History />
+            <span className="hidden md:inline">Signed copies</span> ({doc.versions.length})
+          </Button>
+        )}
         {/* Phones have no page strip: pick the page here. */}
         <select
           aria-label="Go to page"
@@ -355,7 +449,7 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
         >
           {pages.map((n) => (
             <option key={n} value={n}>
-              Page {n} of {pages.length}
+              {n} / {pages.length}
             </option>
           ))}
         </select>
@@ -363,29 +457,49 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
           variant="ghost"
           size="icon-sm"
           aria-label="Zoom out"
+          className="max-md:hidden"
           onClick={() => setZoom(Math.max(0.2, scale / 1.25))}
         >
           <Minus />
         </Button>
-        <Button variant="ghost" size="sm" onClick={() => setZoom(null)} title="Fit the width">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="max-md:hidden"
+          onClick={() => setZoom(null)}
+          title="Fit the width"
+        >
           {Math.round(scale * 100)}%
         </Button>
         <Button
           variant="ghost"
           size="icon-sm"
           aria-label="Zoom in"
+          className="max-md:hidden"
           onClick={() => setZoom(Math.min(6, scale * 1.25))}
         >
           <Plus />
         </Button>
         <Button onClick={() => setFinishing(true)} disabled={job.busy || !list.length}>
-          {job.step || (job.busy ? 'Working…' : 'Finish & download')}
+          {job.step ||
+            (job.busy ? (
+              'Working…'
+            ) : (
+              <>
+                Finish<span className="hidden md:inline"> &amp; download</span>
+              </>
+            ))}
         </Button>
       </header>
 
       {failed && (
         <p role="alert" className="border-b bg-destructive/10 px-3 py-2 text-sm text-destructive">
           It didn't work: {failed}
+        </p>
+      )}
+      {finishError && (
+        <p role="alert" className="border-b bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          Can't finish yet: {finishError}
         </p>
       )}
 
@@ -589,6 +703,10 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
           onCancel={() => setAsking(null)}
           onPick={(pic) => {
             setPictures({ ...pictures, [asking.label]: pic })
+            void api(`${DOC}/pictures/${asking.label}`, { method: 'PUT', body: pic }).then(
+              () => setPictureFailed(false),
+              () => setPictureFailed(true),
+            )
             if (asking.then) void place(asking.label, asking.then.page, asking.then.at, pic)
             setAsking(null)
           }}
@@ -602,22 +720,71 @@ export default function SignWorkspace({ tool }: { tool: ToolSummary }) {
           className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4"
         >
           <div className="grid w-full max-w-2xl gap-3 rounded-lg bg-background p-4">
-            <h2 className="font-semibold">Signed</h2>
-            {done.outputs.map(({ file: out, name }) => (
-              <div key={out} className="grid gap-2">
-                <RemotePreview url={`${outputUrl(done, out)}?view=1`} name={name} />
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={job.reset}>
-                    Keep editing
-                  </Button>
-                  <Button asChild>
-                    <a href={outputUrl(done, out)} download>
-                      Download {name}
-                    </a>
-                  </Button>
+            <h2 className="font-semibold">
+              {version ? `Signed: kept as version ${version.n}` : 'Signed'}
+            </h2>
+            {keepError && (
+              <p role="alert" className="text-sm text-destructive">
+                It wasn't kept with the document ({keepError}); download it now.
+              </p>
+            )}
+            {done.outputs.slice(0, 1).map(({ file: out, name }) => {
+              const url = version ? `${DOC}/versions/${version.n}` : outputUrl(done, out)
+              return (
+                <div key={out} className="grid gap-2">
+                  <RemotePreview url={`${url}?view=1`} name={name} />
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={job.reset}>
+                      Keep editing
+                    </Button>
+                    <Button asChild>
+                      <a href={url} download>
+                        Download
+                      </a>
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {showVersions && doc && (
+        <div
+          role="dialog"
+          aria-label="Signed copies"
+          className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4"
+          onKeyDown={(e) => e.key === 'Escape' && setShowVersions(false)}
+        >
+          <div className="grid w-full max-w-md gap-3 rounded-lg bg-background p-4">
+            <h2 className="font-semibold">Signed copies</h2>
+            <ul className="grid gap-1">
+              {doc.versions
+                .slice()
+                .reverse()
+                .map((v) => (
+                  <li key={v.n} className="flex items-center gap-2 rounded-md border px-3 py-2">
+                    <span className="flex-1 text-sm">
+                      Version {v.n}
+                      <span className="block text-xs text-muted-foreground">
+                        {new Date(v.createdAt).toLocaleString()}
+                        {v.digital ? ' · digitally signed' : ''}
+                      </span>
+                    </span>
+                    <Button asChild size="sm" variant="outline">
+                      <a href={`${DOC}/versions/${v.n}`} download>
+                        Download
+                      </a>
+                    </Button>
+                  </li>
+                ))}
+            </ul>
+            <div className="flex justify-end">
+              <Button variant="outline" onClick={() => setShowVersions(false)}>
+                Close
+              </Button>
+            </div>
           </div>
         </div>
       )}

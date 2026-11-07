@@ -8,6 +8,8 @@ export type LoadedPdf = {
   size(page: number): { width: number; height: number }
   /** Draws `page` at `scale` pixels per point (times the screen's pixel ratio). */
   render(page: number, canvas: HTMLCanvasElement, scale: number): Promise<void>
+  /** Lets go of the document and its worker. */
+  destroy(): Promise<void>
 }
 
 export async function loadPdf(file: Blob): Promise<LoadedPdf> {
@@ -15,19 +17,26 @@ export async function loadPdf(file: Blob): Promise<LoadedPdf> {
   const worker = await import('pdfjs-dist/build/pdf.worker.min.mjs?url')
   pdfjs.GlobalWorkerOptions.workerSrc = worker.default
   const data = new Uint8Array(await file.arrayBuffer())
-  const doc = await pdfjs.getDocument({ data, enableXfa: false }).promise.catch((err: Error) => {
+  const task = pdfjs.getDocument({ data, enableXfa: false })
+  const doc = await task.promise.catch((err: Error) => {
+    void task.destroy()
     if (err?.name === 'PasswordException')
       throw new Error('this PDF has a password; take it off first')
     throw new Error("this file couldn't be read as a PDF")
   })
   const pages = await Promise.all(
     Array.from({ length: doc.numPages }, (_, i) => doc.getPage(i + 1)),
-  )
+  ).catch(() => {
+    // Opened, but a page won't load (a damaged page tree, say).
+    void task.destroy()
+    throw new Error("this file couldn't be read as a PDF")
+  })
   const sizes = pages.map((p) => p.getViewport({ scale: 1 }))
   // One drawing per canvas: a newer one (after zooming) cancels the old.
   const drawing = new WeakMap<HTMLCanvasElement, { cancel(): void }>()
   return {
     pageCount: doc.numPages,
+    destroy: () => task.destroy(),
     size: (n) => ({ width: sizes[n - 1].width, height: sizes[n - 1].height }),
     async render(n, canvas, scale) {
       drawing.get(canvas)?.cancel()
