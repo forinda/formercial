@@ -100,6 +100,13 @@ export class SigningStore {
 
   async create(name: unknown, pages: unknown, bytes: Uint8Array): Promise<SigningDoc> {
     if (sniff(bytes) !== 'pdf') throw HttpException.badRequest('that is not a PDF')
+    // Encrypted, even with only an owner password (it opens, but can't be changed):
+    // turned away now rather than at Finish. The /Encrypt key sits in the trailer or
+    // the cross-reference stream's dictionary, both uncompressed.
+    if (Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength).includes('/Encrypt'))
+      throw HttpException.badRequest(
+        'this PDF is locked with a password, even if it opens without one; take it off first',
+      )
     const count = Number(pages)
     if (!Number.isInteger(count) || count < 1 || count > 5000)
       throw HttpException.badRequest('pages is the number of pages, 1 to 5000')

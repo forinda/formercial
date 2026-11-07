@@ -8,8 +8,20 @@ export type LoadedPdf = {
   size(page: number): { width: number; height: number }
   /** Draws `page` at `scale` pixels per point (times the screen's pixel ratio). */
   render(page: number, canvas: HTMLCanvasElement, scale: number): Promise<void>
+  /** Stops any drawing on `canvas` and frees its pixels. */
+  release(canvas: HTMLCanvasElement): void
   /** Lets go of the document and its worker. */
   destroy(): Promise<void>
+}
+
+/** About the most pixels one canvas can hold everywhere (iOS Safari caps near 16.7M). */
+export const MAX_CANVAS_PIXELS = 16_000_000
+
+/** Canvas pixels per point for a page: as asked, unless that's more than a browser will draw. */
+export function drawScale(size: { width: number; height: number }, scale: number, ratio: number) {
+  const s = scale * ratio
+  const most = Math.sqrt(MAX_CANVAS_PIXELS / (size.width * size.height))
+  return Math.min(s, most)
 }
 
 export async function loadPdf(file: Blob): Promise<LoadedPdf> {
@@ -36,12 +48,18 @@ export async function loadPdf(file: Blob): Promise<LoadedPdf> {
   const drawing = new WeakMap<HTMLCanvasElement, { cancel(): void }>()
   return {
     pageCount: doc.numPages,
+    release(canvas) {
+      drawing.get(canvas)?.cancel()
+      drawing.delete(canvas)
+      canvas.width = canvas.height = 0
+    },
     destroy: () => task.destroy(),
     size: (n) => ({ width: sizes[n - 1].width, height: sizes[n - 1].height }),
     async render(n, canvas, scale) {
       drawing.get(canvas)?.cancel()
-      const ratio = window.devicePixelRatio || 1
-      const viewport = pages[n - 1].getViewport({ scale: scale * ratio })
+      const s = drawScale(sizes[n - 1], scale, window.devicePixelRatio || 1)
+      // Past the cap the page is drawn smaller and stretched to fit: softer, not blank.
+      const viewport = pages[n - 1].getViewport({ scale: s })
       canvas.width = Math.floor(viewport.width)
       canvas.height = Math.floor(viewport.height)
       const task = pages[n - 1].render({ canvas, viewport })

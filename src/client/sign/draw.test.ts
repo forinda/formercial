@@ -58,6 +58,12 @@ describe('clearPaper', () => {
     clearPaper(img, 10)
     expect(img.data[(1 * 4 + 1) * 4 + 3]).toBe(255)
   })
+
+  test('off (0) keeps the paper as it is', () => {
+    const img = picture(4, 4, [255, 255, 255, 255])
+    clearPaper(img, 0)
+    expect([...img.data].filter((_, i) => i % 4 === 3).every((a) => a === 255)).toBe(true)
+  })
 })
 
 test('smoothing keeps the ends and rounds the corners', () => {
