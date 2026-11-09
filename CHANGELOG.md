@@ -1,5 +1,59 @@
 # Changelog
 
+## v0.7.0 (2026-11-09)
+
+[Full changelog](https://github.com/forinda/formercial/compare/v0.6.0...v0.7.0)
+
+### 🚀 Features
+
+- **utilities:** signing documents listed, reopened as left, and kept with every signed copy [`e4b5690`](https://github.com/forinda/formercial/commit/e4b5690bf046189cb05fbc788fda190b1d373590)
+- **utilities:** keep signing documents until deleted, with every signed copy as a version [`6d55629`](https://github.com/forinda/formercial/commit/6d556292c805406d7c083fecb0a42a338c5d063d)
+- **utilities:** any ink colour for signatures, text and ticks [`c170e7c`](https://github.com/forinda/formercial/commit/c170e7ca446c54c024990fb527c2bdae74635598)
+- **utilities:** the signing workspace on phones [`f3957b6`](https://github.com/forinda/formercial/commit/f3957b6110b7331ad6b3f0984a5911ca69802bd8)
+- **utilities:** digitally sign at Finish [`28d0a8a`](https://github.com/forinda/formercial/commit/28d0a8a6dc2f6d92171dd98d68b2dac3e48b0587)
+- **utilities:** name the signing tools, with a rail that folds to icons [`a34f73c`](https://github.com/forinda/formercial/commit/a34f73ce4e2e2dd3b67bc8071ee0983e8cea5b10)
+- **utilities:** draw, upload or type a signature [`6f01c65`](https://github.com/forinda/formercial/commit/6f01c65bbde8836a61f88fe05ae88fe2534da735)
+- **utilities:** remember signatures on this machine [`401ea41`](https://github.com/forinda/formercial/commit/401ea4164ea08f704a84c6319464cf74acfd0022)
+- **utilities:** a workspace for signing PDFs [`8186064`](https://github.com/forinda/formercial/commit/81860642b215b187450c1e7f97e3aa4390eb0726)
+- **utilities:** stamp placed items into a PDF [`cc65c18`](https://github.com/forinda/formercial/commit/cc65c187d7ea6c015202f09086a6467c2191a3b5)
+- **utilities:** the signing workspace's item list [`8ca03c9`](https://github.com/forinda/formercial/commit/8ca03c95ea145c86f16de256a04f2e499dd7d90e)
+- **utilities:** PDF merge, split, compress, pictures, text and signing [`bc624bc`](https://github.com/forinda/formercial/commit/bc624bc11dcc9b490cd34d89511b9b036c6d888e)
+- **utilities:** self-hosted converters with a drop zone and previews [`943b35e`](https://github.com/forinda/formercial/commit/943b35e6aed2eeb4cfab955746afa426d1e19cdf)
+- **fun:** solo arcade with 41 games from canvas-games [`e3870c4`](https://github.com/forinda/formercial/commit/e3870c4cee3179dd6e7d696499544cf7920c4882)
+- **fun:** Fun Club rooms with multiplayer sudoku over kickjs-ws [`54e0476`](https://github.com/forinda/formercial/commit/54e0476f85051cd2446b02d1e62ae8ed4d8b98fc)
+- **memes:** post-card layout and timed text [`a1f9f67`](https://github.com/forinda/formercial/commit/a1f9f679186411ee52c717c90d622bec769b1a67)
+- sections, a meme generator and a Fun Club page [`bd06544`](https://github.com/forinda/formercial/commit/bd06544cfe1c5576d89a5433471bed1519ab0f1f)
+- **player:** gif block, frames drawn by scene time [`7fcac53`](https://github.com/forinda/formercial/commit/7fcac53aa6f57d3a5c9866e9591fb47f39f59d0c)
+- **projects:** numbered pager with first and last page buttons [`9f4d8f6`](https://github.com/forinda/formercial/commit/9f4d8f636377ce27b89e74132fafe2d23ceee63c)
+- **projects:** tabs, search, pages, cards or table, and render thumbnails [`3fad4d4`](https://github.com/forinda/formercial/commit/3fad4d4d585b436074a215a9d67a0766c4e55643)
+
+### 🐛 Bug Fixes
+
+- **utilities:** signing workspace minor fixes from the final review [`6d7fd24`](https://github.com/forinda/formercial/commit/6d7fd24c804890e54a29a46c126045bd46eeab75)
+- **utilities:** final review fixes for the signing workspace [`32147ed`](https://github.com/forinda/formercial/commit/32147edb911bbdf3b9bb71a53c5794969ea353c0)
+- **utilities:** let go of abandoned jobs, steadier autosave, PDF.js cleanup [`a6a8c4d`](https://github.com/forinda/formercial/commit/a6a8c4daf25ca563c0764a0fb89c653122b71dfa)
+- **utilities:** signing jobs bound to their document, kept by the server when done [`7ab0339`](https://github.com/forinda/formercial/commit/7ab033957d729cccfa81aab5d2c17355c764c5a3)
+- **utilities:** review fixes for kept signing documents [`2f14072`](https://github.com/forinda/formercial/commit/2f140726311a698589406e7a23a32d0931099215)
+- **utilities:** a pinch that starts on an item zooms instead of moving it [`d5834da`](https://github.com/forinda/formercial/commit/d5834dacf5623badd470b9cf849ff55c8bae47d9)
+- **utilities:** sign in a worker that the time limit can stop [`4d99ae9`](https://github.com/forinda/formercial/commit/4d99ae9d2e7252e92addfe639a37528204326aa1)
+- **utilities:** PDF programs need the sandbox too [`d777148`](https://github.com/forinda/formercial/commit/d7771487e5fdd486ac2abeed5f4a3e994ad7f07d)
+- **utilities:** recalculate spreadsheets on load, and say when the sandbox is refused [`081af05`](https://github.com/forinda/formercial/commit/081af055fcaff8bd9cc220e5ffc959c6200fe26a)
+- **utilities:** pin LibreOffice's link and recalc settings, and need the sandbox [`37345ed`](https://github.com/forinda/formercial/commit/37345ed8a5fe6e0b3c0cf226eed1a74b527f2e02)
+- **utilities:** keep untrusted documents from reaching outside the job [`8f2c7f3`](https://github.com/forinda/formercial/commit/8f2c7f38d947583422df376c1650102a8b83b547)
+- **fun:** only real room codes reach the room page [`162f8e8`](https://github.com/forinda/formercial/commit/162f8e84c7cbeb57ceb15442369823a7d591cd77)
+- address review on run panels, render names and the code ring [`90ac432`](https://github.com/forinda/formercial/commit/90ac43205231b630510360611f64d60c78c0934a)
+- **render:** stamp render files and history in local time [`34ae3ba`](https://github.com/forinda/formercial/commit/34ae3baa2137c8edfeff1f4239592de269e86b34)
+- **player:** keep run and revise code readable [`42ff8fb`](https://github.com/forinda/formercial/commit/42ff8fb1e6f9270e484ab4ea95bf4ed6d4b1c6b3)
+- **projects:** read controls from the browser's address, list every render page [`fee19b5`](https://github.com/forinda/formercial/commit/fee19b50d09ca9dd1c58378e91eba3cfe8f9be1f)
+
+### 🔧 Chores
+
+- ignore .playwright-mcp [`06752fe`](https://github.com/forinda/formercial/commit/06752fe35721b96f39bf7314e306da735c52fedb)
+
+### 📌 Other
+
+- format styles.test.ts so the format check passes [`5c58ca3`](https://github.com/forinda/formercial/commit/5c58ca390d227634c35a7b93819f01eb3a045c8b)
+
 ## v0.6.0 (2026-11-02)
 
 [Full changelog](https://github.com/forinda/formercial/compare/v0.5.2...v0.6.0)
